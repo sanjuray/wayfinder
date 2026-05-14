@@ -42,3 +42,7 @@ npm run build     # production build
 - Collections detail / Trips list / Trip plan screens
 - Validation states for invalid Google Maps short links
 - Full keyboard accessibility audit
+
+## UI Preview
+
+👉 [Open the interactive UI mockup]([https://sanjuray.github.io/wayfinder/mockup/index.html])
