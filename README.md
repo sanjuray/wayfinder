@@ -43,6 +43,5 @@ npm run build     # production build
 - Validation states for invalid Google Maps short links
 - Full keyboard accessibility audit
 
-## UI Preview
-
-👉 [Open the interactive UI mockup] <a url="https://sanjuray.github.io/wayfinder/mockup/index.html"/>
+## 🌐 Live Preview
+You can view the interactive UI mockup here: [Live Demo](https://sanjuray.github.io/wayfinder/mockup/index.html)
