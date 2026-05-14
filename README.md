@@ -45,4 +45,4 @@ npm run build     # production build
 
 ## UI Preview
 
-👉 [Open the interactive UI mockup]([https://sanjuray.github.io/wayfinder/mockup/index.html])
+👉 [Open the interactive UI mockup] <a url="https://sanjuray.github.io/wayfinder/mockup/index.html"/>
