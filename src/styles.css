@@ -1,1 +1,74 @@
 /* You can add global styles to this file, and also import other style files */
+/* =========================================================
+   Global Styles
+   ========================================================= */
+
+/* Reset */
+@import 'styles/reset.css';
+
+/* Design Tokens */
+@import 'styles/tokens.css';
+
+/* Themes */
+@import 'styles/themes/paper.css';
+@import 'styles/themes/neon.css';
+@import 'styles/themes/kyoto.css';
+@import 'styles/themes/mono.css';
+@import 'styles/themes/midnight.css';
+@import 'styles/themes/subway.css';
+@import 'styles/themes/forest.css';
+
+
+/* =========================================================
+   Base Document Styles
+   ========================================================= */
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+  background: var(--wf-bg);
+  color: var(--wf-ink);
+
+  font-family: var(--wf-font-body);
+
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
+}
+
+body {
+  overflow-x: hidden;
+}
+
+
+/* =========================================================
+   Global Defaults
+   ========================================================= */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+
+/* =========================================================
+   Selection Styling
+   ========================================================= */
+
+::selection {
+  background: var(--wf-accent);
+  color: var(--wf-bg);
+}

@@ -1,0 +1,32 @@
+[data-theme='kyoto'] {
+  --wf-bg: #0f1729;
+  --wf-bg-2: #1a2541;
+  --wf-ink: #f4ecd8;
+  --wf-ink-soft: #a89f8c;
+  --wf-ink-faint: #6b6452;
+
+  --wf-hairline: rgba(244, 236, 216, 0.12);
+  --wf-hairline-soft: rgba(244, 236, 216, 0.06);
+
+  --wf-accent: #e8a547;
+  --wf-accent-2: #c8842a;
+  --wf-gold: #f4d58d;
+  --wf-teal: #7fb3a6;
+
+  --wf-map-land: #1a2541;
+  --wf-map-road: #2a3a5c;
+  --wf-map-water: #0f2a3f;
+  --wf-map-park: #1f3d3a;
+
+  --wf-font-display: 'Fraunces', Georgia, serif;
+  --wf-font-body: 'Manrope', sans-serif;
+  --wf-font-handwrite: 'Kalam', cursive;
+  --wf-font-mono: 'JetBrains Mono', Menlo, monospace;
+
+  --wf-pin-shape: 50% 50% 50% 0;
+  --wf-radius-card: 18px;
+  --wf-radius-pill: 30px;
+
+  --wf-glow: 0 0 20px rgba(232, 165, 71, 0.3);
+  --wf-glow-hover: 0 0 28px rgba(232, 165, 71, 0.5), 0 0 48px rgba(244, 213, 141, 0.2);
+}

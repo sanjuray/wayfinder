@@ -1,0 +1,32 @@
+[data-theme='neon'] {
+  --wf-bg: #0e0f1a;
+  --wf-bg-2: #1a1b2e;
+  --wf-ink: #f0f4ff;
+  --wf-ink-soft: #9aa3c4;
+  --wf-ink-faint: #5d6483;
+
+  --wf-hairline: rgba(240, 244, 255, 0.1);
+  --wf-hairline-soft: rgba(240, 244, 255, 0.05);
+
+  --wf-accent: #ff3d9a;
+  --wf-accent-2: #e02382;
+  --wf-gold: #7affd7;
+  --wf-teal: #7affd7;
+
+  --wf-map-land: #1a1b2e;
+  --wf-map-road: #2d2f4a;
+  --wf-map-water: #1f3b5c;
+  --wf-map-park: #1e3a2d;
+
+  --wf-font-display: 'Space Grotesk', sans-serif;
+  --wf-font-body: 'Space Grotesk', sans-serif;
+  --wf-font-handwrite: 'Space Grotesk', sans-serif;
+  --wf-font-mono: 'JetBrains Mono', Menlo, monospace;
+
+  --wf-pin-shape: 6px;
+  --wf-radius-card: 6px;
+  --wf-radius-pill: 6px;
+
+  --wf-glow: 0 0 16px rgba(255, 61, 154, 0.4), 0 0 32px rgba(255, 61, 154, 0.15);
+  --wf-glow-hover: 0 0 24px rgba(255, 61, 154, 0.7), 0 0 48px rgba(255, 61, 154, 0.3);
+}

@@ -1,0 +1,32 @@
+[data-theme='midnight'] {
+  --wf-bg: #1b0f1f;
+  --wf-bg-2: #2a1830;
+  --wf-ink: #f4e8d0;
+  --wf-ink-soft: #b6a081;
+  --wf-ink-faint: #7d6a52;
+
+  --wf-hairline: rgba(244, 232, 208, 0.12);
+  --wf-hairline-soft: rgba(244, 232, 208, 0.06);
+
+  --wf-accent: #d4a74c;
+  --wf-accent-2: #b08938;
+  --wf-gold: #e8c57a;
+  --wf-teal: #7e9a7a;
+
+  --wf-map-land: #251424;
+  --wf-map-road: #3a2438;
+  --wf-map-water: #1f2a3d;
+  --wf-map-park: #243024;
+
+  --wf-font-display: 'Fraunces', Georgia, serif;
+  --wf-font-body: 'Manrope', sans-serif;
+  --wf-font-handwrite: 'Kalam', cursive;
+  --wf-font-mono: 'JetBrains Mono', Menlo, monospace;
+
+  --wf-pin-shape: 50% 50% 50% 0;
+  --wf-radius-card: 16px;
+  --wf-radius-pill: 28px;
+
+  --wf-glow: 0 0 20px rgba(212, 167, 76, 0.3);
+  --wf-glow-hover: 0 0 28px rgba(212, 167, 76, 0.5), 0 0 48px rgba(232, 197, 122, 0.2);
+}

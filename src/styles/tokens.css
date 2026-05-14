@@ -1,0 +1,50 @@
+/*
+ * The variable contract.
+ *
+ * Every theme file in styles/themes/ redefines THESE variables and only these.
+ * Adding a new variable here means adding it in all 7 theme files too.
+ * Components style with var(--wf-*) — never hardcoded colors.
+ */
+
+:root,
+[data-theme='paper'] {
+  /* surfaces */
+  --wf-bg: #faf6ef;
+  --wf-bg-2: #f1ecdf;
+
+  /* text */
+  --wf-ink: #1a1a2e;
+  --wf-ink-soft: #6b6b78;
+  --wf-ink-faint: #9a9aa0;
+
+  /* lines */
+  --wf-hairline: rgba(26, 26, 46, 0.12);
+  --wf-hairline-soft: rgba(26, 26, 46, 0.06);
+
+  /* accents */
+  --wf-accent: #ff6b5b;
+  --wf-accent-2: #e5523f;
+  --wf-gold: #ffd15b;
+  --wf-teal: #1d9e75;
+
+  /* map (used in mockup-style rendered map only; real Leaflet uses tile imagery) */
+  --wf-map-land: #e8e4d8;
+  --wf-map-road: #d4cfbe;
+  --wf-map-water: #bfd9d6;
+  --wf-map-park: #c8d9b0;
+
+  /* type */
+  --wf-font-display: 'Fraunces', Georgia, serif;
+  --wf-font-body: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
+  --wf-font-handwrite: 'Kalam', cursive;
+  --wf-font-mono: 'JetBrains Mono', Menlo, monospace;
+
+  /* shape */
+  --wf-pin-shape: 50% 50% 50% 0;
+  --wf-radius-card: 14px;
+  --wf-radius-pill: 24px;
+
+  /* motion */
+  --wf-glow: 0 4px 18px rgba(255, 107, 91, 0.25);
+  --wf-glow-hover: 0 6px 24px rgba(255, 107, 91, 0.4);
+}

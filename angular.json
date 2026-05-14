@@ -11,7 +11,7 @@
       "schematics": {},
       "root": "",
       "sourceRoot": "src",
-      "prefix": "app",
+      "prefix": "wf",
       "architect": {
         "build": {
           "builder": "@angular/build:application",
@@ -25,6 +25,9 @@
               }
             ],
             "styles": [
+              "node_modules/leaflet/dist/leaflet.css",
+              "node_modules/leaflet.markercluster/dist/MarkerCluster.css",
+              "node_modules/leaflet.markercluster/dist/MarkerCluster.Default.css",
               "src/styles.css"
             ]
           },

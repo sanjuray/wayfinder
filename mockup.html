@@ -1,0 +1,1405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Wayfinder — interactive mockup v3</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Manrope:wght@400;500;600&family=Kalam&family=Space+Grotesk:wght@400;500;700&family=Playfair+Display:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.4.0/dist/tabler-icons.min.css">
+<style>
+  /* =========================================================
+     SIX THEMES — switched via [data-theme] on .app
+     ========================================================= */
+  .app[data-theme="paper"]{
+    --bg:#FAF6EF;--bg-2:#F1ECDF;--ink:#1A1A2E;--ink-soft:#6b6b78;--ink-faint:#9a9aa0;
+    --hairline:rgba(26,26,46,0.12);--hairline-soft:rgba(26,26,46,0.06);
+    --accent:#FF6B5B;--accent-2:#E5523F;--gold:#FFD15B;--teal:#1D9E75;
+    --map-land:#E8E4D8;--map-road:#D4CFBE;--map-water:#BFD9D6;--map-park:#C8D9B0;
+    --font-display:'Fraunces',Georgia,serif;--font-body:'Manrope',sans-serif;--font-handwrite:'Kalam',cursive;
+    --pin-shape:50% 50% 50% 0;--radius-card:14px;--radius-pill:24px;
+    --glow:0 4px 18px rgba(255,107,91,0.25);
+    --glow-hover:0 6px 24px rgba(255,107,91,0.4);
+  }
+  .app[data-theme="neon"]{
+    --bg:#0E0F1A;--bg-2:#1A1B2E;--ink:#F0F4FF;--ink-soft:#9aa3c4;--ink-faint:#5d6483;
+    --hairline:rgba(240,244,255,0.1);--hairline-soft:rgba(240,244,255,0.05);
+    --accent:#FF3D9A;--accent-2:#E02382;--gold:#7AFFD7;--teal:#7AFFD7;
+    --map-land:#1A1B2E;--map-road:#2D2F4A;--map-water:#1F3B5C;--map-park:#1E3A2D;
+    --font-display:'Space Grotesk',sans-serif;--font-body:'Space Grotesk',sans-serif;--font-handwrite:'Space Grotesk',sans-serif;
+    --pin-shape:6px;--radius-card:6px;--radius-pill:6px;
+    --glow:0 0 16px rgba(255,61,154,0.4),0 0 32px rgba(255,61,154,0.15);
+    --glow-hover:0 0 24px rgba(255,61,154,0.7),0 0 48px rgba(255,61,154,0.3);
+  }
+  .app[data-theme="kyoto"]{
+    --bg:#0F1729;--bg-2:#1A2541;--ink:#F4ECD8;--ink-soft:#a89f8c;--ink-faint:#6b6452;
+    --hairline:rgba(244,236,216,0.12);--hairline-soft:rgba(244,236,216,0.06);
+    --accent:#E8A547;--accent-2:#C8842A;--gold:#F4D58D;--teal:#7FB3A6;
+    --map-land:#1A2541;--map-road:#2A3A5C;--map-water:#0F2A3F;--map-park:#1F3D3A;
+    --font-display:'Fraunces',Georgia,serif;--font-body:'Manrope',sans-serif;--font-handwrite:'Kalam',cursive;
+    --pin-shape:50% 50% 50% 0;--radius-card:18px;--radius-pill:30px;
+    --glow:0 4px 18px rgba(232,165,71,0.3);
+    --glow-hover:0 0 24px rgba(232,165,71,0.55),0 0 48px rgba(244,213,141,0.25);
+  }
+  .app[data-theme="mono"]{
+    --bg:#FFFFFF;--bg-2:#F4F4F4;--ink:#000000;--ink-soft:#444444;--ink-faint:#888888;
+    --hairline:rgba(0,0,0,0.15);--hairline-soft:rgba(0,0,0,0.08);
+    --accent:#D72638;--accent-2:#A81E2C;--gold:#000000;--teal:#000000;
+    --map-land:#F4F4F4;--map-road:#D4D4D4;--map-water:#E0E0E0;--map-park:#EAEAEA;
+    --font-display:'Playfair Display',Georgia,serif;--font-body:'Manrope',sans-serif;--font-handwrite:'Playfair Display',serif;
+    --pin-shape:0;--radius-card:0;--radius-pill:0;
+    --glow:0 2px 0 rgba(215,38,56,0.3);
+    --glow-hover:0 4px 0 rgba(215,38,56,0.5);
+  }
+  .app[data-theme="forest"]{
+    --bg:#EFEAD8;--bg-2:#DDD5BC;--ink:#1F2D1A;--ink-soft:#566649;--ink-faint:#8a957d;
+    --hairline:rgba(31,45,26,0.14);--hairline-soft:rgba(31,45,26,0.07);
+    --accent:#3F6B47;--accent-2:#2D5234;--gold:#D9A23F;--teal:#5C8466;
+    --map-land:#D8CFB2;--map-road:#B9AE8E;--map-water:#9CB8A4;--map-park:#8FA975;
+    --font-display:'Fraunces',Georgia,serif;--font-body:'Manrope',sans-serif;--font-handwrite:'Kalam',cursive;
+    --pin-shape:50% 50% 50% 0;--radius-card:14px;--radius-pill:24px;
+    --glow:0 4px 18px rgba(63,107,71,0.3);
+    --glow-hover:0 6px 24px rgba(63,107,71,0.45),0 0 32px rgba(217,162,63,0.2);
+  }
+  .app[data-theme="midnight"]{
+    --bg:#1B0F1F;--bg-2:#2A1830;--ink:#F4E8D0;--ink-soft:#b6a081;--ink-faint:#7d6a52;
+    --hairline:rgba(244,232,208,0.12);--hairline-soft:rgba(244,232,208,0.06);
+    --accent:#D4A74C;--accent-2:#B08938;--gold:#E8C57A;--teal:#7E9A7A;
+    --map-land:#251424;--map-road:#3A2438;--map-water:#1F2A3D;--map-park:#243024;
+    --font-display:'Fraunces',Georgia,serif;--font-body:'Manrope',sans-serif;--font-handwrite:'Kalam',cursive;
+    --pin-shape:50% 50% 50% 0;--radius-card:16px;--radius-pill:28px;
+    --glow:0 0 20px rgba(212,167,76,0.3);
+    --glow-hover:0 0 28px rgba(212,167,76,0.5),0 0 48px rgba(232,197,122,0.2);
+  }
+  .app[data-theme="subway"]{
+    --bg:#FAFAFA;--bg-2:#EFEFEF;--ink:#1C1C1C;--ink-soft:#5a5a5a;--ink-faint:#999;
+    --hairline:rgba(28,28,28,0.15);--hairline-soft:rgba(28,28,28,0.07);
+    --accent:#0066CC;--accent-2:#004A99;--gold:#1C1C1C;--teal:#0066CC;
+    --map-land:#EFEFEF;--map-road:#D4D4D4;--map-water:#D8E3EF;--map-park:#DCE3D8;
+    --font-display:'Manrope',sans-serif;--font-body:'Manrope',sans-serif;--font-handwrite:'Manrope',sans-serif;
+    --pin-shape:50% 50% 50% 0;--radius-card:4px;--radius-pill:4px;
+    --glow:0 0 0 2px rgba(0,102,204,0.15);
+    --glow-hover:0 0 0 3px rgba(0,102,204,0.35);
+  }
+
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:#E8E4D8;font-family:'Manrope',sans-serif;color:#1A1A2E;-webkit-font-smoothing:antialiased}
+  .stage{max-width:1280px;margin:0 auto;padding:24px}
+
+  .head-row{display:flex;align-items:center;gap:16px;margin-bottom:6px}
+  .lead{margin:0;font-family:'Fraunces',serif;font-size:32px;font-weight:500;letter-spacing:-0.5px;display:flex;align-items:center;gap:14px}
+  .sublead{margin:0 0 24px;font-size:14px;color:#6b6b78}
+
+  /* === LOGO MARK === */
+  .logo-mark{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
+  .logo-mark svg{display:block}
+
+  /* nav tabs */
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;padding:6px;background:#FAF6EF;border-radius:14px;border:0.5px solid rgba(26,26,46,0.12)}
+  .tab{font-size:13px;padding:9px 14px;border-radius:10px;border:none;background:transparent;cursor:pointer;color:#6b6b78;display:inline-flex;align-items:center;gap:8px;font-family:'Manrope',sans-serif;font-weight:500;transition:all .15s ease}
+  .tab:hover{color:#1A1A2E;background:rgba(26,26,46,0.04)}
+  .tab.active{background:#1A1A2E;color:#FAF6EF}
+
+  /* theme switcher — six themes */
+  .theme-bar{display:flex;align-items:center;gap:8px;margin-bottom:18px;padding:10px 14px;background:#FAF6EF;border-radius:12px;border:0.5px solid rgba(26,26,46,0.1);flex-wrap:wrap}
+  .theme-bar .lbl{font-size:12px;color:#6b6b78;font-weight:500;margin-right:4px}
+  .theme-pick{display:inline-flex;align-items:center;gap:7px;padding:7px 12px;border-radius:8px;border:0.5px solid rgba(26,26,46,0.15);background:#fff;cursor:pointer;font-size:12px;color:#1A1A2E;font-family:'Manrope',sans-serif;font-weight:500}
+  .theme-pick:hover{border-color:rgba(26,26,46,0.4)}
+  .theme-pick.on{background:#1A1A2E;color:#FAF6EF;border-color:#1A1A2E}
+  .theme-pick .swatch{display:inline-flex;gap:2px}
+  .theme-pick .sw{width:10px;height:10px;border-radius:50%}
+
+  .screen{display:none;animation:fadein .25s ease-out}
+  .screen.active{display:block}
+  @keyframes fadein{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+  /* APP container — themed */
+  .app{background:var(--bg);border-radius:18px;overflow:hidden;border:0.5px solid var(--hairline);box-shadow:0 4px 24px rgba(0,0,0,0.04);color:var(--ink);font-family:var(--font-body);transition:background .3s ease,color .3s ease}
+  .app[data-theme="neon"]{box-shadow:0 8px 32px rgba(255,61,154,0.12)}
+  .app[data-theme="kyoto"]{box-shadow:0 8px 32px rgba(232,165,71,0.1)}
+  .app[data-theme="mono"]{border-radius:0;box-shadow:0 0 0 1px rgba(0,0,0,0.1)}
+  .app[data-theme="sakura"]{box-shadow:0 8px 32px rgba(232,155,173,0.18)}
+  .app[data-theme="forest"]{box-shadow:0 6px 24px rgba(31,45,26,0.12)}
+
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 22px;border-bottom:0.5px solid var(--hairline)}
+  .brand{display:inline-flex;align-items:center;gap:10px}
+  .brand-text{display:flex;align-items:baseline;gap:10px;line-height:1}
+  .brand-name{font-family:var(--font-display);font-size:21px;letter-spacing:-0.4px;font-weight:500;color:var(--ink)}
+  .brand-sep{font-size:14px;color:var(--ink-faint);font-family:var(--font-display)}
+  .brand-tagline{font-family:var(--font-handwrite);font-size:13px;color:var(--accent);letter-spacing:0.2px;white-space:nowrap}
+  .app[data-theme="neon"] .brand-tagline{font-family:var(--font-body);text-transform:uppercase;letter-spacing:1.5px;font-size:10px;font-weight:500}
+  .app[data-theme="mono"] .brand-tagline{font-family:var(--font-display);font-style:italic;color:var(--accent);font-size:13px}
+  .app[data-theme="subway"] .brand-tagline{font-family:var(--font-body);text-transform:uppercase;letter-spacing:1.2px;font-size:10px;font-weight:500;color:var(--accent)}
+  .app[data-theme="polaroid"] .brand-tagline{font-family:var(--font-display);font-style:italic;font-size:13px}
+
+  .nav{display:flex;gap:4px}
+  .nav button{background:transparent;border:none;font-size:13px;padding:7px 13px;border-radius:8px;color:var(--ink);cursor:pointer;font-family:var(--font-body);font-weight:500;transition:all .2s ease}
+  .nav button:hover{background:var(--hairline)}
+  .nav button.on{background:var(--ink);color:var(--bg)}
+  .app[data-theme="neon"] .nav button.on{box-shadow:var(--glow)}
+  .app[data-theme="neon"] .nav button:hover{box-shadow:var(--glow);color:var(--accent)}
+
+  .iconbtn{width:34px;height:34px;border-radius:50%;border:0.5px solid var(--hairline);background:transparent;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink);font-size:16px;transition:all .2s ease}
+  .app[data-theme="mono"] .iconbtn{border-radius:0}
+  .iconbtn:hover{background:var(--hairline)}
+  .app[data-theme="neon"] .iconbtn:hover{box-shadow:var(--glow);border-color:var(--accent)}
+  .topbar-right{display:flex;gap:6px;align-items:center}
+  .topbar-right .save-status{font-size:11px;color:var(--ink-faint);margin-right:6px;display:inline-flex;align-items:center;gap:4px}
+  .topbar-right .save-status .dot{width:6px;height:6px;border-radius:50%;background:var(--teal)}
+
+  /* breadcrumb */
+  .breadcrumb{display:flex;align-items:center;gap:10px;padding:14px 22px;border-bottom:0.5px solid var(--hairline)}
+  .breadcrumb button{background:transparent;border:none;cursor:pointer;color:var(--ink-soft);font-size:13px;font-family:var(--font-body);display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:8px;font-weight:500;transition:all .2s}
+  .breadcrumb button:hover{background:var(--hairline);color:var(--ink)}
+  .app[data-theme="neon"] .breadcrumb button:hover{box-shadow:var(--glow)}
+  .breadcrumb .title{font-family:var(--font-display);font-size:20px;color:var(--ink);font-weight:500;letter-spacing:-0.3px}
+
+  .body{display:grid;grid-template-columns:260px 1fr;min-height:560px}
+  .side{padding:18px;border-right:0.5px solid var(--hairline)}
+  .side h4{margin:0 0 8px;font-size:11px;color:var(--ink-faint);letter-spacing:0.6px;font-weight:500;text-transform:uppercase}
+  .cat{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;font-size:13px;color:var(--ink);cursor:pointer;transition:all .15s}
+  .cat:hover{background:var(--hairline)}
+  .app[data-theme="neon"] .cat:hover{box-shadow:inset 0 0 0 1px var(--accent),var(--glow)}
+  .cat .sw{width:11px;height:11px;border-radius:50%;flex-shrink:0}
+  .app[data-theme="neon"] .cat .sw{border-radius:2px}
+  .app[data-theme="mono"] .cat .sw{border-radius:0}
+  .cat .ct{margin-left:auto;font-size:11px;color:var(--ink-faint)}
+  .coll{padding:10px 12px;border-radius:var(--radius-card);background:var(--bg-2);border:0.5px solid var(--hairline-soft);margin-bottom:7px;cursor:pointer;display:flex;align-items:center;gap:10px;transition:all .15s}
+  .coll:hover{border-color:var(--hairline);transform:translateX(2px)}
+  .app[data-theme="neon"] .coll:hover{box-shadow:var(--glow);border-color:var(--accent)}
+  .coll .cover{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;position:relative}
+  .coll .cover.v1{background:linear-gradient(135deg,var(--accent) 0%,var(--gold) 100%)}
+  .coll .cover.v2{background:linear-gradient(135deg,var(--ink) 0%,var(--accent) 100%)}
+  .coll .cover.v3{background:linear-gradient(135deg,var(--teal) 0%,var(--accent) 100%)}
+  .coll .cover.v4{background:linear-gradient(135deg,var(--gold) 0%,var(--ink) 100%)}
+  .coll .cover .pat{position:absolute;inset:0;background-image:radial-gradient(circle at 30% 40%,rgba(255,255,255,0.2) 1.5px,transparent 2px),radial-gradient(circle at 70% 70%,rgba(255,255,255,0.15) 2px,transparent 2.5px)}
+  .app[data-theme="mono"] .coll .cover{border-radius:0}
+  .coll .cover i{font-size:14px;color:rgba(255,255,255,0.95);position:relative;z-index:1}
+  .coll .nm{font-size:13px;font-weight:500;color:var(--ink)}
+  .coll .ct{margin-left:auto;font-size:11px;color:var(--ink-faint)}
+
+  /* MAP */
+  .map{position:relative;background:var(--map-land);overflow:hidden;min-height:560px}
+  .map .grid{position:absolute;inset:0;background-image:linear-gradient(to right,rgba(0,0,0,0.04) 1px,transparent 1px),linear-gradient(to bottom,rgba(0,0,0,0.04) 1px,transparent 1px);background-size:42px 42px;opacity:0.5}
+  .app[data-theme="neon"] .map .grid{background-image:linear-gradient(to right,rgba(122,255,215,0.08) 1px,transparent 1px),linear-gradient(to bottom,rgba(122,255,215,0.08) 1px,transparent 1px)}
+  .app[data-theme="kyoto"] .map .grid{background-image:linear-gradient(to right,rgba(232,165,71,0.06) 1px,transparent 1px),linear-gradient(to bottom,rgba(232,165,71,0.06) 1px,transparent 1px)}
+  .map .road{position:absolute;background:var(--map-road)}
+  .map .water{position:absolute;background:var(--map-water);border-radius:50%}
+  .map .park{position:absolute;background:var(--map-park);border-radius:40% 60% 55% 45%}
+  .map-note{position:absolute;left:18px;bottom:18px;background:var(--bg);border-radius:8px;padding:8px 12px;font-size:10px;color:var(--ink-faint);font-style:italic;border:0.5px solid var(--hairline);max-width:240px;line-height:1.5}
+
+  /* PINS */
+  .pin{position:absolute;width:30px;height:30px;border-radius:var(--pin-shape);transform:translate(-50%,-100%) rotate(-45deg);display:flex;align-items:center;justify-content:center;cursor:pointer;border:2.5px solid var(--bg);transition:transform .2s cubic-bezier(0.34,1.56,0.64,1),box-shadow .2s}
+  .app[data-theme="neon"] .pin{transform:translate(-50%,-50%) rotate(0);border-radius:6px;border-width:2px;box-shadow:0 0 8px rgba(0,0,0,0.4)}
+  .app[data-theme="mono"] .pin{transform:translate(-50%,-100%) rotate(0);border-radius:0;border-width:2px;width:24px;height:30px}
+  .pin:hover{transform:translate(-50%,-100%) rotate(-45deg) scale(1.18)}
+  .app[data-theme="neon"] .pin:hover{transform:translate(-50%,-50%) rotate(0) scale(1.18);box-shadow:0 0 16px currentColor}
+  .app[data-theme="mono"] .pin:hover{transform:translate(-50%,-100%) rotate(0) scale(1.18)}
+  .pin i{transform:rotate(45deg);color:var(--bg);font-size:14px}
+  .app[data-theme="neon"] .pin i,.app[data-theme="mono"] .pin i{transform:rotate(0)}
+  .pin.planned{background:var(--bg);border-color:var(--ink);border-style:dashed}
+  .pin.planned i{color:var(--ink)}
+  .pin.fav::after{content:'✦';position:absolute;top:-12px;right:-10px;color:var(--gold);font-size:16px;transform:rotate(45deg);text-shadow:0 0 8px rgba(0,0,0,0.4);font-family:var(--font-display)}
+  .app[data-theme="neon"] .pin.fav::after,.app[data-theme="mono"] .pin.fav::after{transform:rotate(0);top:-14px;right:-8px}
+
+  .cluster{position:absolute;width:46px;height:46px;border-radius:50%;background:var(--ink);color:var(--bg);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:500;transform:translate(-50%,-50%);border:3px solid var(--bg);cursor:pointer;transition:all .2s;font-family:var(--font-body)}
+  .app[data-theme="neon"] .cluster{border-radius:8px;box-shadow:0 0 12px rgba(255,61,154,0.5)}
+  .app[data-theme="mono"] .cluster{border-radius:0}
+  .cluster:hover{background:var(--accent);transform:translate(-50%,-50%) scale(1.05)}
+  .app[data-theme="neon"] .cluster:hover{box-shadow:var(--glow-hover)}
+
+  .fab{position:absolute;bottom:24px;right:24px;background:var(--accent);color:var(--bg);border:none;border-radius:var(--radius-pill);padding:14px 24px;font-size:14px;cursor:pointer;display:inline-flex;align-items:center;gap:9px;font-family:var(--font-body);font-weight:500;box-shadow:var(--glow);z-index:5;transition:all .2s ease}
+  .app[data-theme="neon"] .fab{font-weight:700;letter-spacing:0.5px;text-transform:uppercase;font-size:12px}
+  .fab:hover{transform:translateY(-2px);box-shadow:var(--glow-hover)}
+
+  .search{position:absolute;top:18px;left:18px;background:var(--bg);border-radius:var(--radius-pill);padding:11px 18px;display:flex;align-items:center;gap:10px;border:0.5px solid var(--hairline);width:340px;box-shadow:0 2px 12px rgba(0,0,0,0.04);z-index:3;transition:box-shadow .2s}
+  .app[data-theme="neon"] .search:focus-within{box-shadow:var(--glow)}
+  .search input{border:none;background:transparent;flex:1;font-size:13px;font-family:var(--font-body);color:var(--ink);outline:none}
+  .search input::placeholder{color:var(--ink-faint)}
+
+  .quote{position:absolute;background:var(--ink);color:var(--bg);padding:14px 22px;border-radius:16px;font-family:var(--font-handwrite);font-size:16px;opacity:0;transition:all .35s cubic-bezier(0.34,1.56,0.64,1);pointer-events:none;max-width:280px;line-height:1.5;z-index:8;transform:translate(-50%,calc(-100% - 22px)) scale(0.85)}
+  .app[data-theme="neon"] .quote{font-family:var(--font-body);font-weight:500;border:1px solid var(--accent);box-shadow:0 0 24px rgba(255,61,154,0.4)}
+  .app[data-theme="mono"] .quote{font-family:var(--font-display);font-style:italic;border-radius:0}
+  .quote.show{opacity:1;transform:translate(-50%,calc(-100% - 18px)) scale(1)}
+  .quote .star{color:var(--gold);margin-right:6px}
+  .quote::after{content:'';position:absolute;left:50%;bottom:-8px;transform:translateX(-50%);width:0;height:0;border:8px solid transparent;border-top-color:var(--ink);border-bottom:0}
+
+  /* CELEBRATION OVERLAY (lives on map) */
+  .cel-overlay{position:absolute;inset:0;background:rgba(0,0,0,0);transition:background .4s ease;pointer-events:none;z-index:6;opacity:0}
+  .cel-overlay.show{background:rgba(0,0,0,0.35);opacity:1}
+  .cel-pin-wrap{position:absolute;transition:none;pointer-events:none;z-index:9}
+  .cel-pin-wrap.show .cel-pin{animation:cel-drop 0.85s cubic-bezier(0.34,1.56,0.64,1) both}
+  .cel-pin{width:42px;height:42px;border-radius:var(--pin-shape);background:#D85A30;border:3px solid var(--bg);transform:translate(-50%,-100%) rotate(-45deg);display:flex;align-items:center;justify-content:center;position:relative;left:0;top:0}
+  .app[data-theme="neon"] .cel-pin{transform:translate(-50%,-50%) rotate(0);border-radius:6px}
+  .app[data-theme="mono"] .cel-pin{transform:translate(-50%,-100%) rotate(0);border-radius:0}
+  .cel-pin i{transform:rotate(45deg);color:var(--bg);font-size:18px}
+  .app[data-theme="neon"] .cel-pin i,.app[data-theme="mono"] .cel-pin i{transform:rotate(0)}
+  @keyframes cel-drop{0%{transform:translate(-50%,calc(-100% - 60px)) rotate(-45deg) scale(0.4);opacity:0}55%{transform:translate(-50%,-100%) rotate(-45deg) scale(1.3);opacity:1}80%{transform:translate(-50%,-100%) rotate(-45deg) scale(0.92)}100%{transform:translate(-50%,-100%) rotate(-45deg) scale(1);opacity:1}}
+  .ring{position:absolute;width:0;height:0;border-radius:50%;border:2px solid var(--accent);transform:translate(-50%,-100%);left:0;top:0;pointer-events:none;opacity:0}
+  .cel-pin-wrap.show .ring{animation:ring-pulse 1s ease-out forwards}
+  .ring.r2{animation-delay:0.15s !important}
+  @keyframes ring-pulse{0%{width:8px;height:8px;opacity:1;border-width:3px}100%{width:120px;height:120px;opacity:0;border-width:1px;margin-left:-60px;margin-top:-60px}}
+  .spark{position:absolute;color:var(--gold);font-size:18px;font-family:var(--font-display);opacity:0;pointer-events:none;left:0;top:0}
+  .cel-pin-wrap.show .spark{animation:spark-out 1.3s ease-out forwards}
+  @keyframes spark-out{0%{opacity:0;transform:translate(-50%,-100%) scale(0)}30%{opacity:1}100%{opacity:0;transform:var(--end) scale(1.3)}}
+
+  .toast{position:absolute;top:80px;left:50%;transform:translateX(-50%) translateY(-12px);background:var(--ink);color:var(--bg);padding:12px 20px;border-radius:var(--radius-pill);font-size:13px;font-weight:500;display:inline-flex;align-items:center;gap:8px;opacity:0;transition:all .35s cubic-bezier(0.34,1.56,0.64,1);z-index:10;pointer-events:none}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .toast .star{color:var(--gold);font-size:15px;font-family:var(--font-display)}
+
+  /* MODAL FLOW */
+  .modal-stage{padding:40px 20px;display:flex;justify-content:center}
+  .modal{padding:28px;background:var(--bg);border-radius:18px;max-width:440px;width:100%;border:0.5px solid var(--hairline);box-shadow:0 8px 32px rgba(0,0,0,0.08)}
+  .app[data-theme="mono"] .modal{border-radius:0}
+  .app[data-theme="neon"] .modal{box-shadow:0 0 40px rgba(255,61,154,0.15)}
+  .step-row{display:flex;gap:6px;margin-bottom:20px;justify-content:center}
+  .step-row span{width:34px;height:4px;border-radius:2px;background:var(--hairline);transition:all .3s}
+  .step-row span.on{background:var(--accent);box-shadow:var(--glow)}
+  .step-row span.done{background:var(--ink)}
+  .modal h3{margin:0 0 6px;font-family:var(--font-display);font-size:22px;font-weight:500;letter-spacing:-0.3px;color:var(--ink)}
+  .modal .sub{font-size:13px;color:var(--ink-soft);margin-bottom:18px;line-height:1.5}
+  .input{width:100%;padding:12px 14px;border-radius:10px;border:0.5px solid var(--hairline);background:var(--bg-2);font-size:14px;font-family:var(--font-body);color:var(--ink);margin-bottom:10px;transition:all .15s}
+  .app[data-theme="mono"] .input{border-radius:0}
+  .input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(255,107,91,0.1)}
+  .app[data-theme="neon"] .input:focus{box-shadow:var(--glow)}
+  .help{font-size:12px;color:var(--ink-faint);margin-bottom:14px;line-height:1.6}
+  .resolved{background:var(--bg-2);border-radius:10px;padding:14px;margin-bottom:14px;border:0.5px solid var(--hairline-soft);display:flex;gap:12px;align-items:flex-start}
+  .app[data-theme="mono"] .resolved{border-radius:0}
+  .resolved .pinmini{width:36px;height:36px;border-radius:var(--pin-shape);background:#D85A30;transform:rotate(-45deg);display:flex;align-items:center;justify-content:center;flex-shrink:0;border:2.5px solid var(--bg)}
+  .app[data-theme="neon"] .resolved .pinmini{transform:rotate(0);border-radius:6px}
+  .app[data-theme="mono"] .resolved .pinmini{transform:rotate(0);border-radius:0}
+  .resolved .pinmini i{color:#fff;transform:rotate(45deg);font-size:14px}
+  .app[data-theme="neon"] .resolved .pinmini i,.app[data-theme="mono"] .resolved .pinmini i{transform:rotate(0)}
+  .resolved .nm{font-size:14px;font-weight:500;color:var(--ink)}
+  .resolved .ad{font-size:12px;color:var(--ink-soft);margin-top:3px;line-height:1.5}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}
+  .chip{font-size:12px;padding:7px 13px;border-radius:18px;background:var(--bg-2);border:0.5px solid var(--hairline);color:var(--ink);cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-family:var(--font-body);transition:all .15s}
+  .app[data-theme="mono"] .chip{border-radius:0}
+  .chip:hover{border-color:var(--ink-soft);transform:translateY(-1px)}
+  .app[data-theme="neon"] .chip:hover{box-shadow:var(--glow);border-color:var(--accent)}
+  .chip.sel{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+  .app[data-theme="neon"] .chip.sel{box-shadow:var(--glow);background:var(--accent);border-color:var(--accent)}
+  .chip.cat{padding-left:9px}
+  .chip.cat .sw{width:9px;height:9px;border-radius:50%}
+  .app[data-theme="mono"] .chip.cat .sw{border-radius:0}
+  .chip.add{border-style:dashed;color:var(--ink-soft)}
+  .label{font-size:11px;color:var(--ink-soft);margin:14px 0 7px;letter-spacing:0.4px;text-transform:uppercase;font-weight:500}
+  .actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
+  .btn{padding:10px 18px;border-radius:10px;font-size:13px;border:0.5px solid var(--hairline);background:var(--bg-2);color:var(--ink);cursor:pointer;font-family:var(--font-body);font-weight:500;transition:all .2s ease;display:inline-flex;align-items:center;gap:6px}
+  .app[data-theme="mono"] .btn{border-radius:0}
+  .btn:hover{transform:translateY(-1px);border-color:var(--ink-soft);box-shadow:var(--glow)}
+  .app[data-theme="paper"] .btn:hover{box-shadow:0 4px 12px rgba(26,26,46,0.08)}
+  .btn.primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+  .btn.primary:hover{background:var(--accent);border-color:var(--accent);box-shadow:var(--glow-hover)}
+  .btn.danger{color:#A32D2D;border-color:rgba(163,45,45,0.3)}
+  .btn.danger:hover{background:rgba(163,45,45,0.08)}
+
+  /* COLLECTION */
+  .cell-wrap{padding:24px}
+  .coll-head{display:flex;gap:22px;margin-bottom:22px;align-items:flex-end}
+  .coll-cover-large{width:160px;height:160px;border-radius:18px;flex-shrink:0;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+  .app[data-theme="mono"] .coll-cover-large{border-radius:0}
+  .coll-cover-large i{font-size:48px;color:rgba(255,255,255,0.95);position:relative;z-index:1}
+  .coll-cover-large .pat{position:absolute;inset:0;background-image:radial-gradient(circle at 20% 30%,rgba(255,255,255,0.18) 2px,transparent 3px),radial-gradient(circle at 70% 60%,rgba(255,255,255,0.12) 3px,transparent 4px),radial-gradient(circle at 40% 80%,rgba(255,255,255,0.15) 2px,transparent 3px)}
+  .coll-meta h2{margin:0;font-family:var(--font-display);font-size:32px;font-weight:500;letter-spacing:-0.5px;color:var(--ink)}
+  .coll-meta .stats{font-size:13px;color:var(--ink-soft);margin-top:8px;display:flex;gap:18px;flex-wrap:wrap}
+  .coll-meta .stats span{display:inline-flex;align-items:center;gap:6px}
+  .coll-actions{margin-left:auto;display:flex;gap:8px}
+  .coll-grid{display:grid;grid-template-columns:1fr 1.2fr;gap:18px}
+  .place-list{display:flex;flex-direction:column;gap:8px;max-height:420px;overflow-y:auto;padding-right:6px}
+  .place{display:flex;gap:12px;padding:12px;background:var(--bg-2);border-radius:12px;border:0.5px solid var(--hairline-soft);cursor:pointer;align-items:center;transition:all .15s}
+  .app[data-theme="mono"] .place{border-radius:0}
+  .place:hover{border-color:var(--hairline);transform:translateX(2px)}
+  .app[data-theme="neon"] .place:hover{box-shadow:var(--glow);border-color:var(--accent)}
+  .place .ico{width:36px;height:36px;border-radius:var(--pin-shape);transform:rotate(-45deg);display:flex;align-items:center;justify-content:center;flex-shrink:0;border:2px solid var(--bg)}
+  .app[data-theme="neon"] .place .ico,.app[data-theme="mono"] .place .ico{transform:rotate(0);border-radius:6px}
+  .app[data-theme="mono"] .place .ico{border-radius:0}
+  .place .ico i{transform:rotate(45deg);color:#fff;font-size:14px}
+  .app[data-theme="neon"] .place .ico i,.app[data-theme="mono"] .place .ico i{transform:rotate(0)}
+  .place .info{flex:1;min-width:0}
+  .place .nm{font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink)}
+  .place .meta{font-size:12px;color:var(--ink-soft);display:flex;gap:6px;align-items:center;margin-top:3px}
+  .badge{font-size:10px;padding:3px 9px;border-radius:10px;font-weight:500;letter-spacing:0.3px}
+  .app[data-theme="mono"] .badge{border-radius:0}
+  .badge.visited{background:var(--ink);color:var(--bg)}
+  .badge.planned{background:transparent;border:0.5px solid var(--ink-soft);color:var(--ink-soft)}
+  .badge.fav{background:var(--gold);color:#1A1A2E}
+  .place .star{color:var(--gold);font-family:var(--font-display);font-size:14px}
+  .coll-map{position:relative;background:var(--map-land);border-radius:14px;overflow:hidden;min-height:420px}
+  .app[data-theme="mono"] .coll-map{border-radius:0}
+  .coll-map .grid{position:absolute;inset:0;background-image:linear-gradient(to right,rgba(0,0,0,0.04) 1px,transparent 1px),linear-gradient(to bottom,rgba(0,0,0,0.04) 1px,transparent 1px);background-size:42px 42px;opacity:0.5}
+
+  /* TRIP LIST (new) */
+  .trip-list-wrap{padding:24px}
+  .trip-list-head{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:22px;flex-wrap:wrap;gap:12px}
+  .trip-list-head h2{margin:0;font-family:var(--font-display);font-size:28px;font-weight:500;letter-spacing:-0.4px;color:var(--ink)}
+  .trip-list-head .sub{font-size:13px;color:var(--ink-soft);margin-top:4px}
+  .trip-section{margin-bottom:28px}
+  .trip-section-title{display:flex;align-items:center;gap:10px;margin-bottom:12px;font-size:13px;color:var(--ink-soft);font-weight:500;letter-spacing:0.4px;text-transform:uppercase}
+  .trip-section-title .ct{background:var(--bg-2);padding:2px 8px;border-radius:10px;font-size:11px;color:var(--ink)}
+  .app[data-theme="mono"] .trip-section-title .ct{border-radius:0}
+  .trip-section-title .line{flex:1;height:0.5px;background:var(--hairline)}
+  .trip-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+  .trip-card{background:var(--bg-2);border-radius:14px;border:0.5px solid var(--hairline-soft);overflow:hidden;cursor:pointer;transition:all .2s ease;position:relative}
+  .app[data-theme="mono"] .trip-card{border-radius:0}
+  .trip-card:hover{border-color:var(--hairline);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,0.08)}
+  .app[data-theme="neon"] .trip-card:hover{box-shadow:var(--glow);border-color:var(--accent)}
+  .trip-card .preview{height:130px;background:var(--map-land);position:relative;overflow:hidden;border-bottom:0.5px solid var(--hairline-soft)}
+  .trip-card .preview .grid-mini{position:absolute;inset:0;background-image:linear-gradient(to right,rgba(0,0,0,0.05) 1px,transparent 1px),linear-gradient(to bottom,rgba(0,0,0,0.05) 1px,transparent 1px);background-size:24px 24px;opacity:0.5}
+  .trip-card .preview .road-mini{position:absolute;background:var(--map-road)}
+  .trip-card .preview svg{position:absolute;inset:0;width:100%;height:100%}
+  .trip-card .preview .mini-pin{position:absolute;width:14px;height:14px;border-radius:50%;background:var(--ink);color:var(--bg);display:flex;align-items:center;justify-content:center;font-size:8px;border:1.5px solid var(--bg);transform:translate(-50%,-50%);font-weight:500}
+  .trip-card .preview .mini-pin.start{background:var(--accent)}
+  .trip-card .preview .mini-pin.end{background:var(--teal)}
+  .trip-card .meta-row{padding:14px 16px}
+  .trip-card .nm{font-size:15px;font-weight:500;color:var(--ink);font-family:var(--font-display);letter-spacing:-0.2px}
+  .trip-card .info-line{font-size:12px;color:var(--ink-soft);margin-top:4px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .trip-card .info-line .pip{display:inline-flex;align-items:center;gap:4px}
+  .trip-card .progress{margin-top:10px;font-size:11px;color:var(--ink-soft);display:flex;align-items:center;gap:8px}
+  .trip-card .progress-bar{flex:1;height:4px;background:var(--hairline-soft);border-radius:2px;overflow:hidden}
+  .trip-card .progress-bar .fill{height:100%;background:var(--teal);border-radius:2px}
+  .app[data-theme="mono"] .trip-card .progress-bar,.app[data-theme="mono"] .trip-card .progress-bar .fill{border-radius:0}
+  .trip-card .status-pill{position:absolute;top:12px;right:12px;background:var(--ink);color:var(--bg);font-size:10px;padding:3px 9px;border-radius:10px;font-weight:500;letter-spacing:0.3px}
+  .app[data-theme="mono"] .trip-card .status-pill{border-radius:0}
+  .trip-card .status-pill.upcoming{background:var(--accent)}
+  .trip-card .status-pill.live{background:var(--teal);animation:pulse-live 2s ease-in-out infinite}
+  @keyframes pulse-live{0%,100%{opacity:1}50%{opacity:0.7}}
+  .trip-card .status-pill.draft{background:transparent;border:0.5px solid var(--hairline);color:var(--ink-soft)}
+  .new-trip-card{background:transparent;border:1px dashed var(--hairline);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px 20px;text-align:center;color:var(--ink-soft);cursor:pointer;border-radius:14px;transition:all .2s}
+  .app[data-theme="mono"] .new-trip-card{border-radius:0}
+  .new-trip-card:hover{color:var(--ink);border-color:var(--accent);background:var(--bg-2)}
+  .new-trip-card i{font-size:24px;margin-bottom:6px}
+  .new-trip-card .nm{font-size:13px;font-weight:500;font-family:var(--font-display)}
+
+  /* TRIP DETAIL */
+  .trip{padding:24px;display:grid;grid-template-columns:340px 1fr;gap:20px}
+  .trip-side h2{margin:0 0 4px;font-family:var(--font-display);font-size:26px;font-weight:500;letter-spacing:-0.4px;color:var(--ink)}
+  .trip-side .sub{font-size:13px;color:var(--ink-soft);margin-bottom:18px;display:flex;align-items:center;gap:6px}
+  .trip-side .back-btn{margin-bottom:14px;background:transparent;border:none;cursor:pointer;color:var(--ink-soft);font-size:12px;font-family:var(--font-body);display:inline-flex;align-items:center;gap:5px;padding:6px 8px;border-radius:6px}
+  .trip-side .back-btn:hover{background:var(--hairline);color:var(--ink)}
+  .stops{display:flex;flex-direction:column;gap:10px;margin-bottom:14px}
+  .stop{background:var(--bg-2);border-radius:12px;border:0.5px solid var(--hairline-soft);padding:14px 16px;position:relative;cursor:grab;transition:all .15s}
+  .app[data-theme="mono"] .stop{border-radius:0}
+  .stop:hover{border-color:var(--hairline);transform:translateX(2px)}
+  .app[data-theme="neon"] .stop:hover{box-shadow:var(--glow)}
+  .stop:active{cursor:grabbing}
+  .stop .num{position:absolute;left:-10px;top:50%;transform:translateY(-50%);width:26px;height:26px;border-radius:50%;background:var(--ink);color:var(--bg);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;border:2px solid var(--bg)}
+  .app[data-theme="mono"] .stop .num{border-radius:0}
+  .stop.start .num{background:var(--accent)}
+  .stop.end .num{background:var(--teal)}
+  .stop .nm{font-size:14px;font-weight:500;margin-left:22px;color:var(--ink)}
+  .stop .meta{font-size:12px;color:var(--ink-soft);margin-left:22px;margin-top:4px;display:flex;align-items:center;gap:6px}
+  .stop .grip{position:absolute;right:10px;top:50%;transform:translateY(-50%);color:var(--ink-faint);font-size:16px}
+  .leg{display:flex;align-items:center;gap:8px;padding:0 0 0 26px;font-size:13px;color:var(--ink-soft);font-family:var(--font-handwrite);margin:-4px 0}
+  .leg .line{flex:1;border-top:1px dashed var(--hairline)}
+  .totals{background:var(--bg-2);border-radius:12px;padding:14px;border:0.5px solid var(--hairline-soft);margin-bottom:12px}
+  .app[data-theme="mono"] .totals{border-radius:0}
+  .totals .row{display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;color:var(--ink)}
+  .totals .row:last-child{margin-bottom:0}
+  .totals .row .v{font-weight:500}
+  .totals .row .l{color:var(--ink-soft)}
+  .disclaim{font-size:11px;color:var(--ink-faint);font-style:italic;margin-bottom:14px;line-height:1.5}
+  .mode{display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:12px;color:var(--ink)}
+  .mode select{padding:7px 10px;border-radius:8px;border:0.5px solid var(--hairline);font-family:var(--font-body);font-size:12px;background:var(--bg-2);color:var(--ink);cursor:pointer}
+  .app[data-theme="mono"] .mode select{border-radius:0}
+  .export-btn{width:100%;padding:14px;background:var(--ink);color:var(--bg);border:none;border-radius:12px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;font-family:var(--font-body);font-weight:500;transition:all .2s ease}
+  .app[data-theme="mono"] .export-btn{border-radius:0}
+  .export-btn:hover{background:var(--accent);box-shadow:var(--glow-hover)}
+  .trip-map{position:relative;background:var(--map-land);border-radius:14px;overflow:hidden;min-height:540px}
+  .app[data-theme="mono"] .trip-map{border-radius:0}
+  .trip-map .grid{position:absolute;inset:0;background-image:linear-gradient(to right,rgba(0,0,0,0.04) 1px,transparent 1px),linear-gradient(to bottom,rgba(0,0,0,0.04) 1px,transparent 1px);background-size:42px 42px;opacity:0.5}
+  .tpin{position:absolute;width:32px;height:32px;border-radius:50%;background:var(--ink);color:var(--bg);display:flex;align-items:center;justify-content:center;font-size:13px;border:3px solid var(--bg);transform:translate(-50%,-50%);font-weight:500;cursor:pointer;transition:transform .2s}
+  .app[data-theme="neon"] .tpin{border-radius:6px}
+  .app[data-theme="mono"] .tpin{border-radius:0}
+  .tpin:hover{transform:translate(-50%,-50%) scale(1.15)}
+  .tpin.start{background:var(--accent)}
+  .tpin.end{background:var(--teal)}
+
+  /* SETTINGS */
+  .set-wrap{padding:24px}
+  .set-grid{display:grid;grid-template-columns:200px 1fr;gap:24px}
+  .set-nav{display:flex;flex-direction:column;gap:3px}
+  .set-nav button{text-align:left;padding:10px 14px;border-radius:10px;border:none;background:transparent;font-size:13px;color:var(--ink);cursor:pointer;font-family:var(--font-body);font-weight:500;display:flex;align-items:center;gap:10px;transition:all .15s}
+  .app[data-theme="mono"] .set-nav button{border-radius:0}
+  .set-nav button:hover{background:var(--hairline)}
+  .app[data-theme="neon"] .set-nav button:hover{box-shadow:var(--glow)}
+  .set-nav button.active{background:var(--ink);color:var(--bg)}
+  .set-nav button.adv-nav{margin-top:18px;color:var(--ink-faint);font-style:italic;font-size:12px;border-top:0.5px solid var(--hairline-soft);padding-top:14px;border-radius:0}
+  .set-nav button.adv-nav:hover{color:var(--ink-soft);background:var(--hairline-soft)}
+  .set-nav button.adv-nav.active{background:var(--ink);color:var(--bg);font-style:normal;border-radius:10px;border-top:none}
+  .set-card{background:var(--bg-2);border-radius:14px;border:0.5px solid var(--hairline-soft);padding:18px 22px;margin-bottom:14px}
+  .app[data-theme="mono"] .set-card{border-radius:0}
+  .set-card h3{margin:0 0 6px;font-size:15px;font-weight:500;color:var(--ink)}
+  .set-card .desc{font-size:13px;color:var(--ink-soft);line-height:1.6;margin-bottom:14px}
+  .cats-list{display:flex;flex-wrap:wrap;gap:8px}
+  .cat-pill{display:inline-flex;align-items:center;gap:8px;padding:7px 6px 7px 10px;background:var(--bg);border:0.5px solid var(--hairline-soft);border-radius:20px;font-size:13px;color:var(--ink);cursor:pointer;transition:all .15s;position:relative}
+  .app[data-theme="mono"] .cat-pill{border-radius:0}
+  .cat-pill:hover{border-color:var(--ink-soft);transform:translateY(-1px)}
+  .app[data-theme="neon"] .cat-pill:hover{box-shadow:var(--glow);border-color:var(--accent)}
+  .cat-pill .sw{width:14px;height:14px;border-radius:50%}
+  .app[data-theme="neon"] .cat-pill .sw{border-radius:3px}
+  .app[data-theme="mono"] .cat-pill .sw{border-radius:0}
+  .cat-pill .actions-mini{display:flex;gap:2px;margin-left:6px;opacity:0;transition:opacity .15s;border-left:0.5px solid var(--hairline);padding-left:6px}
+  .cat-pill:hover .actions-mini{opacity:1}
+  .cat-pill .actions-mini button{width:22px;height:22px;border-radius:50%;border:none;background:transparent;cursor:pointer;color:var(--ink-soft);display:inline-flex;align-items:center;justify-content:center}
+  .app[data-theme="mono"] .cat-pill .actions-mini button{border-radius:0}
+  .cat-pill .actions-mini button:hover{background:var(--hairline);color:var(--ink)}
+  .cat-pill .actions-mini button.del:hover{background:rgba(163,45,45,0.1);color:#A32D2D}
+  .cat-pill.add{background:transparent;border-style:dashed;color:var(--ink-soft);padding:7px 14px}
+  .vibe-pill{display:inline-flex;align-items:center;gap:6px;padding:7px 4px 7px 12px;background:var(--bg);border:0.5px solid var(--hairline-soft);border-radius:18px;font-size:12px;color:var(--ink);cursor:pointer;transition:all .15s}
+  .app[data-theme="mono"] .vibe-pill{border-radius:0}
+  .vibe-pill:hover{border-color:var(--ink-soft);transform:translateY(-1px)}
+  .vibe-pill .actions-mini{opacity:0;transition:opacity .15s;display:flex;gap:1px;padding-left:4px;border-left:0.5px solid var(--hairline)}
+  .vibe-pill:hover .actions-mini{opacity:1}
+  .vibe-pill .actions-mini button{width:20px;height:20px;border-radius:50%;border:none;background:transparent;cursor:pointer;color:var(--ink-soft);display:inline-flex;align-items:center;justify-content:center}
+  .app[data-theme="mono"] .vibe-pill .actions-mini button{border-radius:0}
+  .vibe-pill .actions-mini button:hover{background:var(--hairline);color:var(--ink)}
+  .vibe-pill .actions-mini button.del:hover{background:rgba(163,45,45,0.1);color:#A32D2D}
+  .backup-actions{display:flex;gap:10px;flex-wrap:wrap}
+  .watermark{font-family:'JetBrains Mono','Fira Code',Menlo,monospace;font-size:11px;background:var(--bg);border-radius:8px;padding:14px 16px;color:var(--ink-soft);margin-top:12px;border:0.5px solid var(--hairline-soft);line-height:1.7;white-space:pre-wrap;word-break:break-all}
+  .app[data-theme="mono"] .watermark{border-radius:0}
+  .watermark .k{color:var(--accent)}
+  .watermark .s{color:var(--teal)}
+  .folder-info{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--bg);border-radius:10px;border:0.5px solid var(--hairline-soft);font-size:13px}
+  .app[data-theme="mono"] .folder-info{border-radius:0}
+  .folder-info i{font-size:20px;color:var(--accent)}
+  .folder-info .path{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink-soft);margin-top:2px}
+  .folder-info .change{margin-left:auto}
+
+  /* THEME PREVIEW IN SETTINGS */
+  .theme-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-top:8px}
+  .theme-tile{border-radius:12px;border:0.5px solid var(--hairline-soft);overflow:hidden;cursor:pointer;transition:all .2s;background:var(--bg);padding:12px}
+  .app[data-theme="mono"] .theme-tile{border-radius:0}
+  .theme-tile:hover{border-color:var(--ink-soft);transform:translateY(-2px)}
+  .theme-tile.active{border-color:var(--accent);border-width:1.5px;box-shadow:var(--glow)}
+  .theme-tile .swatches{display:flex;gap:4px;margin-bottom:8px}
+  .theme-tile .swatches span{width:18px;height:18px;border-radius:4px}
+  .theme-tile .nm{font-size:13px;font-weight:500;color:var(--ink)}
+  .theme-tile .desc{font-size:11px;color:var(--ink-soft);margin-top:2px;line-height:1.4}
+
+  /* FIRST RUN */
+  .firstrun-overlay{padding:40px 24px;background:linear-gradient(135deg,var(--bg) 0%,var(--bg-2) 100%);border-radius:18px;min-height:440px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;border:0.5px solid var(--hairline);position:relative;overflow:hidden}
+  .firstrun-overlay .deco{position:absolute;font-size:100px;opacity:0.06;font-family:var(--font-display);top:20px;right:30px;transform:rotate(8deg);color:var(--accent)}
+  .firstrun .big-logo{margin-bottom:12px}
+  .firstrun h1{font-family:var(--font-display);font-size:38px;font-weight:500;margin:0 0 4px;letter-spacing:-0.6px;color:var(--ink)}
+  .firstrun .tagline{font-family:var(--font-handwrite);font-size:18px;color:var(--accent);margin:0 0 28px}
+  .firstrun-card{background:var(--bg);border-radius:14px;border:0.5px solid var(--hairline);padding:24px;max-width:480px;width:100%;text-align:left}
+  .app[data-theme="mono"] .firstrun-card{border-radius:0}
+  .firstrun-card h3{margin:0 0 8px;font-size:16px;font-weight:500;color:var(--ink);display:flex;align-items:center;gap:8px}
+  .firstrun-card h3 i{color:var(--accent)}
+  .firstrun-card .desc{font-size:13px;color:var(--ink-soft);line-height:1.6;margin-bottom:14px}
+  .firstrun-card .note{font-size:11px;color:var(--ink-faint);font-style:italic;margin-top:12px;line-height:1.5}
+  .firstrun-actions{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+  .browser-warn{background:var(--bg-2);border-radius:8px;padding:10px 12px;font-size:11px;color:var(--ink-soft);margin-top:12px;border-left:2px solid var(--accent);line-height:1.5}
+  .app[data-theme="mono"] .browser-warn{border-radius:0}
+
+  /* EXIT */
+  .exit-modal{padding:30px;background:var(--bg);border-radius:18px;max-width:440px;border:0.5px solid var(--hairline);box-shadow:0 8px 32px rgba(0,0,0,0.12);text-align:center}
+  .app[data-theme="mono"] .exit-modal{border-radius:0}
+  .exit-modal .icon-wrap{width:64px;height:64px;border-radius:50%;background:rgba(255,107,91,0.12);color:var(--accent);display:inline-flex;align-items:center;justify-content:center;font-size:30px;margin-bottom:16px}
+  .app[data-theme="mono"] .exit-modal .icon-wrap{border-radius:0}
+  .exit-modal h3{margin:0 0 10px;font-family:var(--font-display);font-size:22px;font-weight:500;color:var(--ink)}
+  .exit-modal p{margin:0 0 22px;font-size:14px;color:var(--ink-soft);line-height:1.6}
+  .exit-modal .actions{justify-content:center;flex-wrap:wrap}
+  .exit-stage{padding:30px;display:flex;justify-content:center;background:rgba(0,0,0,0.45);border-radius:18px}
+  .app[data-theme="mono"] .exit-stage{border-radius:0}
+
+  .hint{font-size:12px;color:#9a9aa0;margin:12px 4px 0;font-style:italic;line-height:1.5}
+
+  @media(max-width:900px){.body,.coll-grid,.trip,.set-grid{grid-template-columns:1fr}.side{border-right:none;border-bottom:0.5px solid var(--hairline)}}
+  ::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:rgba(0,0,0,0.15);border-radius:4px}::-webkit-scrollbar-thumb:hover{background:rgba(0,0,0,0.3)}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="head-row">
+    <span class="logo-mark">
+      <svg width="42" height="48" viewBox="0 0 42 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M21 2 C9.95 2 1 10.95 1 22 C1 36 21 46 21 46 C21 46 41 36 41 22 C41 10.95 32.05 2 21 2 Z" fill="#1A1A2E" stroke="#1A1A2E" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M21 11 L23 19 L31 21 L23 23 L21 31 L19 23 L11 21 L19 19 Z" fill="#FF6B5B"/>
+        <circle cx="21" cy="21" r="2.2" fill="#FAF6EF"/>
+      </svg>
+    </span>
+    <h1 class="lead">wayfinder</h1>
+  </div>
+  <p class="sublead"><em data-sublead-tagline>pin it. plan it. go.</em> &nbsp;Interactive mockup v4 — six themes, time-of-day tagline, locked quote bank.</p>
+
+  <div class="theme-bar">
+    <span class="lbl">Theme:</span>
+    <button class="theme-pick on" data-theme="paper"><span class="swatch"><span class="sw" style="background:#FAF6EF;border:1px solid #ccc"></span><span class="sw" style="background:#1A1A2E"></span><span class="sw" style="background:#FF6B5B"></span></span>Paper</button>
+    <button class="theme-pick" data-theme="neon"><span class="swatch"><span class="sw" style="background:#0E0F1A"></span><span class="sw" style="background:#FF3D9A"></span><span class="sw" style="background:#7AFFD7"></span></span>Neon Drift</button>
+    <button class="theme-pick" data-theme="kyoto"><span class="swatch"><span class="sw" style="background:#0F1729"></span><span class="sw" style="background:#E8A547"></span><span class="sw" style="background:#F4D58D"></span></span>Kyoto Night</button>
+    <button class="theme-pick" data-theme="mono"><span class="swatch"><span class="sw" style="background:#FFF;border:1px solid #ccc"></span><span class="sw" style="background:#000"></span><span class="sw" style="background:#D72638"></span></span>Mono Press</button>
+    <button class="theme-pick" data-theme="midnight"><span class="swatch"><span class="sw" style="background:#1B0F1F"></span><span class="sw" style="background:#D4A74C"></span><span class="sw" style="background:#E8C57A"></span></span>Midnight Library</button>
+    <button class="theme-pick" data-theme="subway"><span class="swatch"><span class="sw" style="background:#FAFAFA;border:1px solid #ccc"></span><span class="sw" style="background:#1C1C1C"></span><span class="sw" style="background:#0066CC"></span></span>Tokyo Subway</button>
+    <button class="theme-pick" data-theme="forest"><span class="swatch"><span class="sw" style="background:#EFEAD8;border:1px solid #ccc"></span><span class="sw" style="background:#1F2D1A"></span><span class="sw" style="background:#3F6B47"></span></span>Forest Floor</button>
+    <span style="margin-left:auto;font-size:11px;color:#9a9aa0;font-style:italic">mockup only — real app puts theme in Settings</span>
+  </div>
+
+  <div class="tabs" id="tabs">
+    <button class="tab active" data-screen="home"><i class="ti ti-map"></i>Home / map</button>
+    <button class="tab" data-screen="firstrun"><i class="ti ti-sparkles"></i>First run</button>
+    <button class="tab" data-screen="add"><i class="ti ti-plus"></i>Add place</button>
+    <button class="tab" data-screen="collection"><i class="ti ti-folder"></i>Collection</button>
+    <button class="tab" data-screen="triplist"><i class="ti ti-list"></i>Trips so far</button>
+    <button class="tab" data-screen="trip"><i class="ti ti-route"></i>Trip plan</button>
+    <button class="tab" data-screen="settings"><i class="ti ti-settings"></i>Settings</button>
+    <button class="tab" data-screen="exit"><i class="ti ti-alert-triangle"></i>Unsaved exit</button>
+  </div>
+
+  <!-- HOME -->
+  <div class="screen active" id="screen-home">
+    <div class="app" data-theme="paper" id="home-app">
+      <div class="topbar">
+        <div class="brand">
+          <span class="logo-mark"><svg width="26" height="30" viewBox="0 0 42 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M21 2 C9.95 2 1 10.95 1 22 C1 36 21 46 21 46 C21 46 41 36 41 22 C41 10.95 32.05 2 21 2 Z" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round" style="color:var(--ink)"/><path d="M21 11 L23 19 L31 21 L23 23 L21 31 L19 23 L11 21 L19 19 Z" fill="var(--accent)"/><circle cx="21" cy="21" r="2.2" fill="var(--bg)"/></svg></span>
+          <div class="brand-text">
+            <span class="brand-name">wayfinder</span>
+            <span class="brand-sep">·</span>
+            <span class="brand-tagline" data-tagline>the map of your maybe-someday.</span>
+          </div>
+        </div>
+        <div class="nav">
+          <button class="on">Map</button>
+          <button>Collections</button>
+          <button>Trips</button>
+        </div>
+        <div class="topbar-right">
+          <span class="save-status"><span class="dot"></span>saved</span>
+          <button class="iconbtn" aria-label="Search"><i class="ti ti-search"></i></button>
+          <button class="iconbtn" aria-label="Settings"><i class="ti ti-settings"></i></button>
+        </div>
+      </div>
+      <div class="body">
+        <div class="side">
+          <h4>Categories</h4>
+          <div class="cat"><span class="sw" style="background:#D85A30"></span>Restaurant<span class="ct">12</span></div>
+          <div class="cat"><span class="sw" style="background:#BA7517"></span>Café<span class="ct">7</span></div>
+          <div class="cat"><span class="sw" style="background:#993556"></span>Street food<span class="ct">5</span></div>
+          <div class="cat"><span class="sw" style="background:#534AB7"></span>Temple<span class="ct">3</span></div>
+          <div class="cat"><span class="sw" style="background:#1D9E75"></span>Park / Nature<span class="ct">9</span></div>
+          <div class="cat"><span class="sw" style="background:#185FA5"></span>Viewpoint<span class="ct">4</span></div>
+          <div style="height:18px"></div>
+          <h4>Collections</h4>
+          <div class="coll"><div class="cover v1"><div class="pat"></div><i class="ti ti-tools-kitchen-2"></i></div><span class="nm">Tokyo eats</span><span class="ct">14</span></div>
+          <div class="coll"><div class="cover v2"><div class="pat"></div><i class="ti ti-heart"></i></div><span class="nm">Date spots</span><span class="ct">8</span></div>
+          <div class="coll"><div class="cover v3"><div class="pat"></div><i class="ti ti-bike"></i></div><span class="nm">Weekend rides</span><span class="ct">6</span></div>
+          <div class="coll"><div class="cover v4"><div class="pat"></div><i class="ti ti-diamond"></i></div><span class="nm">Hidden gems</span><span class="ct">11</span></div>
+        </div>
+        <div class="map" id="home-map">
+          <div class="grid"></div>
+          <div class="water" style="left:-50px;top:80px;width:200px;height:140px"></div>
+          <div class="water" style="right:-30px;bottom:60px;width:140px;height:110px"></div>
+          <div class="park" style="right:60px;top:50px;width:120px;height:90px"></div>
+          <div class="park" style="left:140px;bottom:80px;width:100px;height:80px"></div>
+          <div class="road" style="left:0;top:240px;right:0;height:6px"></div>
+          <div class="road" style="left:300px;top:0;width:6px;bottom:0"></div>
+          <div class="road" style="left:0;top:340px;right:0;height:3px"></div>
+          <div class="road" style="left:480px;top:0;width:3px;bottom:0"></div>
+          <div class="search">
+            <i class="ti ti-search" style="color:var(--ink-faint);font-size:15px"></i>
+            <input placeholder="Search your places, or jump to a city…" />
+          </div>
+          <div class="cluster" style="left:200px;top:200px">12</div>
+          <div class="cluster" style="left:540px;top:160px">7</div>
+          <div class="pin" style="background:#D85A30;left:340px;top:270px" title="Sōan Soba"><i class="ti ti-tools-kitchen-2"></i></div>
+          <div class="pin fav" style="background:#1D9E75;left:420px;top:330px" title="Maruyama Park — favorite"><i class="ti ti-tree"></i></div>
+          <div class="pin planned" style="left:540px;top:260px" title="Café Kitsuné — planned"><i class="ti ti-coffee"></i></div>
+          <div class="pin" style="background:#185FA5;left:280px;top:380px" title="Kiyomizu viewpoint"><i class="ti ti-mountain"></i></div>
+          <div class="pin" style="background:#534AB7;left:480px;top:420px" title="Yasaka Shrine"><i class="ti ti-building-arch"></i></div>
+          <div class="pin" style="background:#993556;left:240px;top:440px" title="Nishiki Market"><i class="ti ti-meat"></i></div>
+          <div class="pin fav" style="background:#BA7517;left:380px;top:200px" title="Glitch Coffee — favorite"><i class="ti ti-coffee"></i></div>
+          <div class="map-note">Real app uses Leaflet + OpenStreetMap. Abstract style is mockup-only.</div>
+          <button class="fab" id="fab-add"><i class="ti ti-plus"></i>Add a place</button>
+          <div class="cel-overlay" id="cel-overlay"></div>
+          <div class="cel-pin-wrap" id="cel-pin-wrap" style="left:50%;top:50%">
+            <div class="ring r1"></div>
+            <div class="ring r2"></div>
+            <div class="cel-pin" id="cel-pin"><i class="ti ti-tools-kitchen-2" id="cel-pin-icon"></i></div>
+          </div>
+          <div class="toast" id="toast"><span class="star">✦</span><span id="toast-text">Saved to "Tokyo eats"</span></div>
+          <div class="quote" id="home-quote"><span class="star">✦</span><span class="qtxt">the side street always wins.</span></div>
+        </div>
+      </div>
+    </div>
+    <p class="hint">Logo + tagline now in topbar. Triple-click empty map for a quote at that spot. Try the buttons below to test the celebration in any theme.</p>
+    <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+      <button class="btn" id="replay-drop"><i class="ti ti-refresh"></i> Replay pin drop on map</button>
+      <button class="btn" id="trigger-quote"><i class="ti ti-quote"></i> Show a random quote</button>
+      <button class="btn" id="flip-tagline"><i class="ti ti-arrows-shuffle"></i> Flip tagline (demo)</button>
+    </div>
+  </div>
+
+  <!-- FIRST RUN -->
+  <div class="screen" id="screen-firstrun">
+    <div class="app" data-theme="paper">
+      <div class="firstrun-overlay firstrun">
+        <div class="deco">✦</div>
+        <span class="big-logo">
+          <svg width="56" height="64" viewBox="0 0 42 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M21 2 C9.95 2 1 10.95 1 22 C1 36 21 46 21 46 C21 46 41 36 41 22 C41 10.95 32.05 2 21 2 Z" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round" style="color:var(--ink)"/><path d="M21 11 L23 19 L31 21 L23 23 L21 31 L19 23 L11 21 L19 19 Z" fill="var(--accent)"/><circle cx="21" cy="21" r="2.2" fill="var(--bg)"/></svg>
+        </span>
+        <h1>welcome to wayfinder</h1>
+        <div class="tagline" data-tagline-firstrun>the map of your maybe-someday.</div>
+        <div class="firstrun-card">
+          <h3><i class="ti ti-folder"></i> Pick a folder for your places</h3>
+          <div class="desc">Wayfinder will save your pins, collections, trips, and backups here. Nothing leaves this folder. Nothing leaves your machine.</div>
+          <div class="firstrun-actions">
+            <button class="btn primary"><i class="ti ti-folder-plus" style="font-size:13px"></i> Pick a folder</button>
+            <button class="btn">Use browser storage instead</button>
+          </div>
+          <div class="browser-warn"><strong>On Firefox or Safari?</strong> Folder access isn't supported there yet — your data lives in the browser, with manual backup/restore.</div>
+          <div class="note">All your stuff stays local. There's no server, no account, no telemetry.</div>
+        </div>
+      </div>
+    </div>
+    <p class="hint">First-launch screen — try switching themes here too.</p>
+  </div>
+
+  <!-- ADD -->
+  <div class="screen" id="screen-add">
+    <div class="app" data-theme="paper">
+      <div class="topbar">
+        <div class="brand">
+          <span class="logo-mark"><svg width="26" height="30" viewBox="0 0 42 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M21 2 C9.95 2 1 10.95 1 22 C1 36 21 46 21 46 C21 46 41 36 41 22 C41 10.95 32.05 2 21 2 Z" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round" style="color:var(--ink)"/><path d="M21 11 L23 19 L31 21 L23 23 L21 31 L19 23 L11 21 L19 19 Z" fill="var(--accent)"/><circle cx="21" cy="21" r="2.2" fill="var(--bg)"/></svg></span>
+          <div class="brand-text"><span class="brand-name">wayfinder</span><span class="brand-sep">·</span><span class="brand-tagline" data-tagline>the map of your maybe-someday.</span></div>
+        </div>
+        <div class="nav"><button class="on">Map</button><button>Collections</button><button>Trips</button></div>
+        <div class="topbar-right"><button class="iconbtn"><i class="ti ti-x"></i></button></div>
+      </div>
+      <div class="modal-stage">
+        <div class="modal" id="add-modal">
+          <div class="step-row" id="add-steps"><span class="on"></span><span></span><span></span><span></span></div>
+          <div id="add-stage-1">
+            <h3>Drop a new place</h3>
+            <div class="sub">Where do you want to remember?</div>
+            <input class="input" id="add-link" placeholder="maps.app.goo.gl/… or paste any address" />
+            <div class="help">Google Maps links resolve automatically. For reels or shorts, paste the caption or address text. Or close this and click anywhere on the map to drop a pin manually.</div>
+            <div class="actions"><button class="btn">Cancel</button><button class="btn primary" id="add-next-1">Continue</button></div>
+          </div>
+          <div id="add-stage-2" style="display:none">
+            <h3>Confirm location</h3>
+            <div class="sub">Resolved from your link. Looks right?</div>
+            <div class="resolved"><div class="pinmini"><i class="ti ti-tools-kitchen-2"></i></div><div><div class="nm">Sōan Soba Yoshimura</div><div class="ad">12-3 Higashiyama-ku, Kyoto, Japan<br/>35.0036°N, 135.7780°E</div></div></div>
+            <div class="help">If the pin's slightly off, drag it on the map to nudge it.</div>
+            <div class="actions"><button class="btn" id="add-back-2">Back</button><button class="btn primary" id="add-next-2">Looks right</button></div>
+          </div>
+          <div id="add-stage-3" style="display:none">
+            <h3>What is this place?</h3>
+            <div class="sub">Pick one category, then add any vibe tags.</div>
+            <div class="label">Category</div>
+            <div class="chips" id="cat-chips">
+              <span class="chip cat sel" data-icon="ti-tools-kitchen-2" data-color="#D85A30"><span class="sw" style="background:#D85A30"></span>Restaurant</span>
+              <span class="chip cat" data-icon="ti-coffee" data-color="#BA7517"><span class="sw" style="background:#BA7517"></span>Café</span>
+              <span class="chip cat" data-icon="ti-meat" data-color="#993556"><span class="sw" style="background:#993556"></span>Street food</span>
+              <span class="chip cat" data-icon="ti-building-arch" data-color="#534AB7"><span class="sw" style="background:#534AB7"></span>Temple</span>
+              <span class="chip cat" data-icon="ti-tree" data-color="#1D9E75"><span class="sw" style="background:#1D9E75"></span>Park</span>
+              <span class="chip cat" data-icon="ti-mountain" data-color="#185FA5"><span class="sw" style="background:#185FA5"></span>Viewpoint</span>
+            </div>
+            <div class="label">Vibe tags</div>
+            <div class="chips">
+              <span class="chip sel">date-worthy</span>
+              <span class="chip">hidden-gem</span>
+              <span class="chip sel">splurge</span>
+              <span class="chip">solo-spot</span>
+              <span class="chip">family-friendly</span>
+              <span class="chip add"><i class="ti ti-plus" style="font-size:11px"></i> add</span>
+            </div>
+            <div class="actions"><button class="btn" id="add-back-3">Back</button><button class="btn primary" id="add-next-3">Continue</button></div>
+          </div>
+          <div id="add-stage-4" style="display:none">
+            <h3>Save it where?</h3>
+            <div class="sub">Drop into one or many collections — or none.</div>
+            <div class="chips">
+              <span class="chip sel"><i class="ti ti-folder" style="font-size:13px;color:var(--accent)"></i> Tokyo eats</span>
+              <span class="chip"><i class="ti ti-folder" style="font-size:13px;color:var(--accent)"></i> Date spots</span>
+              <span class="chip"><i class="ti ti-folder" style="font-size:13px;color:var(--accent)"></i> Splurge picks</span>
+              <span class="chip add"><i class="ti ti-plus" style="font-size:11px"></i> new collection</span>
+            </div>
+            <div class="label">Status</div>
+            <div class="chips" id="status-chips"><span class="chip sel">planned</span><span class="chip">visited</span></div>
+            <div class="label">Mark as favorite</div>
+            <div class="chips"><span class="chip"><span style="color:#FFD15B;font-family:var(--font-display)">✦</span> compass star</span></div>
+            <div class="actions"><button class="btn" id="add-back-4">Back</button><button class="btn primary" id="add-save"><i class="ti ti-sparkles" style="font-size:13px"></i> Drop pin</button></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="hint">"Drop pin" navigates to home and plays the celebration with the pin matching your selected category.</p>
+  </div>
+
+  <!-- COLLECTION -->
+  <div class="screen" id="screen-collection">
+    <div class="app" data-theme="paper">
+      <div class="topbar">
+        <div class="brand">
+          <span class="logo-mark"><svg width="26" height="30" viewBox="0 0 42 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M21 2 C9.95 2 1 10.95 1 22 C1 36 21 46 21 46 C21 46 41 36 41 22 C41 10.95 32.05 2 21 2 Z" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round" style="color:var(--ink)"/><path d="M21 11 L23 19 L31 21 L23 23 L21 31 L19 23 L11 21 L19 19 Z" fill="var(--accent)"/><circle cx="21" cy="21" r="2.2" fill="var(--bg)"/></svg></span>
+          <div class="brand-text"><span class="brand-name">wayfinder</span><span class="brand-sep">·</span><span class="brand-tagline" data-tagline>the map of your maybe-someday.</span></div>
+        </div>
+        <div class="nav"><button>Map</button><button class="on">Collections</button><button>Trips</button></div>
+        <div class="topbar-right"><button class="iconbtn"><i class="ti ti-search"></i></button><button class="iconbtn"><i class="ti ti-dots"></i></button></div>
+      </div>
+      <div class="cell-wrap">
+        <div class="coll-head">
+          <div class="coll-cover-large" style="background:linear-gradient(135deg,var(--accent) 0%,var(--gold) 100%)"><div class="pat"></div><i class="ti ti-tools-kitchen-2"></i></div>
+          <div class="coll-meta">
+            <h2>Tokyo eats</h2>
+            <div class="stats">
+              <span><i class="ti ti-map-pin" style="font-size:13px"></i> 14 places</span>
+              <span><i class="ti ti-check" style="font-size:13px"></i> 9 visited</span>
+              <span style="color:var(--gold)"><span style="font-family:var(--font-display)">✦</span> 4 favorites</span>
+              <span><i class="ti ti-clock" style="font-size:13px"></i> updated 3 days ago</span>
+            </div>
+          </div>
+          <div class="coll-actions">
+            <button class="btn"><i class="ti ti-photo" style="font-size:13px"></i> Cover</button>
+            <button class="btn"><i class="ti ti-share" style="font-size:13px"></i> Share</button>
+            <button class="btn"><i class="ti ti-route" style="font-size:13px"></i> Plan trip</button>
+            <button class="btn primary"><i class="ti ti-plus" style="font-size:13px"></i> Add</button>
+          </div>
+        </div>
+        <div class="coll-grid">
+          <div class="place-list">
+            <div class="place"><div class="ico" style="background:#D85A30"><i class="ti ti-tools-kitchen-2"></i></div><div class="info"><div class="nm">Sōan Soba Yoshimura</div><div class="meta"><span class="badge visited">visited</span><span>·</span><span>date-worthy</span><span>·</span><span class="star">✦</span></div></div></div>
+            <div class="place"><div class="ico" style="background:#BA7517"><i class="ti ti-coffee"></i></div><div class="info"><div class="nm">Café Kitsuné Aoyama</div><div class="meta"><span class="badge planned">planned</span><span>·</span><span>chill spot</span></div></div></div>
+            <div class="place"><div class="ico" style="background:#993556"><i class="ti ti-meat"></i></div><div class="info"><div class="nm">Nishiki Market alley</div><div class="meta"><span class="badge visited">visited</span><span>·</span><span>hidden-gem</span><span>·</span><span class="star">✦</span></div></div></div>
+            <div class="place"><div class="ico" style="background:#D85A30"><i class="ti ti-tools-kitchen-2"></i></div><div class="info"><div class="nm">Tonkatsu Maisen Aoyama</div><div class="meta"><span class="badge planned">planned</span><span>·</span><span>solo-spot</span></div></div></div>
+            <div class="place"><div class="ico" style="background:#BA7517"><i class="ti ti-coffee"></i></div><div class="info"><div class="nm">Glitch Coffee Roasters</div><div class="meta"><span class="badge visited">visited</span><span>·</span><span>splurge</span><span>·</span><span class="star">✦</span></div></div></div>
+            <div class="place"><div class="ico" style="background:#993556"><i class="ti ti-meat"></i></div><div class="info"><div class="nm">Omoide Yokocho</div><div class="meta"><span class="badge planned">planned</span><span>·</span><span>touristy</span></div></div></div>
+            <div class="place"><div class="ico" style="background:#D85A30"><i class="ti ti-tools-kitchen-2"></i></div><div class="info"><div class="nm">Den</div><div class="meta"><span class="badge visited">visited</span><span>·</span><span>splurge</span><span>·</span><span class="star">✦</span></div></div></div>
+            <div class="place"><div class="ico" style="background:#BA7517"><i class="ti ti-coffee"></i></div><div class="info"><div class="nm">Bear Pond Espresso</div><div class="meta"><span class="badge planned">planned</span><span>·</span><span>hidden-gem</span></div></div></div>
+          </div>
+          <div class="coll-map">
+            <div class="grid"></div>
+            <div class="water" style="left:-50px;top:80px;width:160px;height:120px;background:var(--map-water);position:absolute;border-radius:50%"></div>
+            <div class="park" style="right:30px;top:40px;width:90px;height:70px;background:var(--map-park);position:absolute;border-radius:40% 60% 55% 45%"></div>
+            <div class="road" style="left:0;top:160px;right:0;height:4px;background:var(--map-road);position:absolute"></div>
+            <div class="road" style="left:200px;top:0;width:4px;bottom:0;background:var(--map-road);position:absolute"></div>
+            <div class="pin" style="background:#D85A30;left:140px;top:140px"><i class="ti ti-tools-kitchen-2"></i></div>
+            <div class="pin planned" style="left:240px;top:200px"><i class="ti ti-coffee"></i></div>
+            <div class="pin fav" style="background:#993556;left:300px;top:110px"><i class="ti ti-meat"></i></div>
+            <div class="pin" style="background:#D85A30;left:340px;top:240px"><i class="ti ti-tools-kitchen-2"></i></div>
+            <div class="pin fav" style="background:#BA7517;left:200px;top:280px"><i class="ti ti-coffee"></i></div>
+            <div class="pin planned" style="left:360px;top:170px"><i class="ti ti-meat"></i></div>
+            <div class="pin fav" style="background:#D85A30;left:160px;top:320px"><i class="ti ti-tools-kitchen-2"></i></div>
+            <div class="pin planned" style="left:280px;top:340px"><i class="ti ti-coffee"></i></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="hint">Cover is now a default gradient with the most-used category icon. "Cover" button lets you swap to a custom image.</p>
+  </div>
+
+  <!-- TRIP LIST (NEW) -->
+  <div class="screen" id="screen-triplist">
+    <div class="app" data-theme="paper">
+      <div class="topbar">
+        <div class="brand">
+          <span class="logo-mark"><svg width="26" height="30" viewBox="0 0 42 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M21 2 C9.95 2 1 10.95 1 22 C1 36 21 46 21 46 C21 46 41 36 41 22 C41 10.95 32.05 2 21 2 Z" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round" style="color:var(--ink)"/><path d="M21 11 L23 19 L31 21 L23 23 L21 31 L19 23 L11 21 L19 19 Z" fill="var(--accent)"/><circle cx="21" cy="21" r="2.2" fill="var(--bg)"/></svg></span>
+          <div class="brand-text"><span class="brand-name">wayfinder</span><span class="brand-sep">·</span><span class="brand-tagline" data-tagline>the map of your maybe-someday.</span></div>
+        </div>
+        <div class="nav"><button>Map</button><button>Collections</button><button class="on">Trips</button></div>
+        <div class="topbar-right"><button class="iconbtn"><i class="ti ti-search"></i></button></div>
+      </div>
+      <div class="trip-list-wrap">
+        <div class="trip-list-head">
+          <div>
+            <h2>Trips so far</h2>
+            <div class="sub">14 trips · 5 upcoming · 1 in progress</div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn"><i class="ti ti-filter" style="font-size:13px"></i> Filter</button>
+            <button class="btn primary"><i class="ti ti-plus" style="font-size:13px"></i> New trip</button>
+          </div>
+        </div>
+
+        <div class="trip-section">
+          <div class="trip-section-title"><i class="ti ti-player-play" style="font-size:14px;color:var(--teal)"></i>In progress<span class="ct">1</span><span class="line"></span></div>
+          <div class="trip-cards">
+            <div class="trip-card">
+              <div class="status-pill live">live</div>
+              <div class="preview">
+                <div class="grid-mini"></div>
+                <div class="road-mini" style="left:0;right:0;top:50%;height:2px"></div>
+                <svg viewBox="0 0 280 130" preserveAspectRatio="none"><path d="M 30 40 Q 80 20 130 60 T 220 90" fill="none" stroke="#FF6B5B" stroke-width="2" stroke-dasharray="4 3" opacity="0.85"/></svg>
+                <div class="mini-pin start" style="left:30px;top:40px">1</div>
+                <div class="mini-pin" style="left:130px;top:60px">2</div>
+                <div class="mini-pin end" style="left:220px;top:90px">3</div>
+              </div>
+              <div class="meta-row">
+                <div class="nm">Today's Kyoto wander</div>
+                <div class="info-line">
+                  <span class="pip"><i class="ti ti-calendar" style="font-size:12px"></i>today</span>
+                  <span>·</span>
+                  <span class="pip"><i class="ti ti-map-pin" style="font-size:12px"></i>3 stops</span>
+                  <span>·</span>
+                  <span class="pip"><i class="ti ti-walk" style="font-size:12px"></i>4.2km</span>
+                </div>
+                <div class="progress"><span>1 of 3 visited</span><div class="progress-bar"><div class="fill" style="width:33%"></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="trip-section">
+          <div class="trip-section-title"><i class="ti ti-calendar-event" style="font-size:14px;color:var(--accent)"></i>Upcoming<span class="ct">3</span><span class="line"></span></div>
+          <div class="trip-cards">
+            <div class="trip-card">
+              <div class="status-pill upcoming">in 3 days</div>
+              <div class="preview">
+                <div class="grid-mini"></div>
+                <svg viewBox="0 0 280 130" preserveAspectRatio="none"><path d="M 40 30 Q 100 80 160 50 T 240 100" fill="none" stroke="#FF6B5B" stroke-width="2" stroke-dasharray="4 3" opacity="0.85"/></svg>
+                <div class="mini-pin start" style="left:40px;top:30px">1</div>
+                <div class="mini-pin" style="left:120px;top:65px">2</div>
+                <div class="mini-pin" style="left:160px;top:50px">3</div>
+                <div class="mini-pin" style="left:200px;top:80px">4</div>
+                <div class="mini-pin end" style="left:240px;top:100px">5</div>
+              </div>
+              <div class="meta-row">
+                <div class="nm">Kyoto day loop</div>
+                <div class="info-line">
+                  <span class="pip"><i class="ti ti-calendar" style="font-size:12px"></i>sat, may 16</span>
+                  <span>·</span>
+                  <span class="pip"><i class="ti ti-map-pin" style="font-size:12px"></i>5 stops</span>
+                  <span>·</span>
+                  <span class="pip"><i class="ti ti-walk" style="font-size:12px"></i>7.5km*</span>
+                </div>
+              </div>
+            </div>
+            <div class="trip-card">
+              <div class="status-pill upcoming">in 12 days</div>
+              <div class="preview">
+                <div class="grid-mini"></div>
+                <svg viewBox="0 0 280 130" preserveAspectRatio="none"><path d="M 50 90 Q 130 30 200 70 T 240 50" fill="none" stroke="#FF6B5B" stroke-width="2" stroke-dasharray="4 3" opacity="0.85"/></svg>
+                <div class="mini-pin start" style="left:50px;top:90px">1</div>
+                <div class="mini-pin" style="left:130px;top:55px">2</div>
+                <div class="mini-pin" style="left:200px;top:70px">3</div>
+                <div class="mini-pin end" style="left:240px;top:50px">4</div>
+              </div>
+              <div class="meta-row">
+                <div class="nm">Goa beach hop</div>
+                <div class="info-line">
+                  <span class="pip"><i class="ti ti-calendar" style="font-size:12px"></i>thu, may 25</span>
+                  <span>·</span>
+                  <span class="pip"><i class="ti ti-map-pin" style="font-size:12px"></i>4 stops</span>
+                  <span>·</span>
+                  <span class="pip"><i class="ti ti-car" style="font-size:12px"></i>23km*</span>
+                </div>
+              </div>
+            </div>
+            <div class="trip-card">
+              <div class="status-pill upcoming">in 28 days</div>
+              <div class="preview">
+                <div class="grid-mini"></div>
+                <svg viewBox="0 0 280 130" preserveAspectRatio="none"><path d="M 30 60 Q 90 20 150 50 Q 210 80 250 40" fill="none" stroke="#FF6B5B" stroke-width="2" stroke-dasharray="4 3" opacity="0.85"/></svg>
+                <div class="mini-pin start" style="left:30px;top:60px">1</div>
+                <div class="mini-pin" style="left:150px;top:50px">2</div>
+                <div class="mini-pin end" style="left:250px;top:40px">3</div>
+              </div>
+              <div class="meta-row">
+                <div class="nm">Western ghats long weekend</div>
+                <div class="info-line">
+                  <span class="pip"><i class="ti ti-calendar" style="font-size:12px"></i>sat, jun 6</span>
+                  <span>·</span>
+                  <span class="pip"><i class="ti ti-map-pin" style="font-size:12px"></i>3 stops</span>
+                  <span>·</span>
+                  <span class="pip"><i class="ti ti-car" style="font-size:12px"></i>340km*</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="trip-section">
+          <div class="trip-section-title"><i class="ti ti-edit" style="font-size:14px;color:var(--ink-soft)"></i>Drafts &amp; undated<span class="ct">2</span><span class="line"></span></div>
+          <div class="trip-cards">
+            <div class="trip-card">
+              <div class="status-pill draft">draft</div>
+              <div class="preview">
+                <div class="grid-mini"></div>
+                <svg viewBox="0 0 280 130" preserveAspectRatio="none"><path d="M 60 70 Q 140 30 200 80" fill="none" stroke="#FF6B5B" stroke-width="2" stroke-dasharray="4 3" opacity="0.5"/></svg>
+                <div class="mini-pin start" style="left:60px;top:70px">1</div>
+                <div class="mini-pin end" style="left:200px;top:80px">2</div>
+              </div>
+              <div class="meta-row">
+                <div class="nm">Maybe-someday Lisbon</div>
+                <div class="info-line">
+                  <span class="pip"><i class="ti ti-calendar-off" style="font-size:12px"></i>no date</span>
+                  <span>·</span>
+                  <span class="pip"><i class="ti ti-map-pin" style="font-size:12px"></i>2 stops</span>
+                </div>
+              </div>
+            </div>
+            <div class="new-trip-card">
+              <i class="ti ti-plus"></i>
+              <div class="nm">New trip</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="trip-section">
+          <div class="trip-section-title"><i class="ti ti-history" style="font-size:14px;color:var(--ink-soft)"></i>Past<span class="ct">9</span><span class="line"></span><button class="btn" style="font-size:11px;padding:4px 10px">View all</button></div>
+          <div class="trip-cards">
+            <div class="trip-card">
+              <div class="status-pill">9d ago</div>
+              <div class="preview" style="opacity:0.85">
+                <div class="grid-mini"></div>
+                <svg viewBox="0 0 280 130" preserveAspectRatio="none"><path d="M 40 50 Q 100 80 160 40 T 240 70" fill="none" stroke="#1D9E75" stroke-width="2" opacity="0.7"/></svg>
+                <div class="mini-pin start" style="left:40px;top:50px;background:#1D9E75">1</div>
+                <div class="mini-pin" style="left:160px;top:40px;background:#1D9E75">2</div>
+                <div class="mini-pin end" style="left:240px;top:70px;background:#1D9E75">3</div>
+              </div>
+              <div class="meta-row">
+                <div class="nm">Jaipur old-city walk</div>
+                <div class="info-line">
+                  <span class="pip"><i class="ti ti-calendar" style="font-size:12px"></i>apr 29</span>
+                  <span>·</span>
+                  <span class="pip"><i class="ti ti-check" style="font-size:12px;color:var(--teal)"></i>3 of 3 visited</span>
+                </div>
+              </div>
+            </div>
+            <div class="trip-card">
+              <div class="status-pill">3w ago</div>
+              <div class="preview" style="opacity:0.85">
+                <div class="grid-mini"></div>
+                <svg viewBox="0 0 280 130" preserveAspectRatio="none"><path d="M 30 80 Q 80 30 140 50 Q 200 70 250 30" fill="none" stroke="#1D9E75" stroke-width="2" opacity="0.7"/></svg>
+                <div class="mini-pin start" style="left:30px;top:80px;background:#1D9E75">1</div>
+                <div class="mini-pin" style="left:80px;top:35px;background:#1D9E75">2</div>
+                <div class="mini-pin" style="left:140px;top:50px;background:#1D9E75">3</div>
+                <div class="mini-pin end" style="left:250px;top:30px;background:#1D9E75">4</div>
+              </div>
+              <div class="meta-row">
+                <div class="nm">Bangalore café crawl</div>
+                <div class="info-line">
+                  <span class="pip"><i class="ti ti-calendar" style="font-size:12px"></i>apr 12</span>
+                  <span>·</span>
+                  <span class="pip" style="color:var(--accent)"><i class="ti ti-alert-circle" style="font-size:12px"></i>2 of 4 visited</span>
+                </div>
+              </div>
+            </div>
+            <div class="trip-card">
+              <div class="status-pill">2 mo ago</div>
+              <div class="preview" style="opacity:0.85">
+                <div class="grid-mini"></div>
+                <svg viewBox="0 0 280 130" preserveAspectRatio="none"><path d="M 50 40 Q 120 80 180 50 T 240 90" fill="none" stroke="#1D9E75" stroke-width="2" opacity="0.7"/></svg>
+                <div class="mini-pin start" style="left:50px;top:40px;background:#1D9E75">1</div>
+                <div class="mini-pin end" style="left:240px;top:90px;background:#1D9E75">2</div>
+              </div>
+              <div class="meta-row">
+                <div class="nm">Goa weekend</div>
+                <div class="info-line">
+                  <span class="pip"><i class="ti ti-calendar" style="font-size:12px"></i>mar 8</span>
+                  <span>·</span>
+                  <span class="pip"><i class="ti ti-check" style="font-size:12px;color:var(--teal)"></i>2 of 2 visited</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="hint">Trips list with sections: in progress (live pulse), upcoming (countdown), drafts/undated, past (with progress nudges). Click a card → opens trip detail.</p>
+  </div>
+
+  <!-- TRIP DETAIL -->
+  <div class="screen" id="screen-trip">
+    <div class="app" data-theme="paper">
+      <div class="topbar">
+        <div class="brand">
+          <span class="logo-mark"><svg width="26" height="30" viewBox="0 0 42 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M21 2 C9.95 2 1 10.95 1 22 C1 36 21 46 21 46 C21 46 41 36 41 22 C41 10.95 32.05 2 21 2 Z" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round" style="color:var(--ink)"/><path d="M21 11 L23 19 L31 21 L23 23 L21 31 L19 23 L11 21 L19 19 Z" fill="var(--accent)"/><circle cx="21" cy="21" r="2.2" fill="var(--bg)"/></svg></span>
+          <div class="brand-text"><span class="brand-name">wayfinder</span><span class="brand-sep">·</span><span class="brand-tagline" data-tagline>the map of your maybe-someday.</span></div>
+        </div>
+        <div class="nav"><button>Map</button><button>Collections</button><button class="on">Trips</button></div>
+        <div class="topbar-right"><button class="iconbtn"><i class="ti ti-dots"></i></button></div>
+      </div>
+      <div class="trip">
+        <div class="trip-side">
+          <button class="back-btn"><i class="ti ti-arrow-left" style="font-size:12px"></i> trips so far</button>
+          <h2>Kyoto day loop</h2>
+          <div class="sub"><i class="ti ti-calendar" style="font-size:13px"></i> sat, may 16 · 5 stops</div>
+          <div class="stops">
+            <div class="stop start"><div class="num">1</div><div class="nm">Café Kitsuné</div><div class="meta"><i class="ti ti-coffee" style="color:#BA7517"></i> café · morning</div><i class="ti ti-grip-vertical grip"></i></div>
+            <div class="leg"><span>2.4 km*</span><span class="line"></span><span><i class="ti ti-walk" style="font-size:11px"></i> ~28 min</span></div>
+            <div class="stop"><div class="num">2</div><div class="nm">Nishiki Market alley</div><div class="meta"><i class="ti ti-meat" style="color:#993556"></i> brunch · busy after 11</div><i class="ti ti-grip-vertical grip"></i></div>
+            <div class="leg"><span>3.1 km*</span><span class="line"></span><span><i class="ti ti-walk" style="font-size:11px"></i> ~36 min</span></div>
+            <div class="stop"><div class="num">3</div><div class="nm">Yasaka Shrine</div><div class="meta"><i class="ti ti-building-arch" style="color:#534AB7"></i> temple · park behind</div><i class="ti ti-grip-vertical grip"></i></div>
+            <div class="leg"><span>1.2 km*</span><span class="line"></span><span><i class="ti ti-walk" style="font-size:11px"></i> ~14 min</span></div>
+            <div class="stop"><div class="num">4</div><div class="nm">Sōan Soba Yoshimura</div><div class="meta"><i class="ti ti-tools-kitchen-2" style="color:#D85A30"></i> dinner · book ahead</div><i class="ti ti-grip-vertical grip"></i></div>
+            <div class="leg"><span>0.8 km*</span><span class="line"></span><span><i class="ti ti-walk" style="font-size:11px"></i> ~10 min</span></div>
+            <div class="stop end"><div class="num">5</div><div class="nm">Kiyomizu viewpoint</div><div class="meta"><i class="ti ti-mountain" style="color:#185FA5"></i> sunset spot</div><i class="ti ti-grip-vertical grip"></i></div>
+          </div>
+          <div class="totals">
+            <div class="row"><span class="l">Total distance</span><span class="v">7.5 km*</span></div>
+            <div class="row"><span class="l">Estimated time</span><span class="v">~88 min walking</span></div>
+            <div class="row"><span class="l">Stops</span><span class="v">5</span></div>
+          </div>
+          <div class="disclaim">*Distances are straight-line approximations — point of reference only. Open in Google Maps for actual road routes.</div>
+          <div class="mode"><span>Open as:</span><select><option>Let Google decide</option><option>Walking</option><option>Driving</option><option>Cycling</option><option>Transit</option></select></div>
+          <button class="export-btn"><i class="ti ti-external-link"></i>Open trip in Google Maps</button>
+        </div>
+        <div class="trip-map">
+          <div class="grid"></div>
+          <div class="water" style="left:-50px;top:80px;width:140px;height:120px;background:var(--map-water);position:absolute;border-radius:50%"></div>
+          <div class="park" style="right:30px;bottom:40px;width:110px;height:90px;background:var(--map-park);position:absolute;border-radius:40% 60% 55% 45%"></div>
+          <div class="road" style="left:0;top:200px;right:0;height:4px;background:var(--map-road);position:absolute"></div>
+          <div class="road" style="left:180px;top:0;width:4px;bottom:0;background:var(--map-road);position:absolute"></div>
+          <svg style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none" viewBox="0 0 540 520" preserveAspectRatio="none"><path d="M 80 110 Q 180 60 260 140 T 400 260 Q 360 380 220 380 Q 130 390 100 320" fill="none" stroke="#FF6B5B" stroke-width="3" stroke-dasharray="8 6" stroke-linecap="round" opacity="0.85"/></svg>
+          <div class="tpin start" style="left:80px;top:110px">1</div>
+          <div class="tpin" style="left:260px;top:140px">2</div>
+          <div class="tpin" style="left:400px;top:260px">3</div>
+          <div class="tpin" style="left:220px;top:380px">4</div>
+          <div class="tpin end" style="left:100px;top:320px">5</div>
+        </div>
+      </div>
+    </div>
+    <p class="hint">Trip detail. Back arrow returns to the trips list.</p>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="screen" id="screen-settings">
+    <div class="app" data-theme="paper">
+      <div class="breadcrumb">
+        <button><i class="ti ti-arrow-left"></i> back to map</button>
+        <span style="color:var(--ink-faint)">/</span>
+        <span class="title">Settings</span>
+      </div>
+      <div class="set-wrap">
+        <div class="set-grid">
+          <div class="set-nav">
+            <button class="active"><i class="ti ti-tags"></i>Categories &amp; vibes</button>
+            <button><i class="ti ti-folder"></i>Collections</button>
+            <button><i class="ti ti-palette"></i>Theme</button>
+            <button><i class="ti ti-database-export"></i>Storage &amp; backup</button>
+            <button><i class="ti ti-info-circle"></i>About</button>
+            <button class="adv-nav"><i class="ti ti-tool"></i>Advanced</button>
+          </div>
+          <div>
+            <div class="set-card">
+              <h3>Categories</h3>
+              <div class="desc">14 defaults pre-loaded. Hover any pill to edit (rename, change icon, change color) or delete.</div>
+              <div class="cats-list">
+                <span class="cat-pill"><span class="sw" style="background:#D85A30"></span>Restaurant<span class="actions-mini"><button><i class="ti ti-pencil" style="font-size:11px"></i></button><button class="del"><i class="ti ti-trash" style="font-size:11px"></i></button></span></span>
+                <span class="cat-pill"><span class="sw" style="background:#BA7517"></span>Café<span class="actions-mini"><button><i class="ti ti-pencil" style="font-size:11px"></i></button><button class="del"><i class="ti ti-trash" style="font-size:11px"></i></button></span></span>
+                <span class="cat-pill"><span class="sw" style="background:#993556"></span>Street food<span class="actions-mini"><button><i class="ti ti-pencil" style="font-size:11px"></i></button><button class="del"><i class="ti ti-trash" style="font-size:11px"></i></button></span></span>
+                <span class="cat-pill"><span class="sw" style="background:#A32D2D"></span>Bar / Nightlife<span class="actions-mini"><button><i class="ti ti-pencil" style="font-size:11px"></i></button><button class="del"><i class="ti ti-trash" style="font-size:11px"></i></button></span></span>
+                <span class="cat-pill"><span class="sw" style="background:#534AB7"></span>Temple<span class="actions-mini"><button><i class="ti ti-pencil" style="font-size:11px"></i></button><button class="del"><i class="ti ti-trash" style="font-size:11px"></i></button></span></span>
+                <span class="cat-pill"><span class="sw" style="background:#1D9E75"></span>Park / Nature<span class="actions-mini"><button><i class="ti ti-pencil" style="font-size:11px"></i></button><button class="del"><i class="ti ti-trash" style="font-size:11px"></i></button></span></span>
+                <span class="cat-pill"><span class="sw" style="background:#0F6E56"></span>Trek / Hike<span class="actions-mini"><button><i class="ti ti-pencil" style="font-size:11px"></i></button><button class="del"><i class="ti ti-trash" style="font-size:11px"></i></button></span></span>
+                <span class="cat-pill"><span class="sw" style="background:#185FA5"></span>Viewpoint<span class="actions-mini"><button><i class="ti ti-pencil" style="font-size:11px"></i></button><button class="del"><i class="ti ti-trash" style="font-size:11px"></i></button></span></span>
+                <span class="cat-pill"><span class="sw" style="background:#85B7EB"></span>Beach<span class="actions-mini"><button><i class="ti ti-pencil" style="font-size:11px"></i></button><button class="del"><i class="ti ti-trash" style="font-size:11px"></i></button></span></span>
+                <span class="cat-pill"><span class="sw" style="background:#7F77DD"></span>Activity<span class="actions-mini"><button><i class="ti ti-pencil" style="font-size:11px"></i></button><button class="del"><i class="ti ti-trash" style="font-size:11px"></i></button></span></span>
+                <span class="cat-pill"><span class="sw" style="background:#0C447C"></span>Stay<span class="actions-mini"><button><i class="ti ti-pencil" style="font-size:11px"></i></button><button class="del"><i class="ti ti-trash" style="font-size:11px"></i></button></span></span>
+                <span class="cat-pill"><span class="sw" style="background:#888780"></span>Landmark<span class="actions-mini"><button><i class="ti ti-pencil" style="font-size:11px"></i></button><button class="del"><i class="ti ti-trash" style="font-size:11px"></i></button></span></span>
+                <span class="cat-pill add"><i class="ti ti-plus" style="font-size:12px"></i> Add custom</span>
+              </div>
+            </div>
+
+            <div class="set-card">
+              <h3>Vibe tags</h3>
+              <div class="desc">10 defaults — multi-select on each place. Hover any tag to rename or delete. Deleting un-tags it from places where it's used.</div>
+              <div class="cats-list">
+                <span class="vibe-pill">date-worthy<span class="actions-mini"><button><i class="ti ti-pencil" style="font-size:10px"></i></button><button class="del"><i class="ti ti-trash" style="font-size:10px"></i></button></span></span>
+                <span class="vibe-pill">hidden-gem<span class="actions-mini"><button><i class="ti ti-pencil" style="font-size:10px"></i></button><button class="del"><i class="ti ti-trash" style="font-size:10px"></i></button></span></span>
+                <span class="vibe-pill">chill spot<span class="actions-mini"><button><i class="ti ti-pencil" style="font-size:10px"></i></button><button class="del"><i class="ti ti-trash" style="font-size:10px"></i></button></span></span>
+                <span class="vibe-pill">family-friendly<span class="actions-mini"><button><i class="ti ti-pencil" style="font-size:10px"></i></button><button class="del"><i class="ti ti-trash" style="font-size:10px"></i></button></span></span>
+                <span class="vibe-pill">solo-spot<span class="actions-mini"><button><i class="ti ti-pencil" style="font-size:10px"></i></button><button class="del"><i class="ti ti-trash" style="font-size:10px"></i></button></span></span>
+                <span class="vibe-pill">group-outing<span class="actions-mini"><button><i class="ti ti-pencil" style="font-size:10px"></i></button><button class="del"><i class="ti ti-trash" style="font-size:10px"></i></button></span></span>
+                <span class="vibe-pill">touristy<span class="actions-mini"><button><i class="ti ti-pencil" style="font-size:10px"></i></button><button class="del"><i class="ti ti-trash" style="font-size:10px"></i></button></span></span>
+                <span class="vibe-pill">budget<span class="actions-mini"><button><i class="ti ti-pencil" style="font-size:10px"></i></button><button class="del"><i class="ti ti-trash" style="font-size:10px"></i></button></span></span>
+                <span class="vibe-pill">splurge<span class="actions-mini"><button><i class="ti ti-pencil" style="font-size:10px"></i></button><button class="del"><i class="ti ti-trash" style="font-size:10px"></i></button></span></span>
+                <span class="vibe-pill">kid-friendly<span class="actions-mini"><button><i class="ti ti-pencil" style="font-size:10px"></i></button><button class="del"><i class="ti ti-trash" style="font-size:10px"></i></button></span></span>
+                <span class="cat-pill add" style="font-size:12px"><i class="ti ti-plus" style="font-size:11px"></i> Add vibe</span>
+              </div>
+            </div>
+
+            <div class="set-card">
+              <h3>Theme</h3>
+              <div class="desc">Seven themes. Switch any time — the whole app re-renders live. Tagline auto-shifts based on time of day (action mode by day, reflective by night).</div>
+              <div class="theme-grid">
+                <div class="theme-tile active" data-tile-theme="paper">
+                  <div class="swatches"><span style="background:#FAF6EF;border:0.5px solid #ccc"></span><span style="background:#1A1A2E"></span><span style="background:#FF6B5B"></span></div>
+                  <div class="nm">Paper</div>
+                  <div class="desc" style="margin:0">warm cream, ink, coral. Default.</div>
+                </div>
+                <div class="theme-tile" data-tile-theme="neon">
+                  <div class="swatches"><span style="background:#0E0F1A"></span><span style="background:#FF3D9A"></span><span style="background:#7AFFD7"></span></div>
+                  <div class="nm">Neon Drift</div>
+                  <div class="desc" style="margin:0">dark, magenta + mint. Glow on hover.</div>
+                </div>
+                <div class="theme-tile" data-tile-theme="kyoto">
+                  <div class="swatches"><span style="background:#0F1729"></span><span style="background:#E8A547"></span><span style="background:#F4D58D"></span></div>
+                  <div class="nm">Kyoto Night</div>
+                  <div class="desc" style="margin:0">deep navy + warm gold. Lantern glow.</div>
+                </div>
+                <div class="theme-tile" data-tile-theme="mono">
+                  <div class="swatches"><span style="background:#FFF;border:0.5px solid #ccc"></span><span style="background:#000"></span><span style="background:#D72638"></span></div>
+                  <div class="nm">Mono Press</div>
+                  <div class="desc" style="margin:0">b/w, single red, sharp corners.</div>
+                </div>
+                <div class="theme-tile" data-tile-theme="midnight">
+                  <div class="swatches"><span style="background:#1B0F1F"></span><span style="background:#D4A74C"></span><span style="background:#E8C57A"></span></div>
+                  <div class="nm">Midnight Library</div>
+                  <div class="desc" style="margin:0">deep plum + brass + cream. cozy reading nook.</div>
+                </div>
+                <div class="theme-tile" data-tile-theme="subway">
+                  <div class="swatches"><span style="background:#FAFAFA;border:0.5px solid #ccc"></span><span style="background:#1C1C1C"></span><span style="background:#0066CC"></span></div>
+                  <div class="nm">Tokyo Subway</div>
+                  <div class="desc" style="margin:0">white + electric blue. clean transit signage.</div>
+                </div>
+                <div class="theme-tile" data-tile-theme="forest">
+                  <div class="swatches"><span style="background:#EFEAD8;border:0.5px solid #ccc"></span><span style="background:#1F2D1A"></span><span style="background:#3F6B47"></span></div>
+                  <div class="nm">Forest Floor</div>
+                  <div class="desc" style="margin:0">deep green + ochre. forest canopy after rain.</div>
+                </div>
+              </div>
+              <div style="margin-top:12px;display:flex;align-items:center;gap:10px;font-size:13px;color:var(--ink)"><span>Auto-shift to dusk after sunset</span><div class="toggle on" data-toggle></div></div>
+            </div>
+
+            <div class="set-card">
+              <h3>Storage &amp; backup</h3>
+              <div class="desc">Wayfinder is saving everything to this folder. <strong>Last backup: 3 days ago.</strong></div>
+              <div class="folder-info">
+                <i class="ti ti-folder"></i>
+                <div><div>Wayfinder data folder</div><div class="path">~/Documents/Wayfinder/</div></div>
+                <button class="btn change">Change folder</button>
+              </div>
+              <div class="backup-actions" style="margin-top:14px">
+                <button class="btn primary"><i class="ti ti-download" style="font-size:13px"></i> Export backup now</button>
+                <button class="btn"><i class="ti ti-upload" style="font-size:13px"></i> Import from file</button>
+                <button class="btn"><i class="ti ti-clock" style="font-size:13px"></i> Auto-backup: weekly</button>
+              </div>
+              <div class="watermark">{
+  <span class="k">"wayfinder"</span>: {
+    <span class="k">"schemaVersion"</span>: 1,
+    <span class="k">"exportedAt"</span>: <span class="s">"2026-05-08T14:32:00Z"</span>,
+    <span class="k">"exportedBy"</span>: <span class="s">"wayfinder-web-v1.0.0"</span>,
+    <span class="k">"checksum"</span>: <span class="s">"sha256:a3f5b2c8…"</span>
+  },
+  <span class="k">"data"</span>: { <span class="s">/* pins, collections, trips */</span> }
+}</div>
+            </div>
+
+            <div class="set-card">
+              <h3>About wayfinder</h3>
+              <p style="font-family:var(--font-display);font-size:18px;color:var(--ink);margin:0 0 14px;line-height:1.5;font-weight:500;letter-spacing:-0.2px">Wayfinder is for everyone in between.</p>
+              <p style="font-size:13px;color:var(--ink-soft);line-height:1.7;margin:0 0 12px">For the enthusiastic and the lazy. For ambitious visionary planners and the hard-to-move homebodies with glimpses of hope. For the seasoned wanderer and the once-in-a-while explorer. For anyone collecting places they mean to go.</p>
+              <p style="font-size:13px;color:var(--ink-soft);line-height:1.7;margin:0 0 12px">Wayfinder doesn't push. It pins. It plans. It taunts when you need it, encourages when you don't, and stays quiet when you just want to look at the map.</p>
+              <p style="font-size:13px;color:var(--ink-soft);line-height:1.7;margin:0 0 18px">Built for fellow travelers — hoping this helps in your journey.</p>
+              <p style="font-size:11px;color:var(--ink-faint);font-style:italic;margin:0;padding-top:14px;border-top:0.5px solid var(--hairline-soft)">Made with care. No servers. No ads. No telemetry. Version 1.0.0 · 2026.</p>
+            </div>
+
+            <div class="set-card" style="display:none" data-section="advanced">
+              <h3>Map provider</h3>
+              <div class="desc">Most users won't need to change this. Wayfinder defaults to OpenStreetMap tiles. Pick a different one if you want a different look.</div>
+              <div style="display:flex;flex-direction:column;gap:6px">
+                <label style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg);border-radius:8px;border:0.5px solid var(--hairline-soft);cursor:pointer;font-size:13px"><input type="radio" name="map" checked style="accent-color:var(--accent)" /> <span style="flex:1"><strong>OpenStreetMap</strong> <span style="color:var(--ink-soft);font-size:11px">— default, free, plain</span></span></label>
+                <label style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg);border-radius:8px;border:0.5px solid var(--hairline-soft);cursor:pointer;font-size:13px"><input type="radio" name="map" style="accent-color:var(--accent)" /> <span style="flex:1"><strong>MapTiler — Streets</strong> <span style="color:var(--ink-soft);font-size:11px">— styled, free tier</span></span></label>
+                <label style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg);border-radius:8px;border:0.5px solid var(--hairline-soft);cursor:pointer;font-size:13px"><input type="radio" name="map" style="accent-color:var(--accent)" /> <span style="flex:1"><strong>Stamen Toner</strong> <span style="color:var(--ink-soft);font-size:11px">— high-contrast b/w</span></span></label>
+                <label style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg);border-radius:8px;border:0.5px solid var(--hairline-soft);cursor:pointer;font-size:13px"><input type="radio" name="map" style="accent-color:var(--accent)" /> <span style="flex:1"><strong>Stadia Maps — Outdoors</strong> <span style="color:var(--ink-soft);font-size:11px">— terrain + trails</span></span></label>
+              </div>
+            </div>
+
+            <div class="set-card" style="display:none" data-section="advanced">
+              <h3>Behavior</h3>
+              <div class="desc">Fine-grained control over what wayfinder does on its own.</div>
+              <div class="row">
+                <div><div class="lbl">Taunt mode</div><div class="desc">Allow the sharper quotes (the ones that roast you for not going).</div></div>
+                <div class="toggle on" data-toggle></div>
+              </div>
+              <div class="row">
+                <div><div class="lbl">Dynamic quote conditions</div><div class="desc">Quotes that reference your specific saved/visited counts.</div></div>
+                <div class="toggle on" data-toggle></div>
+              </div>
+              <div class="row">
+                <div><div class="lbl">Auto-shift to dusk after sunset</div><div class="desc">Map switches to a darker theme automatically at night.</div></div>
+                <div class="toggle on" data-toggle></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="hint">Sidebar order: main settings → About → Advanced (italicized, separated). Click "Advanced" to reveal Map provider + Behavior controls.</p>
+  </div>
+
+  <!-- EXIT -->
+  <div class="screen" id="screen-exit">
+    <div class="app" data-theme="paper">
+      <div class="exit-stage">
+        <div class="exit-modal">
+          <div class="icon-wrap"><i class="ti ti-alert-triangle"></i></div>
+          <h3>your data isn't backed up</h3>
+          <p>You've added 3 places and edited a collection since your last export. Close the tab and they're safe in browser storage — but if you ever clear it, they're gone. Want to save a backup first?</p>
+          <div class="actions">
+            <button class="btn primary"><i class="ti ti-download" style="font-size:13px"></i> Export JSON &amp; exit</button>
+            <button class="btn">Nah, exit me</button>
+            <button class="btn">Stay here</button>
+          </div>
+          <div style="font-size:11px;color:var(--ink-faint);margin-top:18px;font-style:italic">Folder users won't see this — backups are automatic.</div>
+        </div>
+      </div>
+    </div>
+    <p class="hint">Triggered by window.beforeunload when there are unbacked-up changes.</p>
+  </div>
+</div>
+
+<script>
+(function(){
+  const tabs=document.querySelectorAll('#tabs .tab');
+  const screens={firstrun:document.getElementById('screen-firstrun'),home:document.getElementById('screen-home'),add:document.getElementById('screen-add'),collection:document.getElementById('screen-collection'),triplist:document.getElementById('screen-triplist'),trip:document.getElementById('screen-trip'),settings:document.getElementById('screen-settings'),exit:document.getElementById('screen-exit')};
+
+  let currentTheme='paper';
+  document.querySelectorAll('.theme-pick').forEach(b=>b.addEventListener('click',()=>{
+    document.querySelectorAll('.theme-pick').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');
+    currentTheme=b.dataset.theme;
+    document.querySelectorAll('.app').forEach(a=>a.dataset.theme=currentTheme);
+  }));
+
+  // Time-of-day tagline shuffle. Morning/day = action mode. Evening/night = reflective mode.
+  const hour=new Date().getHours();
+  const morningTagline='pin it. plan it. go.';
+  const nightTagline='the map of your maybe-someday.';
+  const isDaytime=hour>=5&&hour<18;
+  const activeTagline=isDaytime?morningTagline:nightTagline;
+  document.querySelectorAll('[data-tagline]').forEach(el=>el.textContent=activeTagline);
+  const fr=document.querySelector('[data-tagline-firstrun]');if(fr)fr.textContent=activeTagline;
+  // sublead shows the OTHER one as flavor
+  const sl=document.querySelector('[data-sublead-tagline]');if(sl)sl.textContent=isDaytime?nightTagline:morningTagline;
+
+  function go(name){
+    tabs.forEach(t=>t.classList.toggle('active',t.dataset.screen===name));
+    Object.entries(screens).forEach(([k,el])=>el.classList.toggle('active',k===name));
+    if(name==='add')setStage(1);
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+  tabs.forEach(t=>t.addEventListener('click',()=>go(t.dataset.screen)));
+
+  const fab=document.getElementById('fab-add');
+  if(fab)fab.addEventListener('click',()=>go('add'));
+
+  const stages=[1,2,3,4];
+  const steps=document.getElementById('add-steps');
+  function setStage(n){
+    stages.forEach(s=>{const el=document.getElementById('add-stage-'+s);if(el)el.style.display=s===n?'block':'none';});
+    if(steps){[...steps.children].forEach((sp,i)=>{sp.classList.remove('on','done');if(i+1<n)sp.classList.add('done');if(i+1===n)sp.classList.add('on');});}
+  }
+  const bind=(id,fn)=>{const el=document.getElementById(id);if(el)el.addEventListener('click',fn);};
+  bind('add-next-1',()=>setStage(2));
+  bind('add-next-2',()=>setStage(3));
+  bind('add-next-3',()=>setStage(4));
+  bind('add-back-2',()=>setStage(1));
+  bind('add-back-3',()=>setStage(2));
+  bind('add-back-4',()=>setStage(3));
+
+  // category selection drives the celebration pin icon + color
+  let chosenCat={icon:'ti-tools-kitchen-2',color:'#D85A30'};
+  document.querySelectorAll('#cat-chips .chip.cat').forEach(c=>c.addEventListener('click',()=>{
+    document.querySelectorAll('#cat-chips .chip.cat').forEach(x=>x.classList.remove('sel'));
+    c.classList.add('sel');
+    chosenCat={icon:c.dataset.icon,color:c.dataset.color};
+  }));
+
+  bind('add-save',()=>{
+    const celPin=document.getElementById('cel-pin');
+    const celIcon=document.getElementById('cel-pin-icon');
+    if(celPin)celPin.style.background=chosenCat.color;
+    if(celIcon){celIcon.className='';celIcon.classList.add('ti',chosenCat.icon);}
+    go('home');
+    setTimeout(playPinDrop,400);
+  });
+
+  document.querySelectorAll('#status-chips .chip').forEach(c=>c.addEventListener('click',()=>{
+    document.querySelectorAll('#status-chips .chip').forEach(x=>x.classList.remove('sel'));
+    c.classList.add('sel');
+  }));
+  document.querySelectorAll('.chip:not(.cat):not(.add):not(#status-chips .chip)').forEach(c=>c.addEventListener('click',()=>c.classList.toggle('sel')));
+
+  const quotes=["ted mosby's kids wouldn't exist if he stayed home.","jiraiya-sensei went on trips for inspiration. just saying.","frodo only had nine stops. you've planned fourteen.","sherlock walked everywhere. holmes-pace. try it.","studio ghibli would not approve of you staying in.","luffy left home for treasure. yours is hidden among your saved pins.","spider-man has the whole city memorized. start small.","avatar aang went to all four corners. you've been to two cafés.","forrest gump just kept running. you can manage three blocks.","wall-e went to space for love. you can go for tacos.","jon snow knew nothing. but he still went north.","ash ketchum hasn't been home in 25 years.","heisenberg drove an RV across new mexico. less crime, more views.","kick buttowski didn't ride his bike to the kitchen.","indiana jones found the holy grail. you can find brunch.","james bond goes to a new country every film. you can too — every possible moment.","musashi walked across japan with nothing. you've got wheels of freedom.","christopher mccandless walked into the wild. your nearest trail starts smaller.","\"next weekend\" has been next weekend for a while now.","planned and visited are not the same thing. you know which ones.","screenshot folder: full. visited folder: shy.","someday is not on the calendar.","you opened wayfinder to feel productive. nice.","close the app. open the door.","that café isn't going to visit itself.","you've been \"meaning to go\" since the iPhone got a USB-C port.","you bookmarked it. you didn't summon it.","there's a 0% chance of going if you stay here.","tagged \"date-worthy.\" dated: never.","you reorganized your collections instead of visiting one.","you're collecting places like pokémon and using none of them.","wishlist: ambitious. weekend: indoor.","seven tabs open. zero shoes on.","you read this instead of leaving. fascinating choice.","shall we call in a war room. just so you could step out.","had a hard week? somewhere out there is a quiet table.","when in doubt, go outside.","a coffee in a new place hits different.","you've earned a wander.","one of those days? short walk. new street. small reset.","when nothing makes sense, at least the bus is going somewhere.","you don't have to feel ready. just go.","tired is a fine reason to leave the house, actually.","find a bench. a new bench. just sit there.","the pin doesn't care if you cry there.","you don't have to come back happy. just come back.","one stop. that's all today asks.","left turn. just for once.","take the bus you don't recognize.","go before it gets famous.","your future self has already thanked you.","a stranger's recommendation beats 200 reviews.","the best trip is the one you almost didn't take.","start with the closest pin. you'll figure out the rest.","the side street always wins.","3am pins age the best.","maps are advice, not orders.","every pin is a memory waiting for permission.","the map remembers what the camera forgets.","small streets keep loud secrets.","a place is just a stranger you haven't met yet.","saved places are tiny letters to a future self.","cities forget you exist on tuesdays. tuesdays are for going.","a map at night is a different map."];
+  let lastQ=-1;
+  const map=document.getElementById('home-map');
+  const quote=document.getElementById('home-quote');
+  let taps=[];
+  function showQuoteAt(x,y,quoteText){
+    if(!quote||!map)return;
+    const rect=map.getBoundingClientRect();
+    const px=x-rect.left;const py=y-rect.top;
+    quote.style.left=Math.max(140,Math.min(rect.width-140,px))+'px';
+    quote.style.top=py+'px';
+    quote.querySelector('.qtxt').textContent=quoteText;
+    quote.classList.add('show');
+    clearTimeout(window._qto);
+    window._qto=setTimeout(()=>quote.classList.remove('show'),4200);
+  }
+  function pickQuote(){let i;do{i=Math.floor(Math.random()*quotes.length)}while(i===lastQ&&quotes.length>1);lastQ=i;return quotes[i];}
+  if(map){
+    map.addEventListener('click',function(e){
+      if(e.target.closest('.pin')||e.target.closest('.fab')||e.target.closest('.search')||e.target.closest('.cluster')||e.target.closest('.cel-overlay')||e.target.closest('.toast'))return;
+      const now=Date.now();
+      taps=taps.filter(t=>now-t<700);
+      taps.push({t:now,x:e.clientX,y:e.clientY});
+      if(taps.length>=3){const last=taps[taps.length-1];showQuoteAt(last.x,last.y,pickQuote());taps=[];}
+    });
+  }
+
+  const celOverlay=document.getElementById('cel-overlay');
+  const celWrap=document.getElementById('cel-pin-wrap');
+  const toast=document.getElementById('toast');
+  function playPinDrop(){
+    if(!celWrap||!celOverlay||!map)return;
+    const w=map.offsetWidth;const h=map.offsetHeight;
+    const x=Math.round(w*0.55);const y=Math.round(h*0.5);
+    celWrap.style.left=x+'px';celWrap.style.top=y+'px';
+    celWrap.querySelectorAll('.spark').forEach(s=>s.remove());
+    celOverlay.classList.remove('show');celWrap.classList.remove('show');
+    void celWrap.offsetWidth;
+    celOverlay.classList.add('show');celWrap.classList.add('show');
+    const angles=[0,30,60,90,120,150,180,210,240,270,300,330];
+    angles.forEach((a,i)=>{
+      const s=document.createElement('div');s.className='spark';s.textContent='✦';
+      const rad=a*Math.PI/180;const dist=60+Math.round(Math.random()*30);
+      const dx=Math.round(Math.cos(rad)*dist);const dy=Math.round(Math.sin(rad)*dist)-100;
+      s.style.setProperty('--end',`translate(calc(-50% + ${dx}px),calc(-100% + ${dy}px))`);
+      s.style.animationDelay=(0.35+i*0.04)+'s';
+      celWrap.appendChild(s);
+    });
+    setTimeout(()=>toast.classList.add('show'),300);
+    setTimeout(()=>{celOverlay.classList.remove('show');toast.classList.remove('show');},2400);
+  }
+  bind('replay-drop',playPinDrop);
+  bind('trigger-quote',()=>{if(!map)return;const r=map.getBoundingClientRect();showQuoteAt(r.left+r.width*0.5,r.top+r.height*0.4,pickQuote());});
+
+  let taglineFlipped=false;
+  bind('flip-tagline',()=>{
+    taglineFlipped=!taglineFlipped;
+    const useNight=isDaytime?taglineFlipped:!taglineFlipped;
+    const main=useNight?nightTagline:morningTagline;
+    const alt=useNight?morningTagline:nightTagline;
+    document.querySelectorAll('[data-tagline]').forEach(el=>el.textContent=main);
+    const fr=document.querySelector('[data-tagline-firstrun]');if(fr)fr.textContent=main;
+    const sl=document.querySelector('[data-sublead-tagline]');if(sl)sl.textContent=alt;
+  });
+
+  document.querySelectorAll('[data-toggle]').forEach(t=>t.addEventListener('click',()=>t.classList.toggle('on')));
+  document.querySelectorAll('.set-nav button').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.set-nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');
+    const isAdvanced=b.classList.contains('adv-nav');
+    document.querySelectorAll('[data-section="advanced"]').forEach(c=>c.style.display=isAdvanced?'block':'none');
+    document.querySelectorAll('.set-card:not([data-section])').forEach(c=>{
+      // hide non-advanced cards when Advanced is selected, show otherwise
+      c.style.display=isAdvanced?'none':'';
+    });
+  }));
+  document.querySelectorAll('.theme-tile').forEach(t=>t.addEventListener('click',()=>{
+    document.querySelectorAll('.theme-tile').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    const themeName=t.dataset.tileTheme;
+    if(themeName){
+      currentTheme=themeName;
+      document.querySelectorAll('.app').forEach(a=>a.dataset.theme=currentTheme);
+      document.querySelectorAll('.theme-pick').forEach(x=>x.classList.toggle('on',x.dataset.theme===themeName));
+    }
+  }));
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,90 @@
+<div class="page">
+  <!-- Topbar -->
+  <header class="topbar">
+    <div class="brand">
+      <img src="logo.svg" alt="" class="logo" />
+      <span class="wordmark">wayfinder</span>
+      <span class="sep">·</span>
+      <span class="tagline">{{ tagline.current() }}</span>
+    </div>
+    <nav class="nav">
+      <a routerLink="/" class="active">Map</a>
+      <a routerLink="/trips">Trips</a>
+      <a routerLink="/settings">Settings</a>
+    </nav>
+  </header>
+
+  <div class="body">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="section">
+        <div class="section-title">Categories</div>
+        <ul class="cat-list">
+          @for (cat of sortedCategories(); track cat.id) {
+            <li>
+              <span class="dot" [style.background]="cat.color"></span>
+              <span class="name">{{ cat.name }}</span>
+              <span class="count">{{ categoryCounts().get(cat.id) ?? 0 }}</span>
+            </li>
+          }
+        </ul>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Collections</div>
+        @if (sortedCollections().length === 0) {
+          <p class="empty">No collections yet.</p>
+        }
+        <ul class="coll-list">
+          @for (col of sortedCollections(); track col.id) {
+            <li>
+              <span class="cover"></span>
+              <span class="name">{{ col.name }}</span>
+            </li>
+          }
+        </ul>
+      </div>
+    </aside>
+
+    <!-- Map -->
+    <div class="map-area">
+      <div class="map" #mapEl></div>
+
+      <button class="fab" (click)="onFabClick()" aria-label="Add a place">
+        + Add a place
+      </button>
+    </div>
+  </div>
+
+  <!-- Add-place modal -->
+  @if (showAddModal()) {
+    <wf-add-place
+      [prefillCoords]="pendingClickCoords()"
+      (saved)="onPlaceSaved($event)"
+      (cancelled)="onCancelAdd()"
+    />
+  }
+
+  <!-- Celebration -->
+  @if (celebration(); as c) {
+    <wf-pin-drop-celebration
+      [x]="c.x"
+      [y]="c.y"
+      [color]="c.color"
+      [placeName]="c.placeName"
+      (done)="onCelebrationDone()"
+    />
+  }
+
+  <!-- Quote card (easter egg) -->
+  @if (activeQuote(); as q) {
+  <wf-quote-card
+    [text]="q.text"
+    [x]="q.x"
+    [y]="q.y"
+    (done)="onQuoteDone()"
+  />
+  }
+</div>
+
+  

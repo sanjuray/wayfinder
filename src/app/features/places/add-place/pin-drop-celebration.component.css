@@ -1,0 +1,163 @@
+:host {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2000;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.overlay.show {
+  opacity: 1;
+  animation: cel-overlay-out 0.6s ease 1.8s forwards;
+}
+
+@keyframes cel-overlay-out {
+  to {
+    opacity: 0;
+  }
+}
+
+.pin-wrap {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  opacity: 0;
+}
+
+.pin-wrap.show {
+  animation: cel-show 0.05s forwards;
+}
+
+@keyframes cel-show {
+  to {
+    opacity: 1;
+  }
+}
+
+.pin {
+  width: 36px;
+  height: 44px;
+  border-radius: var(--wf-pin-shape, 50% 50% 50% 0);
+  transform: rotate(-45deg) scale(0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+  animation: cel-pin-drop 0.85s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.pin .ico {
+  transform: rotate(45deg);
+  font-size: 16px;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.3));
+}
+
+@keyframes cel-pin-drop {
+  0% {
+    transform: rotate(-45deg) scale(0) translateY(-60px);
+  }
+  60% {
+    transform: rotate(-45deg) scale(1.15) translateY(0);
+  }
+  100% {
+    transform: rotate(-45deg) scale(1) translateY(0);
+  }
+}
+
+.ring {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid var(--wf-accent);
+  transform: translate(-50%, -50%) scale(0);
+  opacity: 0.8;
+  pointer-events: none;
+}
+
+ring.r1 {
+  animation: cel-ring 1.4s ease-out 0.6s forwards;
+}
+.ring.r2 {
+  animation: cel-ring 1.4s ease-out 0.85s forwards;
+}
+
+@keyframes cel-ring {
+  to {
+    transform: translate(-50%, -50%) scale(4);
+    opacity: 0;
+  }
+}
+
+.spark {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--wf-gold);
+  transform: translate(-50%, -50%) rotate(var(--angle)) translateX(0);
+  opacity: 0;
+  animation: cel-spark 1s ease-out 0.7s forwards;
+}
+
+@keyframes cel-spark {
+  0% {
+    transform: translate(-50%, -50%) rotate(var(--angle)) translateX(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(var(--angle)) translateX(48px);
+    opacity: 0;
+  }
+}
+
+.toast {
+  position: absolute;
+  top: 90px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-10px);
+  padding: 12px 20px;
+  background: var(--wf-ink);
+  color: var(--wf-bg);
+  border-radius: 30px;
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.toast.show {
+  animation: cel-toast 2.4s ease forwards;
+}
+
+.toast .star {
+  color: var(--wf-gold);
+  margin: 0 4px;
+}
+
+@keyframes cel-toast {
+  0% {
+    transform: translateX(-50%) translateY(-10px);
+    opacity: 0;
+  }
+  15%,
+  85% {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(-50%) translateY(-10px);
+    opacity: 0;
+  }
+}

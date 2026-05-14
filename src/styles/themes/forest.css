@@ -1,0 +1,32 @@
+[data-theme='forest'] {
+  --wf-bg: #efead8;
+  --wf-bg-2: #ddd5bc;
+  --wf-ink: #1f2d1a;
+  --wf-ink-soft: #566649;
+  --wf-ink-faint: #8a957d;
+
+  --wf-hairline: rgba(31, 45, 26, 0.14);
+  --wf-hairline-soft: rgba(31, 45, 26, 0.07);
+
+  --wf-accent: #3f6b47;
+  --wf-accent-2: #2d5234;
+  --wf-gold: #d9a23f;
+  --wf-teal: #5c8466;
+
+  --wf-map-land: #d8cfb2;
+  --wf-map-road: #b9ae8e;
+  --wf-map-water: #9cb8a4;
+  --wf-map-park: #8fa975;
+
+  --wf-font-display: 'Fraunces', Georgia, serif;
+  --wf-font-body: 'Manrope', sans-serif;
+  --wf-font-handwrite: 'Kalam', cursive;
+  --wf-font-mono: 'JetBrains Mono', Menlo, monospace;
+
+  --wf-pin-shape: 50% 50% 50% 0;
+  --wf-radius-card: 14px;
+  --wf-radius-pill: 24px;
+
+  --wf-glow: 0 4px 18px rgba(63, 107, 71, 0.3);
+  --wf-glow-hover: 0 6px 24px rgba(63, 107, 71, 0.45), 0 0 32px rgba(217, 162, 63, 0.2);
+}
