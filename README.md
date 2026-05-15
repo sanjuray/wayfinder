@@ -24,7 +24,7 @@ npm run build     # production build
 
 ## What's in v1 (this baseline)
 
-- ✅ Full Angular 19 project structure (standalone components, signals)
+- ✅ Full Angular 21 project structure (standalone components, signals)
 - ✅ Seven themes via plain CSS variables (paper, neon, kyoto, mono, midnight, subway, forest)
 - ✅ Storage adapter pattern (IndexedDB v1, swappable for cloud in v2)
 - ✅ All entity stores (places, collections, trips, categories, vibe tags) with auto-seeded defaults
