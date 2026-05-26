@@ -95,19 +95,30 @@ styles: [
     `,
   ],
 })
-export class AddPlaceComponent {
+export class AddPlaceComponent implements OnInit{
   protected facade = inject(AddPlaceFacade);
   protected steps = [1, 2, 3, 4];
 
   readonly prefillCoords = input<{ lat: number; lng: number } | null>(null);
+  readonly editingPlace = input<Place | null>(null);
   readonly saved = output<Place>();
   readonly cancelled = output<void>();
 
   ngOnInit(): void {
+    const place = this.editingPlace();
+    if(place){
+      //Edit mode - pre-populate and jump to step 2
+      this.facade.enterEditMode(place);
+      return;
+    }
+
     const coords = this.prefillCoords();
     if (coords) {
+      // Map-click mode - skip to step 2 with resolved coords
       this.facade.setDraftFromMapClick(coords.lat, coords.lng);
     }
+
+    //Otherwise: normal step 1 (paste link / address)
   }
 
   async onSave(): Promise<void> {

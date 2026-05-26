@@ -5,12 +5,15 @@ import { CategoriesStore } from '../../../core/stores/categories.store';
 import { GeocodingService } from '../../../core/services/geocoding.service';
 import { GoogleMapsLinkService } from '../../../core/services/google-maps-link.service';
 import { IdService } from '../../../core/services/id.service';
+import { parseCoordinates } from '../../../core/utils/coord-parser';
 import type { Place, PlaceStatus } from '../../../core/models';
 
 export type AddStep = 1 | 2 | 3 | 4;
 
 export interface DraftPlace {
-  name: string;
+  name: string;              // POI name from geocoder (or fallback)
+  customName: string;        // user-editable label (defaults to name)
+  displayAddress: string;    // formatted address line for display
   lat: number;
   lng: number;
   locality: string;
@@ -41,6 +44,7 @@ export class AddPlaceFacade {
   readonly step = signal<AddStep>(1);
   readonly inputText = signal<string>('');
   readonly draft = signal<DraftPlace | null>(null);
+  readonly customName = signal<string>('');
   readonly categoryId = signal<string | null>(null);
   readonly vibeTagIds = signal<string[]>([]);
   readonly collectionIds = signal<string[]>([]);
@@ -49,12 +53,55 @@ export class AddPlaceFacade {
   readonly loading = signal<boolean>(false);
   readonly error = signal<string | null>(null);
 
+  /**
+   * When non-null, we are editing an existing place rather than creating one.
+   * save() will call updatePartial instead of add.
+   */
+  readonly editingPlaceId = signal<string | null>(null);
+  readonly isEditMode = computed(() => this.editingPlaceId() !== null);
+
   // ----- computed validators -----
   readonly canContinueStep1 = computed(() => this.inputText().trim().length > 0);
-  readonly canContinueStep2 = computed(() => this.draft() !== null);
+  readonly canContinueStep2 = computed(() => this.draft() !== null && this.customName().trim().length > 0);
   readonly canContinueStep3 = computed(() => this.categoryId() !== null);
 
+  // ----- edit mode entry point -----
+
+  /**
+   * Pre-populate the facade with an existing place's data and jump to step 2.
+   * Skips step 1 (address resolution) since we already have the location.
+   */
+  enterEditMode(place: Place): void {
+    this.editingPlaceId.set(place.id);
+    this.draft.set({
+      name: place.name,
+      displayAddress: place.displayAddress ?? place.name,
+      customName: place.customName ?? place.name,
+      lat: place.lat,
+      lng: place.lng,
+      locality: place.locality,
+      region: place.region,
+      country: place.country,
+      sourceUrl: place.sourceUrl,
+    });
+    this.customName.set(place.customName ?? place.name);
+    this.categoryId.set(place.categoryId);
+    this.vibeTagIds.set([...place.vibeTagIds]);
+    this.collectionIds.set([...place.collectionIds]);
+    this.status.set(place.status);
+    this.isFavorite.set(place.isFavorite);
+    this.step.set(2); // skip step 1
+  }
+
   // ----- actions -----
+  /**
+   * Resolves the input text from step 1 into a draft place. Pattern-matches
+   * input type in this priority order:
+   *   1. Coordinates (with or without degree symbols / DMS)
+   *   2. Short Google Maps link → educational help message
+   *   3. Long Google Maps URL → extract coords, reverse geocode
+   *   4. Plain text → forward geocode with comma-fallback
+   */
   async resolveInput(): Promise<void> {
     const raw = this.inputText().trim();
     if (!raw) return;
@@ -63,37 +110,41 @@ export class AddPlaceFacade {
     this.error.set(null);
 
     try {
+      // Case 1: coordinates (any format)
+      const coords = parseCoordinates(raw);
+      if (coords) {
+        await this.resolveFromCoords(coords.lat, coords.lng, undefined, raw);
+        return;
+      }
+
+      // Case 2 & 3: Google Maps URL
       const parsed = this.mapsLink.parse(raw);
 
       if (parsed.needsExpansion) {
         this.error.set(
-          'Short Google Maps links need server expansion (not in v1). Paste the full URL or an address.'
+          "Short Google Maps links can't be read directly in the browser. " +
+            'To get the full link: open the link in Google Maps → tap the place name → ' +
+            'tap Share → Copy link. Paste that here.'
         );
         return;
       }
-
-      // We have explicit coordinates from a parsed URL
       if (parsed.lat !== undefined && parsed.lng !== undefined) {
-        const reverse = await this.geocoding.reverse(parsed.lat, parsed.lng);
-        this.draft.set({
-          name: parsed.name ?? reverse?.name ?? `${parsed.lat}, ${parsed.lng}`,
-          lat: parsed.lat,
-          lng: parsed.lng,
-          locality: reverse?.locality ?? '',
-          region: reverse?.region ?? '',
-          country: reverse?.country ?? '',
-          sourceUrl: parsed.raw,
-        });
-        this.step.set(2);
+        await this.resolveFromCoords(parsed.lat, parsed.lng, parsed.name, parsed.raw);
         return;
       }
 
-      // Treat as freeform address — try forward geocode
-      let results = await this.geocoding.forward(raw);
+      // Case 4: forward geocode plain text
+      let query = raw;
 
-      // Fallback: if first attempt returned nothing AND query has commas,
-      // try again with commas stripped. Helps with informal input like
-      // "kfc, lb nagar" where Nominatim's structured parser fails.
+      // NEW: handle Plus Code fragments better
+      if (looksLikePlusCode(raw)) {
+        // IMPORTANT: force better context formatting for OSM/Nominatim
+        query = raw.split(',').slice(1).join(',')
+      }
+
+      let results = await this.geocoding.forward(query);
+
+      // Comma-strip fallback (existing behaviour)
       if (results.length === 0 && raw.includes(',')) {
         const noCommas = raw.replace(/,/g, ' ').replace(/\s+/g, ' ').trim();
         results = await this.geocoding.forward(noCommas);
@@ -106,16 +157,18 @@ export class AddPlaceFacade {
         return;
       }
 
-      // Take the top result; multi-candidate picker is a v1.1 enhancement
       const r = results[0];
       this.draft.set({
         name: r.name,
+        customName: r.name, // default editable name
+        displayAddress: r.displayAddress,
         lat: r.lat,
         lng: r.lng,
         locality: r.locality,
         region: r.region,
         country: r.country,
       });
+      this.customName.set(r.name);
       this.step.set(2);
     } catch {
       this.error.set('Network problem. Check your connection or click the map directly.');
@@ -123,38 +176,62 @@ export class AddPlaceFacade {
       this.loading.set(false);
     }
   }
-
-
   /**
-   * Used when the user closes the modal and clicks the map manually.
+   * Map click → skip step 1, jump straight to step 2 with reverse geocode.
    */
   async setDraftFromMapClick(lat: number, lng: number, name?: string): Promise<void> {
     this.loading.set(true);
     try {
-      const r = await this.geocoding.reverse(lat, lng);
-      this.draft.set({
-        name: name ?? r?.name ?? `${lat.toFixed(4)}, ${lng.toFixed(4)}`,
-        lat,
-        lng,
-        locality: r?.locality ?? '',
-        region: r?.region ?? '',
-        country: r?.country ?? '',
-      });
-      this.step.set(2);
+      await this.resolveFromCoords(lat, lng, name);
     } catch {
+      const fallback = name ?? `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
       // Even if reverse geocode fails, we still have coords — let user proceed
       this.draft.set({
-        name: name ?? `${lat.toFixed(4)}, ${lng.toFixed(4)}`,
+        name: fallback,
+        customName: fallback,
+        displayAddress: '',
         lat,
         lng,
         locality: '',
         region: '',
         country: '',
       });
+      this.customName.set(this.draft()?.customName ?? '');
       this.step.set(2);
     } finally {
       this.loading.set(false);
     }
+  }
+
+  /**
+   * Shared helper: given lat/lng, reverse geocode and populate the draft.
+   * Falls back to coordinate-string name if reverse geocode fails.
+   */
+  private async resolveFromCoords(
+    lat: number,
+    lng: number,
+    presetName?: string,
+    sourceUrl?: string
+  ): Promise<void> {
+    const reverse = await this.geocoding.reverse(lat, lng);
+    const name =
+      presetName ?? reverse?.name ?? `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+    const displayAddress = reverse?.displayAddress ?? '';
+
+    this.draft.set({
+      name,
+      customName: name,
+      displayAddress,
+      lat,
+      lng,
+      locality: reverse?.locality ?? '',
+      region: reverse?.region ?? '',
+      country: reverse?.country ?? '',
+      sourceUrl,
+    });
+
+    this.customName.set(name);
+    this.step.set(2);
   }
 
   goNext(): void {
@@ -183,10 +260,31 @@ async save(): Promise<Place | null> {
     const categoryId = this.categoryId();
     if (!draft || !categoryId) return null;
 
+    const editedName = this.customName().trim();
+    const customName =
+      editedName && editedName !== draft.name ? editedName : undefined;
     const now = new Date().toISOString();
+
+    if (this.isEditMode()) {
+      // Edit mode — update the existing record
+      const id = this.editingPlaceId()!;
+      await this.placesStore.updatePartial(id, {
+        customName,
+        categoryId,
+        vibeTagIds: this.vibeTagIds(),
+        collectionIds: this.collectionIds(),
+        status: this.status(),
+        isFavorite: this.isFavorite(),
+        updatedAt: now,
+      });
+      // Return the updated place so the caller can react
+      return this.placesStore.getById(id) ?? null;
+    }
+
     const place: Place = {
       id: this.idService.newId(),
       name: draft.name,
+      displayAddress: draft.displayAddress || undefined,
       lat: draft.lat,
       lng: draft.lng,
       locality: draft.locality,
@@ -198,19 +296,22 @@ async save(): Promise<Place | null> {
       status: this.status(),
       isFavorite: this.isFavorite(),
       visits: [],
+      // Save custom name only if it differs from the default — keeps records clean
+      customName,
       sourceUrl: draft.sourceUrl,
       createdAt: now,
       updatedAt: now,
     };
 
     await this.placesStore.add(place);
-    return place;
-  }
+      return place;
+    }
 
   reset(): void {
     this.step.set(1);
     this.inputText.set('');
     this.draft.set(null);
+    this.customName.set('');
     this.categoryId.set(null);
     this.vibeTagIds.set([]);
     this.collectionIds.set([]);
@@ -218,5 +319,10 @@ async save(): Promise<Place | null> {
     this.isFavorite.set(false);
     this.error.set(null);
     this.loading.set(false);
+    this.editingPlaceId.set(null);
   }
+}
+
+function looksLikePlusCode(input: string): boolean {
+  return /\b[A-Z0-9]{4,}\+[A-Z0-9]{2,}\b/i.test(input);
 }

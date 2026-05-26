@@ -8,7 +8,8 @@ import { AddPlaceFacade } from '../add-place.facade';
   imports: [FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <h3>Drop a new place</h3>
+    <!-- <h3>Drop a new place</h3> -->
+    <h2>{{ facade.isEditMode() ? 'Edit place' : 'Drop a new place' }}</h2>
     <p class="sub">Where do you want to remember?</p>
 
     <input
@@ -21,7 +22,8 @@ import { AddPlaceFacade } from '../add-place.facade';
     />  
     <p class="help">
       Google Maps links resolve automatically. For reels or shorts, paste the caption or address.
-      Or close this and click anywhere on the map.
+      Or close this and click any where on the map.<br/>
+      (!) -> Address with Geocode like: 'GFJ8+M6C, Village, State Pincode' will resolve in lower precision
     </p>
 
     @if (facade.error(); as err) {

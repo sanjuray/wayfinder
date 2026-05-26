@@ -5,140 +5,349 @@
   z-index: 2000;
 }
 
+/* Soft overlay that dims the map briefly */
 .overlay {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.35);
+  background: color-mix(in srgb, var(--wf-ink) 25%, transparent);
   opacity: 0;
   transition: opacity 0.3s ease;
 }
-
 .overlay.show {
   opacity: 1;
-  animation: cel-overlay-out 0.6s ease 1.8s forwards;
+  animation: cel-overlay-out 0.5s ease 1.7s forwards;
 }
-
 @keyframes cel-overlay-out {
   to {
     opacity: 0;
   }
 }
 
-.pin-wrap {
+/* The stage holds compass + pin, positioned at the pin's lat/lng */
+.stage {
   position: absolute;
-  transform: translate(-50%, -100%);
+  transform: translate(-50%, -50%);
+  width: 80px;
+  height: 80px;
   opacity: 0;
 }
-
-.pin-wrap.show {
-  animation: cel-show 0.05s forwards;
+.stage.show {
+  animation: cel-stage-show 0.05s forwards;
 }
-
-@keyframes cel-show {
+@keyframes cel-stage-show {
   to {
     opacity: 1;
   }
 }
 
-.pin {
-  width: 36px;
-  height: 44px;
-  border-radius: var(--wf-pin-shape, 50% 50% 50% 0);
-  transform: rotate(-45deg) scale(0);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
-  animation: cel-pin-drop 0.85s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+/* ============ COMPASS RIM ============ */
+.rim {
+  position: absolute;
+  inset: 0;
+  border: 2px solid var(--wf-ink);
+  border-radius: 50%;
+  opacity: 0;
+  background: color-mix(in srgb, var(--wf-bg) 80%, transparent);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--wf-ink) 25%, transparent);
+  animation: cel-rim 2.4s ease-out forwards;
 }
-
-.pin .ico {
-  transform: rotate(45deg);
-  font-size: 16px;
-  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.3));
-}
-
-@keyframes cel-pin-drop {
+@keyframes cel-rim {
   0% {
-    transform: rotate(-45deg) scale(0) translateY(-60px);
+    opacity: 0;
+    transform: scale(0.6);
   }
-  60% {
-    transform: rotate(-45deg) scale(1.15) translateY(0);
+  8% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  54% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  64% {
+    opacity: 1;
+    transform: scale(1.1);
   }
   100% {
-    transform: rotate(-45deg) scale(1) translateY(0);
+    opacity: 0;
   }
 }
 
-.ring {
+
+/* ============ CARDINAL DIRECTIONS (N/S/E/W) ============ */
+.cardinal {
   position: absolute;
-  top: 8px;
+  font-family: var(--wf-font-display);
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--wf-ink);
+  opacity: 0;
+  animation: cel-cardinal 2.4s ease-out forwards;
+}
+.cardinal.n {
+  top: 4px;
   left: 50%;
-  width: 30px;
-  height: 30px;
+  transform: translateX(-50%);
+}
+.cardinal.s {
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+.cardinal.e {
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+}
+.cardinal.w {
+  top: 50%;
+  left: 6px;
+  transform: translateY(-50%);
+}
+@keyframes cel-cardinal {
+  0%,
+  8% {
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.7;
+  }
+  54% {
+    opacity: 0.7;
+  }
+  64% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+/* ============ THE WOBBLING NEEDLE ============ */
+.needle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 3px;
+  height: 60%;
+  transform: translate(-50%, -50%) rotate(0deg);
+  transform-origin: center;
+  opacity: 0;
+  background: linear-gradient(
+    to bottom,
+    var(--wf-accent) 0%,
+    var(--wf-accent) 50%,
+    var(--wf-ink) 50%,
+    var(--wf-ink) 100%
+  );
+  border-radius: 2px;
+  animation: cel-needle 2.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+@keyframes cel-needle {
+  0%,
+  8% {
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  12% {
+    opacity: 1;
+    transform: translate(-50%, -50%) rotate(-90deg);
+  }
+  22% {
+    transform: translate(-50%, -50%) rotate(140deg);
+  }
+  32% {
+    transform: translate(-50%, -50%) rotate(-50deg);
+  }
+  42% {
+    transform: translate(-50%, -50%) rotate(30deg);
+  }
+  50% {
+    transform: translate(-50%, -50%) rotate(-15deg);
+  }
+  58% {
+    transform: translate(-50%, -50%) rotate(0deg);
+    opacity: 1;
+  }
+  68% {
+    opacity: 1;
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  78% {
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(0deg) scale(0.8);
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+
+
+/* ============ TARGET LOCK RINGS ============ */
+/*
+ * Two concentric rings lock in around the location after the needle settles.
+ * They stay visible through the pin landing to anchor the position, then fade
+ * with the pin at the end.
+ */
+.target-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  border: 2px solid;
   border-radius: 50%;
-  border: 2px solid var(--wf-accent);
   transform: translate(-50%, -50%) scale(0);
-  opacity: 0.8;
-  pointer-events: none;
+  opacity: 0;
+}
+.target-ring.r2 {
+  width: 56px;
+  height: 56px;
+  animation: cel-target-ring-2 2.4s ease-out forwards;
+}
+.target-ring.r1 {
+  width: 36px;
+  height: 36px;
+  animation: cel-target-ring-1 2.4s ease-out forwards;
+}
+@keyframes cel-target-ring-2 {
+  0%,
+  60% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0);
+  }
+  66% {
+    opacity: 0.45;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  90% {
+    opacity: 0.45;
+    transform: translate(-50%, -50%) scale(1);
+  }
+100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.08);
+  }
+}
+@keyframes cel-target-ring-1 {
+  0%,
+  64% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0);
+  }
+  70% {
+    opacity: 0.7;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  90% {
+    opacity: 0.7;
+    transform: translate(-50%, -50%) scale(1);
+  }
+100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.08);
+  }
 }
 
-ring.r1 {
-  animation: cel-ring 1.4s ease-out 0.6s forwards;
+/* ============ PIN STEM ============ */
+/* Vertical line that grows upward from the location point */
+.stem {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 2.5px;
+  height: 28px;
+  background: var(--wf-ink);
+  border-radius: 1.5px;
+  transform: translate(-50%, calc(-100% - 2px)) scaleY(0);
+  transform-origin: bottom;
+  animation: cel-stem 2.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
-.ring.r2 {
-  animation: cel-ring 1.4s ease-out 0.85s forwards;
-}
-
-@keyframes cel-ring {
-  to {
-    transform: translate(-50%, -50%) scale(4);
+@keyframes cel-stem {
+  0%,
+  68% {
+    transform: translate(-50%, calc(-100% - 2px)) scaleY(0);
+  }
+  77% {
+    transform: translate(-50%, calc(-100% - 2px)) scaleY(1);
+  }
+  90% {
+    transform: translate(-50%, calc(-100% - 2px)) scaleY(1);
+  }
+  100% {
+    transform: translate(-50%, calc(-100% - 2px)) scaleY(1);
     opacity: 0;
   }
 }
 
-.spark {
+/* ============ PIN HEAD ============ */
+/* Colored ball drops from above and lands on top of the stem */
+.pin-head {
   position: absolute;
-  top: 16px;
+top: 50%;
   left: 50%;
-  width: 4px;
-  height: 4px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
-  background: var(--wf-gold);
-  transform: translate(-50%, -50%) rotate(var(--angle)) translateX(0);
+  transform: translate(-50%, calc(-100% - 30px)) translateY(-80px) scale(0.8);
   opacity: 0;
-  animation: cel-spark 1s ease-out 0.7s forwards;
+  box-shadow: 0 3px 10px color-mix(in srgb, var(--wf-ink) 40%, transparent);
+  animation: cel-pin-head 2.4s cubic-bezier(0.5, 0, 0.1, 1) forwards;
 }
-
-@keyframes cel-spark {
-  0% {
-    transform: translate(-50%, -50%) rotate(var(--angle)) translateX(0);
+@keyframes cel-pin-head {
+  0%,
+  70% {
+    transform: translate(-50%, calc(-100% - 30px)) translateY(-80px) scale(0.8);
+    opacity: 0;
+  }
+  72% {
+    transform: translate(-50%, calc(-100% - 30px)) translateY(-80px) scale(0.8);
+    opacity: 1;
+  }
+ 82% {
+    transform: translate(-50%, calc(-100% - 30px)) translateY(0) scale(1.2);
+    opacity: 1;
+  }
+  88% {
+    transform: translate(-50%, calc(-100% - 30px)) translateY(0) scale(0.92);
+  }
+  92% {
+    transform: translate(-50%, calc(-100% - 30px)) translateY(0) scale(1);
     opacity: 1;
   }
   100% {
-    transform: translate(-50%, -50%) rotate(var(--angle)) translateX(48px);
+    transform: translate(-50%, calc(-100% - 30px)) translateY(0) scale(1);
     opacity: 0;
   }
 }
 
+
+/* ============ TOAST ============ */
 .toast {
   position: absolute;
-  top: 90px;
+  bottom: 48px;
   left: 50%;
-  transform: translateX(-50%) translateY(-10px);
-  padding: 12px 20px;
-  background: var(--wf-ink);
-  color: var(--wf-bg);
-  border-radius: 30px;
+  transform: translateX(-50%) translateY(10px);
+  padding: 12px 22px;
+  background: color-mix(in srgb, var(--wf-bg) 70%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid color-mix(in srgb, var(--wf-accent) 50%, transparent);
+  border-radius: var(--wf-radius-pill);
+  color: var(--wf-ink);
   font-size: 13px;
   font-weight: 500;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+  box-shadow:
+    0 0 24px color-mix(in srgb, var(--wf-accent) 20%, transparent),
+    0 4px 16px color-mix(in srgb, var(--wf-accent) 12%, transparent);
   opacity: 0;
   pointer-events: none;
+  white-space: nowrap;
 }
 
+
 .toast.show {
-  animation: cel-toast 2.4s ease forwards;
+  animation: cel-toast 3.4s ease forwards;
 }
 
 .toast .star {
@@ -148,7 +357,7 @@ ring.r1 {
 
 @keyframes cel-toast {
   0% {
-    transform: translateX(-50%) translateY(-10px);
+    transform: translateX(-50%) translateY(10px);
     opacity: 0;
   }
   15%,
@@ -157,7 +366,8 @@ ring.r1 {
     opacity: 1;
   }
   100% {
-    transform: translateX(-50%) translateY(-10px);
+    transform: translateX(-50%) translateY(10px);
     opacity: 0;
   }
 }
+

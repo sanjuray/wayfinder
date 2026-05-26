@@ -57,7 +57,9 @@ import { CollectionsStore } from '../../../../core/stores/collections.store';
 
     <div class="actions">
       <button class="btn" (click)="facade.goBack()">Back</button>
-      <button class="btn primary" (click)="save.emit()">✦ Drop pin</button>
+      <button class="btn primary" (click)="save.emit()">
+      {{ facade.isEditMode() ? 'Save changes' : '✦ Drop pin' }}
+      </button>
     </div>
   `,
   styles: [

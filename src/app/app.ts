@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { Component, effect, inject, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 
 import { ThemeService } from './core/services/theme.service';
@@ -28,10 +28,16 @@ export class App implements OnInit {
   private places = inject(PlacesStore);
   private trips = inject(TripsStore);
 
+  constructor(){
+    effect(() =>{
+      this.themeService.apply(this.appState.themePreference());
+    })
+  }
+
   async ngOnInit(): Promise<void> {
     // Load app state first (theme preference lives there)
     await this.appState.load();
-    this.themeService.apply(this.appState.themePreference());
+    // this.themeService.apply(this.appState.themePreference());
     this.taglineService.startShuffle();
 
     // Then load all entity stores in parallel

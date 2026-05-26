@@ -7,6 +7,13 @@ export const routes: Routes = [
       import('./features/home/home.component').then((m) => m.HomeComponent),
   },
   {
+    path: 'collections',
+    loadComponent: () =>
+      import('./features/collections/collections-list.component').then(
+        (m) => m.CollectionsListComponent
+      ),
+  },
+  {
     path: 'collections/:id',
     loadComponent: () =>
       import('./features/collections/collection-detail.component').then(

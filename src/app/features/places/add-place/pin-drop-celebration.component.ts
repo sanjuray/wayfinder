@@ -9,36 +9,55 @@ import {
 
 /**
  * The signature visual moment. Plays once per save:
- * dim overlay → pin scales in with bounce → 2 pulse rings → 12 sparkles → toast.
- * Total ~2.4s. Fires done event when finished so the parent can clean up.
+ *
+ *  1. Compass rim fades in at the pin's lat/lng (~0.2s)
+ *  2. Needle appears and wavers like a real magnetic needle searching for north (~1.2s)
+ *  3. Needle snaps to position (the lat/lng) (~0.1s)
+ *  4. Pin emerges from the compass center with a slight bounce (~0.5s)
+ *  5. Toast slides up from the bottom (~2.4s total)
+ *
+ * Total runtime: ~2.4s. Fires `done` event when finished so the parent
+ * can clean up.
  */
+
 @Component({
   selector: 'wf-pin-drop-celebration',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="overlay" [class.show]="show()"></div>
-    <div
-      class="pin-wrap"
-      [class.show]="show()"
-      [style.left.px]="x()"
-      [style.top.px]="y()"
-    >
-      <div class="ring r1"></div>
-      <div class="ring r2"></div>
-      <div class="pin" [style.background]="color()">
-        <span class="ico">📍</span>
-      </div>
-      @for (a of angles; track a) {
-        <div class="spark" [style.--angle.deg]="a"></div>
-      }
-    </div>
+      <div class="overlay" [class.show]="show()"></div>
 
-    @if (placeName()) {
-      <div class="toast" [class.show]="show()">
-        Saved <span class="star">✦</span> {{ placeName() }}
-      </div>
-    }
+  <div
+    class="stage"
+    [class.show]="show()"
+    [style.left.px]="x()"
+    [style.top.px]="y()"
+  >
+    <!-- The compass that appears at the location -->
+    <div class="rim"></div>
+    <div class="cardinal n">N</div>
+    <div class="cardinal s">S</div>
+    <div class="cardinal e">E</div>
+    <div class="cardinal w">W</div>
+
+    <!-- The wobbling needle -->
+    <div class="needle"></div>
+    <!-- Target rings: lock in after the needle settles, anchor through the landing -->
+    <div class="target-ring r2" [style.border-color]="color()"></div>
+    <div class="target-ring r1" [style.border-color]="color()"></div>
+
+    <!-- Pin stem grows up first -->
+    <div class="stem"></div>
+
+    <!-- Pin head drops from above onto the stem -->
+    <div class="pin-head" [style.background]="color()"></div>
+  </div>
+
+  @if (placeName()) {
+    <div class="toast" [class.show]="show()">
+      Saved <span class="star">✦</span> {{ placeName() }}
+    </div>
+  }
   `,
   styleUrl: './pin-drop-celebration.component.css',
 })
@@ -50,7 +69,6 @@ export class PinDropCelebrationComponent implements AfterViewInit {
   readonly done = output<void>();
 
   protected show = signal(false);
-  protected angles = [0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330];
 
   ngAfterViewInit(): void {
     requestAnimationFrame(() => this.show.set(true));

@@ -18,7 +18,7 @@ export interface AppState {
   autoShiftToDuskAtNight: boolean;
   taunting: { enabled: boolean; dynamicQuotesEnabled: boolean };
   storageMode: 'folder' | 'browser';
-  lastBackupAt?: ISODate;
+  lastBackupAt: string | undefined; // stores date
   autoBackupFrequency: 'never' | 'daily' | 'weekly' | 'monthly';
   // v2 stubs (always null in v1)
   syncMode?: 'off' | 'cloud';
@@ -32,6 +32,7 @@ export const DEFAULT_APP_STATE: AppState = {
   autoShiftToDuskAtNight: true,
   taunting: { enabled: true, dynamicQuotesEnabled: true },
   storageMode: 'browser',
+  lastBackupAt: undefined,
   autoBackupFrequency: 'weekly',
   syncMode: 'off',
 };

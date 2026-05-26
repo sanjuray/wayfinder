@@ -11,17 +11,21 @@ export type ISODate = string;
 
 export type PlaceStatus = 'planned' | 'visited';
 
+export type VisitRating = 'thumbs-up' | 'thumbs-down' | 'meh';
+
 export interface Visit {
   id: string;
   date: ISODate;
-  rating?: 'thumbs-up' | 'thumbs-down' | 'meh';
+  rating?: VisitRating;
   note?: string;
   photoUrls?: string[];
+  createdAt: ISODate;
 }
 
 export interface Place {
   id: string;
   name: string;
+  displayAddress?: string;
   lat: number;
   lng: number;
   locality: string;
@@ -33,6 +37,7 @@ export interface Place {
   status: PlaceStatus;
   isFavorite: boolean;
   visits: Visit[];
+  customName?: string;
   reviewText?: string;
   customNotes?: string;
   sourceUrl?: string;

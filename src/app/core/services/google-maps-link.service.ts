@@ -20,8 +20,9 @@ export class GoogleMapsLinkService {
   parse(input: string): ParsedMapsLink {
     const trimmed = input.trim();
 
-    // Short link maps.app.goo.gl/xxx — needs server-side expansion
-    if (/maps\.app\.goo\.gl/i.test(trimmed)) {
+    // Short link maps.app.goo.gl/xxx — needs server-side expansion 
+    // Short link share.google/xxx - needs server-side expansion
+    if (/(maps\.app\.goo\.gl|share\.google)/i.test(trimmed)) {
       return { raw: trimmed, needsExpansion: true };
     }
 

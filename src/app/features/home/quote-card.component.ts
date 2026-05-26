@@ -75,6 +75,6 @@ export class QuoteCardComponent implements AfterViewInit {
 
   ngAfterViewInit(): void {
     requestAnimationFrame(() => this.show.set(true));
-    setTimeout(() => this.done.emit(), 4000);
+    setTimeout(() => this.done.emit(), 6000);
   }
 }
