@@ -1,48 +1,44 @@
 import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
-import { RouterLink } from '@angular/router';
 import { TripsStore } from '../../core/stores/trips.store';
 
+/**
+ * Phase 6 placeholder. Real list view lands when Phase 6 starts.
+ * Renders inside WorkspaceShellComponent.
+ */
 @Component({
   selector: 'wf-trips-so-far',
   standalone: true,
-  imports: [RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="page">
-      <a routerLink="/" class="back">← back to map</a>
-      <h1>Trips so far</h1>
-      <p class="meta">
-        {{ trips.entities().length }} total · {{ trips.upcoming().length }} upcoming
-      </p>
-      <p class="todo">TODO: trips list view per spec section 5.5.</p>
+      <header class="head">
+        <h1>Trips so far</h1>
+        <p class="meta">
+          {{ trips.entities().length }} total · {{ trips.upcoming().length }} upcoming
+        </p>
+      </header>
+      <div class="placeholder">
+        <p>Trips list view — coming in Phase 6.</p>
+      </div>
     </div>
   `,
-  styles: [
-    `
-      .page {
-        padding: 32px;
-        color: var(--wf-ink);
-      }
-      .back {
-        font-size: 13px;
-        color: var(--wf-ink-soft);
-        text-decoration: none;
-      }
-      h1 {
-        font-family: var(--wf-font-display);
-        margin: 16px 0 4px;
-      }
-      .meta {
-        font-size: 13px;
-        color: var(--wf-ink-soft);
-      }
-      .todo {
-        color: var(--wf-ink-faint);
-        font-style: italic;
-        margin-top: 24px;
-      }
-    `,
-  ],
+  styles: [`
+    .page { height: 100%; background: var(--wf-bg); padding: 24px 28px; overflow-y: auto; }
+    .head { margin-bottom: 24px; }
+    h1 {
+      margin: 0;
+      font-family: var(--wf-font-display);
+      font-size: 28px; font-weight: 500;
+      letter-spacing: -0.4px;
+      color: var(--wf-ink);
+    }
+    .meta { font-size: 13px; color: var(--wf-ink-soft); margin: 6px 0 0; }
+    .placeholder {
+      max-width: 480px; margin: 60px auto;
+      text-align: center; color: var(--wf-ink-soft);
+    }
+    .placeholder p { font-size: 14px; line-height: 1.6; margin: 0 0 8px; }
+  `],
 })
 export class TripsSoFarComponent {
   protected trips = inject(TripsStore);

@@ -1,0 +1,141 @@
+.shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: var(--wf-bg);
+}
+
+/* TOPBAR ------------------------------- */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 22px;
+  border-bottom: 0.5px solid var(--wf-hairline);
+  background: var(--wf-bg);
+  gap: 24px;
+  flex-shrink: 0;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.logo-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.logo-mark svg {
+  display: block;
+}
+.brand-text {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  line-height: 1;
+}
+.brand-name {
+  font-family: var(--wf-font-display);
+  font-size: 21px;
+  letter-spacing: -0.4px;
+  font-weight: 500;
+  color: var(--wf-ink);
+}
+.brand-sep {
+  font-size: 14px;
+  color: var(--wf-ink-faint);
+  font-family: var(--wf-font-display);
+}
+.brand-tagline {
+  font-family: var(--wf-font-handwrite);
+  font-size: 13px;
+  color: var(--wf-accent);
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+}
+
+/* nav tabs */
+.nav {
+  display: flex;
+  gap: 4px;
+}
+.nav a {
+  background: transparent;
+  border: none;
+  font-size: 13px;
+  padding: 7px 13px;
+  border-radius: 8px;
+  color: var(--wf-ink);
+  cursor: pointer;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+.nav a:hover {
+  background: var(--wf-hairline);
+}
+.nav a.on {
+  background: var(--wf-ink);
+  color: var(--wf-bg);
+}
+
+/* right cluster: save-status + icons */
+.topbar-right {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-shrink: 0;
+}
+.save-status {
+  font-size: 11px;
+  color: var(--wf-ink-faint);
+  margin-right: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: default;
+}
+.save-status .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--wf-teal);
+}
+.save-status .dot.stale {
+  background: var(--wf-accent);
+}
+.iconbtn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 0.5px solid var(--wf-hairline);
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--wf-ink);
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+.iconbtn:hover {
+  background: var(--wf-hairline);
+}
+.iconbtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* OUTLET ------------------------------- */
+/* Child routes fill the remaining height. Each route owns its own internal
+ * layout (sidebar + map for home, header + grid for collections, etc.). */
+.outlet {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  overflow: hidden;
+}

@@ -1,130 +1,76 @@
-<div class="page">
-  <!-- Topbar -->
-  <header class="topbar">
-  <div class="brand">
-    <span class="logo-mark">
-      <svg width="26" height="30" viewBox="0 0 42 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M21 2 C9.95 2 1 10.95 1 22 C1 36 21 46 21 46 C21 46 41 36 41 22 C41 10.95 32.05 2 21 2 Z"
-          fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round"
-          style="color: var(--wf-ink)" />
-        <path d="M21 11 L23 19 L31 21 L23 23 L21 31 L19 23 L11 21 L19 19 Z" fill="var(--wf-accent)" />
-        <circle cx="21" cy="21" r="2.2" fill="var(--wf-bg)" />
-      </svg>
-    </span>
-    <div class="brand-text">
-      <span class="brand-name">wayfinder</span>
-      <span class="brand-sep">·</span>
-      <span class="brand-tagline">{{ tagline.current() }}</span>
-    </div>
-  </div>
-
-  <nav class="nav">
-    <a routerLink="/" routerLinkActive="on" [routerLinkActiveOptions]="{ exact: true }">Map</a>
-    <a routerLink="/collections" routerLinkActive="on">Collections</a>
-    <a routerLink="/trips" routerLinkActive="on">Trips</a>
-  </nav>
-
-  <div class="topbar-right">
-    <span class="save-status" [title]="backupStatusTooltip()">
-      <span class="dot" [class.stale]="backupIsStale()"></span>
-      {{ backupStatusLabel() }}
-    </span>
-    <button class="iconbtn" disabled title="Search — coming soon" aria-label="Search">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="11" cy="11" r="7"/>
-        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-      </svg>
-    </button>
-    <a routerLink="/settings" class="iconbtn" aria-label="Settings" title="Settings">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="3"/>
-        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-      </svg>
-    </a>
-  </div>
-</header>
-
-
-
+<div class="map-view">
   <div class="body">
-    <!-- Sidebar -->
+    <!-- Sidebar (map-only — Categories + Collections filter the map) -->
     <aside class="sidebar">
       <div class="section">
         <section class="cat-section">
-  <div class="cat-header">
-    <h3 class="aside-label">Categories</h3>
-    <button
-      class="filter-btn"
-      [class.active]="filters.anyFilterActive()"
-      (click)="toggleFilterPopover()"
-      aria-label="Open filters"
-      title="Filters"
-    >
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M3 6h18M7 12h10M11 18h2"/>
-      </svg>
-    </button>
-
-  </div>
-<ul class="cat-list">
-    @for (cat of categories.entities(); track cat.id) {
-      <li
-        class="cat-item"
-        [class.active]="filters.selectedCategoryIds().includes(cat.id)"
-        (click)="onSidebarCategoryClick(cat.id)"
-      >
-        <span class="dot" [style.background]="cat.color"></span>
-        <span class="cat-name">{{ cat.name }}</span>
-        <span class="cat-count">{{ categoryCount(cat.id) }}</span>
-      </li>
-    }
-  </ul>
-</section>
-
+          <div class="cat-header">
+            <h3 class="aside-label">Categories</h3>
+            <button
+              class="filter-btn"
+              [class.active]="filters.anyFilterActive()"
+              (click)="toggleFilterPopover()"
+              aria-label="Open filters"
+              title="Filters"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 6h18M7 12h10M11 18h2"/>
+              </svg>
+            </button>
+          </div>
+          <ul class="cat-list">
+            @for (cat of categories.entities(); track cat.id) {
+              <li
+                class="cat-item"
+                [class.active]="filters.selectedCategoryIds().includes(cat.id)"
+                (click)="onSidebarCategoryClick(cat.id)"
+              >
+                <span class="dot" [style.background]="cat.color"></span>
+                <span class="cat-name">{{ cat.name }}</span>
+                <span class="cat-count">{{ categoryCount(cat.id) }}</span>
+              </li>
+            }
+          </ul>
+        </section>
       </div>
 
-    <div class="section">
-      <h3 class="aside-label">Collections</h3>
-      @if (sortedCollections().length === 0) {
-        <p class="empty">No collections yet.</p>
-      } @else {
-        <ul class="coll-list">
-          @for (col of sortedCollections(); track col.id) {
-            <li
-              class="coll-item"
-              [class.active]="filters.selectedCollectionId() === col.id"
-              (click)="onSidebarCollectionClick(col.id)"
-            >
-              <div class="coll-cover" [style.background]="coverGradientFor(col)">
-                <i class="ti" [class]="'ti-' + (col.coverIcon || 'folder')"></i>
-              </div>
-              <span class="coll-name">{{ col.name }}</span>
-              <span class="coll-count">{{ collectionCount(col.id) }}</span>
-            </li>
-          }
-        </ul>
-      }
-    </div>
-
+      <div class="section">
+        <h3 class="aside-label">Collections</h3>
+        @if (sortedCollections().length === 0) {
+          <p class="empty">No collections yet.</p>
+        } @else {
+          <ul class="coll-list">
+            @for (col of sortedCollections(); track col.id) {
+              <li
+                class="coll-item"
+                [class.active]="filters.selectedCollectionId() === col.id"
+                (click)="onSidebarCollectionClick(col.id)"
+              >
+                <div class="coll-cover" [style.background]="coverGradientFor(col)">
+                  <i class="ti" [class]="'ti-' + (col.coverIcon || 'folder')"></i>
+                </div>
+                <span class="coll-name">{{ col.name }}</span>
+                <span class="coll-count">{{ collectionCount(col.id) }}</span>
+              </li>
+            }
+          </ul>
+        }
+      </div>
     </aside>
 
     <!-- Map -->
     <div class="map-area">
+      @if (showFilterPopover()) {
+        <wf-filter-popover (closed)="onFilterPopoverClose()" />
+      }
 
-      
-    @if (showFilterPopover()) {
-      <wf-filter-popover (closed)="onFilterPopoverClose()" />
-    }
-
-    @if (filters.anyFilterActive()) {
-    <div class="filter-pill" [class.detail-open]="isPlaceDetailOpen()">
-      Showing: <strong>{{ filterSummary() }}</strong>
-      <button class="pill-clear" (click)="clearAllFilters()" aria-label="Clear filters">×</button>
-    </div>
-  }
+      @if (filters.anyFilterActive()) {
+        <div class="filter-pill" [class.detail-open]="isPlaceDetailOpen()">
+          Showing: <strong>{{ filterSummary() }}</strong>
+          <button class="pill-clear" (click)="clearAllFilters()" aria-label="Clear filters">×</button>
+        </div>
+      }
 
       <div class="map" #mapEl></div>
 
@@ -135,12 +81,12 @@
   </div>
 
   @if (emptyStateVariant(); as variant) {
-  <wf-empty-state
-    [variant]="variant"
-    (addPlace)="onAddPlaceFromEmptyState()"
-    (clearFilters)="clearAllFilters()"
-  />
-}
+    <wf-empty-state
+      [variant]="variant"
+      (addPlace)="onAddPlaceFromEmptyState()"
+      (clearFilters)="clearAllFilters()"
+    />
+  }
 
   <!-- Add-place modal -->
   @if (showAddModal()) {
@@ -165,19 +111,16 @@
 
   <!-- Quote card (easter egg) -->
   @if (activeQuote(); as q) {
-  <wf-quote-card
-    [text]="q.text"
-    [x]="q.x"
-    [y]="q.y"
-    (done)="onQuoteDone()"
-  />
+    <wf-quote-card
+      [text]="q.text"
+      [x]="q.x"
+      [y]="q.y"
+      (done)="onQuoteDone()"
+    />
   }
 
   <wf-place-detail
     (closed)="onPlaceDetailClosed()"
     (editRequested)="onEditPlace($event)"
   />
-
 </div>
-
-  

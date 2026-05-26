@@ -17,7 +17,6 @@ import { PIN_ICON_PATHS } from './pin-icons';
 import { PlaceDetailComponent } from '../places/place-detail/place-detail.component';
 import { QuoteService } from '../../core/services/quote.service';
 import { QuoteCardComponent } from './quote-card.component';
-import { RouterLink, RouterLinkActive } from '@angular/router';
 import { gradientCss } from '../../core/constants/collection-covers';
 import type { CollectionCoverGradient } from '../../core/models';
 import * as L from 'leaflet';
@@ -26,14 +25,11 @@ import 'leaflet.markercluster';
 import { PlacesStore } from '../../core/stores/places.store';
 import { CategoriesStore } from '../../core/stores/categories.store';
 import { CollectionsStore } from '../../core/stores/collections.store';
-import { TaglineService } from '../../core/services/tagline.service';
-import { AppStateStore } from '../../core/stores/app-state.store';
 
 import { AddPlaceComponent } from '../places/add-place/add-place.component';
 import { PinDropCelebrationComponent } from '../places/add-place/pin-drop-celebration.component';
 import type { Place, Category } from '../../core/models';
 import type { EmptyStateVariant } from './empty-state.component';
-import { AddPlaceFacade } from '../places/add-place/add-place.facade';
 
 interface CelebrationState {
   x: number;
@@ -42,10 +38,27 @@ interface CelebrationState {
   placeName: string;
 }
 
+/**
+ * Map view — the default child route inside WorkspaceShellComponent.
+ *
+ * Owns the sidebar (Categories + Collections filter chips), the Leaflet map,
+ * the FAB, the filter pill, the place-detail panel, the add-place modal, the
+ * pin-drop celebration, and the easter-egg quote card.
+ *
+ * Does NOT own the topbar — the shell does. The brand, nav tabs, save-status
+ * and settings gear live one level up in WorkspaceShellComponent.
+ */
 @Component({
   selector: 'wf-home',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive, AddPlaceComponent, EmptyStateComponent, PinDropCelebrationComponent, QuoteCardComponent, FilterPopoverComponent, PlaceDetailComponent],
+  imports: [
+    AddPlaceComponent,
+    EmptyStateComponent,
+    PinDropCelebrationComponent,
+    QuoteCardComponent,
+    FilterPopoverComponent,
+    PlaceDetailComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './home.component.html',
   styleUrl: './home.component.css',
@@ -54,16 +67,12 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
   @ViewChild('mapEl', { static: true }) mapEl!: ElementRef<HTMLDivElement>;
   @ViewChild(PlaceDetailComponent) protected placeDetail?: PlaceDetailComponent;
 
-
   protected places = inject(PlacesStore);
   protected categories = inject(CategoriesStore);
   protected collections = inject(CollectionsStore);
   protected filters = inject(FilterStateStore);
 
-  protected appState = inject(AppStateStore);
-  protected tagline = inject(TaglineService);
   protected quoteService = inject(QuoteService);
-
 
   // Easter egg state — the floating quote card
   protected activeQuote = signal<{ text: string; x: number; y: number } | null>(null);
@@ -102,53 +111,13 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
   });
 
   protected emptyStateVariant = computed<EmptyStateVariant | null>(() => {
-  const filtered = this.filters.filteredPlaces();
-  const all = this.places.entities();
+    const filtered = this.filters.filteredPlaces();
+    const all = this.places.entities();
 
-  if (all.length === 0) return 'no-places';
-  if (filtered.length === 0 && this.filters.anyFilterActive()) return 'no-results';
-  return null;
-});
-
-/**
- * Human label for the topbar save-status indicator.
- * "saved" if recently backed up, "unsaved" if never or overdue.
- */
-protected backupStatusLabel = computed<string>(() => {
-  const last = this.appState.lastBackupAt();
-  if (!last) return 'unsaved';
-  return this.backupIsStale() ? 'unsaved' : 'saved';
-});
-
-/**
- * Tooltip text for the save-status indicator.
- * Shows the relative time of last backup.
- */
-protected backupStatusTooltip = computed<string>(() => {
-  const last = this.appState.lastBackupAt();
-  if (!last) return 'No backups yet. Export from Settings.';
-  const days = Math.floor(
-    (Date.now() - new Date(last).getTime()) / (1000 * 60 * 60 * 24)
-  );
-  if (days === 0) return 'Last backup: today';
-  if (days === 1) return 'Last backup: yesterday';
-  return `Last backup: ${days} days ago`;
-});
-
-/**
- * True when the last backup is older than the chosen auto-backup frequency,
- * or when no backup has ever happened.
- */
-protected backupIsStale = computed<boolean>(() => {
-  const last = this.appState.lastBackupAt();
-  if (!last) return true;
-  const freq = this.appState.autoBackupFrequency();
-  if (freq === 'never') return false;
-  const days = (Date.now() - new Date(last).getTime()) / (1000 * 60 * 60 * 24);
-  const threshold = freq === 'daily' ? 1 : freq === 'weekly' ? 7 : 30;
-  return days > threshold;
-});
-
+    if (all.length === 0) return 'no-places';
+    if (filtered.length === 0 && this.filters.anyFilterActive()) return 'no-results';
+    return null;
+  });
 
   protected categoryCount(categoryId: string): number {
     return this.places.entities().filter((p) => p.categoryId === categoryId).length;
@@ -157,7 +126,6 @@ protected backupIsStale = computed<boolean>(() => {
   constructor() {
     // Whenever places change, sync markers on the map
     effect(() => {
-      // const places = this.places.entities();
       const filteredPlaces = this.filters.filteredPlaces();
       const categories = this.categories.entities();
       if (this.map && this.clusterGroup) {
@@ -234,7 +202,6 @@ protected backupIsStale = computed<boolean>(() => {
         title: p.customName ?? p.name,
       });
 
-      // marker.bindPopup(this.popupHtml(p, cat?.name ?? ''));
       marker.on('click', () => this.onPinClick(p.id));
 
       this.clusterGroup.addLayer(marker);
@@ -287,32 +254,21 @@ protected backupIsStale = computed<boolean>(() => {
     });
   }
 
-  private popupHtml(p: Place, catName: string): string {
-    const safe = (s: string) => s.replace(/[<>&"']/g, (c) => `&#${c.charCodeAt(0)};`);
-    return `
-      <strong>${safe(p.name)},${safe(p.locality)}</strong><br/>
-      <span style="font-size:11px; color:#666;">
-        ${safe(catName)} · ${safe(p.locality)}
-      </span>
-    `;
-  }
-
   protected onPinClick(placeId: string): void {
     this.placeDetail?.open(placeId);
     this.isPlaceDetailOpen.set(true);
   }
 
-protected onPlaceDetailClosed(): void {
-  this.isPlaceDetailOpen.set(false);
-}
+  protected onPlaceDetailClosed(): void {
+    this.isPlaceDetailOpen.set(false);
+  }
 
-protected onEditPlace(placeId: string): void {
-  const place = this.places.getById(placeId);
-  if (!place) return;
-  this.editingPlace.set(place);
-  this.showAddModal.set(true);
-}
-
+  protected onEditPlace(placeId: string): void {
+    const place = this.places.getById(placeId);
+    if (!place) return;
+    this.editingPlace.set(place);
+    this.showAddModal.set(true);
+  }
 
   private tryGeolocate(map: L.Map): void {
     if (!navigator.geolocation) return; // browser doesn't support, stay on default
@@ -422,67 +378,65 @@ protected onEditPlace(placeId: string): void {
   protected onQuoteDone(): void {
     this.activeQuote.set(null);
   }
-  
+
   protected onSidebarCategoryClick(categoryId: string): void {
-  this.filters.toggleSidebarCategory(categoryId);
-}
-
-protected onSidebarCollectionClick(collectionId: string): void {
-  this.filters.toggleSidebarCollection(collectionId);
-}
-
-protected collectionCount(collectionId: string): number {
-  return this.places.entities().filter((p) =>
-    p.collectionIds.includes(collectionId)
-  ).length;
-}
-
-
-
-protected toggleFilterPopover(): void {
-  this.showFilterPopover.update((v) => !v);
-}
-
-protected onFilterPopoverClose(): void {
-  this.showFilterPopover.set(false);
-}
-
-protected clearAllFilters(): void {
-  this.filters.clearAll();
-}
-
-protected onAddPlaceFromEmptyState(): void {
-  this.pendingClickCoords.set(null);
-  this.showAddModal.set(true);
-}
-
-/**
- * The active filter pill needs a human-readable summary. This builds it.
- */
-protected filterSummary = computed<string>(() => {
-  const catIds = this.filters.selectedCategoryIds();
-  const colId = this.filters.selectedCollectionId();
-  const loc = this.filters.selectedLocality();
-  const cats = this.categories.entities();
-  const cols = this.collections.entities();
-
-  const parts: string[] = [];
-  if (catIds.length === 1) {
-    const cat = cats.find((c) => c.id === catIds[0]);
-    parts.push(cat?.name ?? 'Category');
-  } else if (catIds.length > 1) {
-    parts.push(`${catIds.length} categories`);
+    this.filters.toggleSidebarCategory(categoryId);
   }
 
-  if (colId) { 
-    const col = cols.find((c) => c.id === colId); 
-    parts.push(col ? `📁 ${col.name}` : 'Collection'); 
-  } 
+  protected onSidebarCollectionClick(collectionId: string): void {
+    this.filters.toggleSidebarCollection(collectionId);
+  }
 
-  if (loc) parts.push(loc);
+  protected collectionCount(collectionId: string): number {
+    return this.places.entities().filter((p) =>
+      p.collectionIds.includes(collectionId)
+    ).length;
+  }
 
-  return parts.join(' · ');
-});
+  protected toggleFilterPopover(): void {
+    this.showFilterPopover.update((v) => !v);
+  }
+
+  protected onFilterPopoverClose(): void {
+    this.showFilterPopover.set(false);
+  }
+
+  protected clearAllFilters(): void {
+    this.filters.clearAll();
+  }
+
+  protected onAddPlaceFromEmptyState(): void {
+    this.pendingClickCoords.set(null);
+    this.showAddModal.set(true);
+  }
+
+  /**
+   * The active filter pill needs a human-readable summary. This builds it.
+   */
+  protected filterSummary = computed<string>(() => {
+    const catIds = this.filters.selectedCategoryIds();
+    const colId = this.filters.selectedCollectionId();
+    const loc = this.filters.selectedLocality();
+    const cats = this.categories.entities();
+    const cols = this.collections.entities();
+
+    const parts: string[] = [];
+    if (catIds.length === 1) {
+      const cat = cats.find((c) => c.id === catIds[0]);
+      parts.push(cat?.name ?? 'Category');
+    } else if (catIds.length > 1) {
+      parts.push(`${catIds.length} categories`);
+    }
+
+    if (colId) {
+      const col = cols.find((c) => c.id === colId);
+      parts.push(col ? `📁 ${col.name}` : 'Collection');
+    }
+
+    if (loc) parts.push(loc);
+
+    return parts.join(' · ');
+  });
 
   /** Returns the CSS gradient string for a collection's cover. */
   protected coverGradientFor(c: { coverGradient?: CollectionCoverGradient }): string {

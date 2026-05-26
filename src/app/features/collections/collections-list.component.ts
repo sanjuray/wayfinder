@@ -1,42 +1,37 @@
 import { Component, ChangeDetectionStrategy } from '@angular/core';
-import { RouterLink } from '@angular/router';
 
+/**
+ * Phase 4 placeholder. Real list view (collection cards grid) lands when Phase 4
+ * proper starts. For now: renders inside WorkspaceShellComponent so the topbar
+ * stays visible.
+ */
 @Component({
   selector: 'wf-collections-list',
   standalone: true,
-  imports: [RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="page">
       <header class="head">
-        <a routerLink="/" class="back">← back to map</a>
         <h1>Collections</h1>
       </header>
       <div class="placeholder">
-        <p>Collections detail and management coming in the next phase.</p>
-        <p class="hint">For now, click a collection in the sidebar to filter the map.</p>
+        <p>Collections list view — coming in Phase 4.</p>
+        <p class="hint">For now, click a collection in the map sidebar to filter pins.</p>
       </div>
     </div>
   `,
   styles: [`
-    .page { height: 100vh; background: var(--wf-bg); }
-    .head {
-      display: flex; align-items: center; gap: 16px;
-      padding: 14px 22px;
-      border-bottom: 0.5px solid var(--wf-hairline);
-    }
-    .back {
-      color: var(--wf-ink-soft); text-decoration: none; font-size: 13px;
-      padding: 6px 10px; border-radius: 8px;
-    }
-    .back:hover { background: var(--wf-hairline); color: var(--wf-ink); }
+    .page { height: 100%; background: var(--wf-bg); padding: 24px 28px; overflow-y: auto; }
+    .head { margin-bottom: 24px; }
     h1 {
       margin: 0;
       font-family: var(--wf-font-display);
-      font-size: 20px; font-weight: 500; color: var(--wf-ink);
+      font-size: 28px; font-weight: 500;
+      letter-spacing: -0.4px;
+      color: var(--wf-ink);
     }
     .placeholder {
-      max-width: 480px; margin: 80px auto;
+      max-width: 480px; margin: 60px auto;
       text-align: center; color: var(--wf-ink-soft);
     }
     .placeholder p { font-size: 14px; line-height: 1.6; margin: 0 0 8px; }
