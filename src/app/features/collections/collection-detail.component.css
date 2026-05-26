@@ -1,0 +1,585 @@
+/* =========================================================
+ * Collection detail — Phase 4 (c) UI revision.
+ * Aligned to mockup screen-collection: 160px cover, 32px display
+ * heading, stats row, action buttons on the right, rounded card
+ * place rows with rotated category icon tiles.
+ * ========================================================= */
+
+.page {
+  height: 100%;
+  background: var(--wf-bg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+.page.loading {
+  align-items: center;
+  justify-content: center;
+  color: var(--wf-ink-faint);
+  font-style: italic;
+}
+
+/* Top-level back link, sits in its own thin row above the cell-wrap */
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--wf-ink-soft);
+  text-decoration: none;
+  padding: 4px 8px;
+  border-radius: 6px;
+  margin: 12px 0 0 16px;
+  align-self: flex-start;
+}
+.back:hover {
+  background: var(--wf-bg-2);
+  color: var(--wf-ink);
+}
+.back i {
+  font-size: 14px;
+}
+
+/* The mockup's content wrapper — 24px padding all around */
+.cell-wrap {
+  padding: 16px 24px 24px;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+/* ============ HEAD (mockup .coll-head) ============ */
+.coll-head {
+  display: flex;
+  gap: 22px;
+  align-items: flex-end;
+  flex-shrink: 0;
+}
+
+.coll-cover-large {
+  width: 160px;
+  height: 160px;
+  border-radius: 18px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.coll-cover-large:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--wf-ink) 22%, transparent);
+}
+/* Cover corners follow var(--wf-radius-card)-ish; using a fixed 18px to match
+ * mockup but theme tokens already handle pin/diamond shapes elsewhere. The
+ * mono theme will look slightly different from the mockup here — accepted. */
+.coll-cover-large i {
+  font-size: 48px;
+  color: rgba(255, 255, 255, 0.95);
+  position: relative;
+  z-index: 1;
+}
+.coll-cover-large .pat {
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.18) 2px, transparent 3px),
+    radial-gradient(circle at 70% 60%, rgba(255, 255, 255, 0.12) 3px, transparent 4px),
+    radial-gradient(circle at 40% 80%, rgba(255, 255, 255, 0.15) 2px, transparent 3px);
+  pointer-events: none;
+}
+
+.coll-meta {
+  flex: 1;
+  min-width: 0;
+}
+.coll-meta .name {
+  margin: 0;
+  font-family: var(--wf-font-display);
+  font-size: 32px;
+  font-weight: 500;
+  letter-spacing: -0.5px;
+  color: var(--wf-ink);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 2px 6px;
+  border-radius: 8px;
+  margin-left: -6px;
+}
+.coll-meta .name:hover {
+  background: var(--wf-bg-2);
+}
+.edit-hint {
+  font-size: 16px;
+  color: var(--wf-ink-faint);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+.coll-meta .name:hover .edit-hint {
+  opacity: 1;
+}
+.name-input {
+  font-family: var(--wf-font-display);
+  font-size: 32px;
+  font-weight: 500;
+  letter-spacing: -0.5px;
+  color: var(--wf-ink);
+  background: var(--wf-bg);
+  border: 0.5px solid var(--wf-accent);
+  border-radius: 8px;
+  padding: 4px 8px;
+  outline: none;
+  box-shadow: var(--wf-glow);
+  width: 100%;
+  max-width: 480px;
+}
+
+.stats {
+  font-size: 13px;
+  color: var(--wf-ink-soft);
+  margin-top: 8px;
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+.stats span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.stats i {
+  font-size: 13px;
+}
+.stats-gold {
+  color: var(--wf-gold);
+}
+.stats .star {
+  font-family: var(--wf-font-display);
+  font-size: 14px;
+}
+
+/* ============ ACTIONS (right of coll-head) ============ */
+.coll-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+  align-items: flex-end;
+}
+.action-wrap {
+  position: relative;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 10px;
+  border: 0.5px solid var(--wf-hairline);
+  background: var(--wf-bg-2);
+  color: var(--wf-ink);
+  cursor: pointer;
+  font-family: inherit;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+.btn i {
+  font-size: 13px;
+}
+.btn:hover {
+  background: var(--wf-bg);
+  border-color: var(--wf-ink-soft);
+}
+.btn.on {
+  background: var(--wf-ink);
+  color: var(--wf-bg);
+  border-color: var(--wf-ink);
+}
+.btn.primary {
+  background: var(--wf-ink);
+  color: var(--wf-bg);
+  border-color: var(--wf-ink);
+}
+.btn.primary:hover {
+  background: var(--wf-accent);
+  border-color: var(--wf-accent);
+}
+.btn.danger {
+  background: var(--wf-accent);
+  color: var(--wf-bg);
+  border-color: var(--wf-accent);
+}
+.btn.danger:hover {
+  background: color-mix(in srgb, var(--wf-accent) 80%, black);
+}
+.btn.iconbtn {
+  padding: 9px 10px;
+}
+
+/* ============ MENUS ============ */
+.menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 240px;
+  background: var(--wf-bg);
+  border: 0.5px solid var(--wf-hairline);
+  border-radius: 12px;
+  box-shadow: 0 10px 28px color-mix(in srgb, var(--wf-ink) 16%, transparent);
+  padding: 6px;
+  z-index: 1100;
+}
+.menu-right {
+  left: auto;
+  right: 0;
+}
+.menu-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  color: var(--wf-ink);
+}
+.menu-item:hover {
+  background: var(--wf-bg-2);
+}
+.menu-item.danger {
+  color: var(--wf-accent);
+}
+.menu-item.danger:hover {
+  background: color-mix(in srgb, var(--wf-accent) 8%, transparent);
+}
+.menu-item i {
+  font-size: 16px;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+.menu-item-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.menu-item-label {
+  font-size: 13px;
+  font-weight: 500;
+}
+.menu-item-sub {
+  font-size: 11px;
+  color: var(--wf-ink-soft);
+}
+.menu-item.danger .menu-item-sub {
+  color: color-mix(in srgb, var(--wf-accent) 70%, var(--wf-ink-soft));
+}
+
+/* ============ GRID (mockup .coll-grid) ============ */
+.coll-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 18px;
+  flex: 1;
+  min-height: 0;
+}
+
+@media (max-width: 900px) {
+  .coll-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ============ PLACE LIST (mockup .place-list and .place) ============ */
+.place-list-wrap {
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+.place-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.place {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  background: var(--wf-bg-2);
+  border-radius: 12px;
+  border: 0.5px solid var(--wf-hairline-soft);
+  cursor: pointer;
+  align-items: center;
+  transition: all 0.15s ease;
+}
+.place:hover {
+  border-color: var(--wf-hairline);
+  transform: translateX(2px);
+}
+.place:hover .row-remove {
+  opacity: 1;
+}
+
+/* Rotated diamond icon tile — matches mockup .place .ico.
+ * Note: --wf-pin-shape varies by theme (50% 50% 50% 0 for paper/sand/cream,
+ * 6px for neon, 0 for mono) so the diamond reads correctly per theme
+ * without needing per-theme overrides here. The rotation is mockup-faithful
+ * for the default themes; for neon/mono the rotation looks slightly off
+ * since the shape is no longer a teardrop. Accepted v1 tradeoff.
+ */
+.ico {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--wf-pin-shape);
+  transform: rotate(-45deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 2px solid var(--wf-bg);
+}
+.ico i {
+  transform: rotate(45deg);
+  color: #fff;
+  font-size: 14px;
+}
+
+.info {
+  flex: 1;
+  min-width: 0;
+}
+.nm {
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--wf-ink);
+}
+.meta {
+  font-size: 12px;
+  color: var(--wf-ink-soft);
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-top: 3px;
+  flex-wrap: wrap;
+}
+.sep {
+  color: var(--wf-ink-faint);
+}
+
+/* Badges — mockup tokens */
+.badge {
+  font-size: 10px;
+  padding: 3px 9px;
+  border-radius: 10px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+  text-transform: lowercase;
+}
+.badge.visited {
+  background: var(--wf-ink);
+  color: var(--wf-bg);
+}
+.badge.planned {
+  background: transparent;
+  border: 0.5px solid var(--wf-ink-soft);
+  color: var(--wf-ink-soft);
+}
+
+.vibe {
+  color: var(--wf-ink-soft);
+}
+.star {
+  color: var(--wf-gold);
+  font-family: var(--wf-font-display);
+  font-size: 14px;
+}
+
+/* "Remove from collection" — low-opacity X, full opacity on row hover */
+.row-remove {
+  background: transparent;
+  border: none;
+  color: var(--wf-ink-faint);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 6px;
+  flex-shrink: 0;
+  opacity: 0.35;
+  transition: opacity 0.12s ease, color 0.12s ease, background 0.12s ease;
+}
+.row-remove:hover {
+  color: var(--wf-accent);
+  background: var(--wf-bg);
+  opacity: 1;
+}
+
+/* ============ EMPTY ============ */
+.empty {
+  margin: 40px auto;
+  max-width: 280px;
+  text-align: center;
+  color: var(--wf-ink-soft);
+}
+.empty-icon {
+  font-size: 32px;
+  color: var(--wf-ink-faint);
+  margin-bottom: 14px;
+}
+.empty-head {
+  font-family: var(--wf-font-display);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--wf-ink);
+  margin: 0 0 6px;
+}
+.empty-sub {
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 0 0 16px;
+}
+
+/* ============ MAP PANE ============ */
+.map-pane {
+  position: relative;
+  min-height: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 0.5px solid var(--wf-hairline);
+}
+.map {
+  width: 100%;
+  height: 100%;
+  background: var(--wf-map-land);
+}
+:host ::ng-deep .wf-pin-icon {
+  background: transparent;
+  border: none;
+}
+
+/* ============ UNDO TOAST ============ */
+.toast {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--wf-ink);
+  color: var(--wf-bg);
+  padding: 10px 12px 10px 16px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--wf-ink) 30%, transparent);
+  z-index: 1000;
+  animation: toast-in 0.2s ease-out;
+  max-width: calc(100% - 48px);
+}
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 8px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+.toast-text {
+  color: var(--wf-bg);
+}
+.toast-text strong {
+  font-weight: 600;
+}
+.toast-undo {
+  background: transparent;
+  border: 0.5px solid color-mix(in srgb, var(--wf-bg) 40%, transparent);
+  color: var(--wf-bg);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 5px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.toast-undo:hover {
+  background: color-mix(in srgb, var(--wf-bg) 12%, transparent);
+}
+.toast-dismiss {
+  background: transparent;
+  border: none;
+  color: color-mix(in srgb, var(--wf-bg) 60%, transparent);
+  cursor: pointer;
+  padding: 2px;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+}
+.toast-dismiss:hover {
+  color: var(--wf-bg);
+}
+
+/* ============ DELETE CONFIRM ============ */
+.confirm-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2900;
+  background: color-mix(in srgb, var(--wf-ink) 35%, transparent);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+.confirm {
+  position: fixed;
+  z-index: 3000;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--wf-bg);
+  border-radius: 14px;
+  border: 0.5px solid var(--wf-hairline);
+  padding: 22px 24px 18px;
+  max-width: 420px;
+  width: calc(100vw - 48px);
+  box-shadow: 0 24px 48px color-mix(in srgb, var(--wf-ink) 30%, transparent);
+}
+.confirm h3 {
+  margin: 0 0 8px;
+  font-family: var(--wf-font-display);
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--wf-ink);
+}
+.confirm p {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--wf-ink-soft);
+  margin: 0 0 18px;
+}
+.confirm p strong {
+  color: var(--wf-ink);
+  font-weight: 500;
+}
+.confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}

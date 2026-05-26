@@ -1,0 +1,305 @@
+.page {
+  height: 100%;
+  background: var(--wf-bg);
+  padding: 28px 32px;
+  overflow-y: auto;
+}
+
+/* HEAD ------------------------------- */
+.head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 28px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.head-text h1 {
+  margin: 0;
+  font-family: var(--wf-font-display);
+  font-size: 28px;
+  font-weight: 500;
+  letter-spacing: -0.4px;
+  color: var(--wf-ink);
+}
+.head-text .sub {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: var(--wf-ink-soft);
+}
+
+/* BUTTONS ------------------------------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 10px;
+  border: 0.5px solid var(--wf-hairline);
+  background: var(--wf-bg-2);
+  color: var(--wf-ink);
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s ease;
+}
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.btn.primary {
+  background: var(--wf-ink);
+  color: var(--wf-bg);
+  border-color: var(--wf-ink);
+}
+.btn.primary:hover:not(:disabled) {
+  background: var(--wf-accent);
+  border-color: var(--wf-accent);
+}
+.btn.ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--wf-ink-soft);
+}
+.btn.ghost:hover:not(:disabled) {
+  color: var(--wf-ink);
+  background: var(--wf-bg-2);
+}
+.btn.big {
+  padding: 12px 22px;
+  font-size: 14px;
+}
+.plus {
+  font-size: 16px;
+  line-height: 1;
+  font-weight: 400;
+}
+
+/* EMPTY STATE ------------------------------- */
+.empty {
+  max-width: 440px;
+  margin: 80px auto;
+  text-align: center;
+  color: var(--wf-ink-soft);
+}
+.empty-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--wf-bg-2);
+  color: var(--wf-ink-soft);
+  margin-bottom: 18px;
+}
+.empty-icon i {
+  font-size: 26px;
+}
+.empty h2 {
+  margin: 0 0 10px;
+  font-family: var(--wf-font-display);
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: -0.3px;
+  color: var(--wf-ink);
+}
+.empty p {
+  font-size: 14px;
+  line-height: 1.55;
+  margin: 0 0 22px;
+}
+
+/* GRID ------------------------------- */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+@media (min-width: 720px) {
+  .grid {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  }
+}
+
+/* CARD ------------------------------- */
+.card {
+  background: var(--wf-bg);
+  border-radius: 16px;
+  border: 0.5px solid var(--wf-hairline);
+  overflow: hidden;
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.2s ease;
+  /* Buttons need normalization to match anchor cards */
+  padding: 0;
+  font-family: inherit;
+  text-align: left;
+}
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--wf-ink) 12%, transparent);
+  border-color: var(--wf-ink-soft);
+}
+
+.cover {
+  height: 140px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 0.5px solid var(--wf-hairline);
+}
+.cover-pat {
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.18) 2px, transparent 3px),
+    radial-gradient(circle at 70% 60%, rgba(255, 255, 255, 0.12) 3px, transparent 4px),
+    radial-gradient(circle at 40% 80%, rgba(255, 255, 255, 0.15) 2px, transparent 3px);
+  pointer-events: none;
+}
+.cover i.ti {
+  font-size: 42px;
+  color: rgba(255, 255, 255, 0.95);
+  position: relative;
+  z-index: 1;
+}
+
+.meta {
+  padding: 14px 16px 16px;
+}
+.name {
+  font-family: var(--wf-font-display);
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--wf-ink);
+  letter-spacing: -0.2px;
+  margin-bottom: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--wf-ink-soft);
+  flex-wrap: wrap;
+}
+.count {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.count i {
+  font-size: 12px;
+}
+.sep {
+  color: var(--wf-ink-faint);
+}
+
+/* NEW COLLECTION TILE ------------------------------- */
+.card-new {
+  background: transparent;
+  border: 1px dashed var(--wf-hairline);
+  align-items: center;
+  justify-content: center;
+  min-height: 220px;
+  padding: 24px;
+  color: var(--wf-ink-soft);
+  transition: all 0.18s ease;
+}
+.card-new:hover {
+  color: var(--wf-ink);
+  border-color: var(--wf-accent);
+  background: var(--wf-bg-2);
+  transform: none;
+  box-shadow: none;
+}
+.new-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--wf-bg-2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+.new-icon .plus {
+  font-size: 20px;
+}
+.new-text {
+  font-family: var(--wf-font-display);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.card-new-expanded {
+  background: var(--wf-bg);
+  border-style: solid;
+  border-color: var(--wf-accent);
+  align-items: stretch;
+  justify-content: stretch;
+  padding: 0;
+  cursor: default;
+}
+.card-new-expanded:hover {
+  border-color: var(--wf-accent);
+  background: var(--wf-bg);
+}
+
+.new-form {
+  padding: 18px 18px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+.new-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--wf-ink-faint);
+  font-weight: 500;
+}
+.new-input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 0.5px solid var(--wf-hairline);
+  background: var(--wf-bg-2);
+  font: inherit;
+  font-size: 14px;
+  color: var(--wf-ink);
+  font-family: var(--wf-font-display);
+}
+.new-input:focus {
+  outline: none;
+  border-color: var(--wf-accent);
+  box-shadow: var(--wf-glow);
+}
+.new-input:disabled {
+  opacity: 0.6;
+}
+.new-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 4px;
+}
+.new-hint {
+  margin: 4px 0 0;
+  font-size: 11px;
+  color: var(--wf-ink-faint);
+  line-height: 1.4;
+  font-style: italic;
+}

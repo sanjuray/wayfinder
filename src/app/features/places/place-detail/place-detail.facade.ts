@@ -3,6 +3,30 @@ import { PlacesStore } from '../../../core/stores/places.store';
 import { IdService } from '../../../core/services/id.service';
 import type { Place, PlaceStatus, Visit, VisitRating } from '../../../core/models';
 
+/**
+ * One option in the "Open in Google Maps" dropdown. The first variant in the
+ * list is the smart default that the primary button click uses.
+ */
+export interface MapsQueryVariant {
+  /** Stable identifier — used for tracking and *ngFor track-by. */
+  key: string;
+  /** Human-readable label shown in the dropdown row. */
+  label: string;
+  /** What the actual query string looks like (shown as a preview). */
+  preview: string;
+  /** Pre-built Google Maps URL ready to drop into an <a href>. */
+  url: string;
+}
+
+/**
+ * Builds a Google Maps search URL from a free-form query string.
+ * Uses the /maps/search/?api=1&query=... format which accepts addresses,
+ * place names, coordinates, or any combination.
+ */
+function buildMapsUrl(query: string): string {
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+}
+
 @Injectable()
 export class PlaceDetailFacade {
   private placesStore = inject(PlacesStore);
@@ -39,39 +63,98 @@ export class PlaceDetailFacade {
   });
 
   /**
-   * Smart Google Maps URL builder.
+   * Available Google Maps query variants for the current place, in priority
+   * order. The first entry is the smart default; the rest are user overrides
+   * surfaced via the split-button dropdown in place-detail.
    *
-   * Priority:
-   *   1. customName + displayAddress  → "Custom Name, Full Address"
-   *   2. displayAddress only          → full Nominatim address
-   *   3. name + coords                → "POI Name @ lat,lng"
-   *   4. coords only                  → bare lat,lng
+   * Why a list and not a single computed URL: addresses like "Mantri Cosmos,
+   * ISB Road, Gachibowli" used to fall through to "address only", which sent
+   * Maps to the street instead of the apartment. We now combine name +
+   * address by default. The user can still pick a narrower or broader query
+   * if Google indexes the place differently than Nominatim does.
    *
-   * Uses Google Maps' /maps/search/?api=1&query=... format which accepts
-   * free-form text, addresses, place names, or coordinates. Falls back
-   * gracefully to coords for places that have nothing else.
+   * Each variant has a stable key (for tracking), a human label, a preview
+   * (what the query actually looks like), and the final maps URL.
    */
-  readonly googleMapsUrl = computed<string>(() => {
+  readonly mapsQueryVariants = computed<MapsQueryVariant[]>(() => {
     const p = this.place();
-    if (!p) return '';
+    if (!p) return [];
 
     const customName = p.customName?.trim();
     const displayAddress = p.displayAddress?.trim();
     const name = p.name?.trim();
+    const locality = [p.locality, p.region].filter(Boolean).join(', ');
     const coords = `${p.lat},${p.lng}`;
 
-    let query: string;
+    const variants: MapsQueryVariant[] = [];
+
+    // Tier 1: customName + displayAddress (user-named, fully addressed)
     if (customName && displayAddress) {
-      query = `${customName}, ${displayAddress}`;
-    } else if (displayAddress) {
-      query = displayAddress;
-    } else if (name) {
-      query = `${name} ${coords}`;
-    } else {
-      query = coords;
+      variants.push({
+        key: 'custom-name-and-address',
+        label: 'Custom name + address',
+        preview: `${customName}, ${displayAddress}`,
+        url: buildMapsUrl(`${customName}, ${displayAddress}`),
+      });
     }
 
-    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+    // Tier 2: name + displayAddress (NEW — the Mantri Cosmos fix)
+    if (name && displayAddress) {
+      variants.push({
+        key: 'name-and-address',
+        label: 'Name + address',
+        preview: `${name}, ${displayAddress}`,
+        url: buildMapsUrl(`${name}, ${displayAddress}`),
+      });
+    }
+
+    // Tier 3: customName + locality (broader than full address)
+    if (customName && locality) {
+      variants.push({
+        key: 'custom-name-and-locality',
+        label: 'Custom name + city',
+        preview: `${customName}, ${locality}`,
+        url: buildMapsUrl(`${customName}, ${locality}`),
+      });
+    }
+
+    // Tier 4: displayAddress only
+    if (displayAddress) {
+      variants.push({
+        key: 'address-only',
+        label: 'Address only',
+        preview: displayAddress,
+        url: buildMapsUrl(displayAddress),
+      });
+    }
+
+    // Tier 5: name only
+    if (name) {
+      variants.push({
+        key: 'name-only',
+        label: 'Place name only',
+        preview: name,
+        url: buildMapsUrl(name),
+      });
+    }
+
+    // Tier 6: coordinates — always available as a last-resort
+    variants.push({
+      key: 'coords',
+      label: 'Coordinates',
+      preview: coords,
+      url: buildMapsUrl(coords),
+    });
+
+    return variants;
+  });
+
+  /**
+   * The smart default — just the first variant. Used by the split button's
+   * primary click action. Empty string when no place is loaded.
+   */
+  readonly googleMapsUrl = computed<string>(() => {
+    return this.mapsQueryVariants()[0]?.url ?? '';
   });
 
   // ----- actions -----

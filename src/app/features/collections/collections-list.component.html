@@ -1,0 +1,95 @@
+<div class="page">
+  <header class="head">
+    <div class="head-text">
+      <h1>Collections</h1>
+      <p class="sub">{{ stats() }}</p>
+    </div>
+    @if (!expandingNew() && collections.entities().length > 0) {
+      <button class="btn primary" (click)="startNewCollection()">
+        <span class="plus">+</span> New collection
+      </button>
+    }
+  </header>
+
+  @if (collections.entities().length === 0 && !expandingNew()) {
+    <!-- First-time empty state. Push toward creating one. -->
+    <div class="empty">
+      <div class="empty-icon"><i class="ti ti-folder-plus"></i></div>
+      <h2>No collections yet</h2>
+      <p>
+        Group your places into themes — "Tokyo eats", "Date spots", "Weekend
+        rides". Click below to make your first.
+      </p>
+      <button class="btn primary big" (click)="startNewCollection()">
+        <span class="plus">+</span> New collection
+      </button>
+    </div>
+  } @else {
+    <div class="grid">
+      @for (card of cards(); track card.collection.id) {
+        <a
+          class="card"
+          [routerLink]="['/collections', card.collection.id]"
+          [attr.aria-label]="'Open ' + card.collection.name"
+        >
+          <div class="cover" [style.background]="coverFor(card.collection.coverGradient)">
+            <div class="cover-pat"></div>
+            <i class="ti" [class]="'ti-' + (card.collection.coverIcon || 'folder')"></i>
+          </div>
+          <div class="meta">
+            <div class="name">{{ card.collection.name }}</div>
+            <div class="info">
+              <span class="count">
+                <i class="ti ti-map-pin"></i>
+                {{ card.placeCount }} {{ card.placeCount === 1 ? 'place' : 'places' }}
+              </span>
+              <span class="sep">·</span>
+              <span class="updated">{{ card.updatedLabel }}</span>
+            </div>
+          </div>
+        </a>
+      }
+
+      <!-- Trailing "new" tile. Expands inline per spec Q4 pattern. -->
+      @if (expandingNew()) {
+        <div class="card card-new card-new-expanded">
+          <div class="new-form">
+            <label class="new-label">Name your collection</label>
+            <input
+              #newNameInput
+              class="new-input"
+              type="text"
+              maxlength="60"
+              placeholder="e.g. Tokyo eats"
+              [ngModel]="newName()"
+              (ngModelChange)="newName.set($event)"
+              (keydown.enter)="confirmNewCollection()"
+              (keydown.escape)="cancelNewCollection()"
+              [disabled]="creating()"
+            />
+            <div class="new-actions">
+              <button class="btn ghost" (click)="cancelNewCollection()" [disabled]="creating()">
+                Cancel
+              </button>
+              <button
+                class="btn primary"
+                (click)="confirmNewCollection()"
+                [disabled]="!newName().trim() || creating()"
+              >
+                {{ creating() ? 'Creating…' : 'Create' }}
+              </button>
+            </div>
+            <p class="new-hint">
+              You can change the gradient and icon after creating.
+            </p>
+          </div>
+        </div>
+      } @else {
+        <button class="card card-new" (click)="startNewCollection()" aria-label="New collection">
+          <div class="new-icon"><span class="plus">+</span></div>
+          <div class="new-text">New collection</div>
+        </button>
+      }
+    </div>
+  }
+</div>

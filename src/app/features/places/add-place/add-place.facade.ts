@@ -254,6 +254,28 @@ export class AddPlaceFacade {
     );
   }
 
+  /**
+  * Create a new collection from inside the save step and auto-select it
+  * for the current draft. Returns the new id so callers can confirm or
+  * focus follow-up UI.
+  *
+  * Trimming + empty-name guarding is the caller's responsibility (the
+  * save-step does this before calling); we still no-op on empty input
+  * to be safe.
+  *
+  * Phase 4 (d) addition — see PHASES_DETAIL §"Inline + New collection".
+  */
+ async newCollection(name: string): Promise<string | null> {
+   const trimmed = name.trim();
+   if (!trimmed) return null;
+   const collection = await this.collectionsStore.create(trimmed);
+   // Auto-select for the place currently being saved
+   this.collectionIds.update((ids) =>
+     ids.includes(collection.id) ? ids : [...ids, collection.id]
+   );
+   return collection.id;
+ }
+
   
 async save(): Promise<Place | null> {
     const draft = this.draft();
