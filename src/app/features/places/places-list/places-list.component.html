@@ -1,0 +1,257 @@
+<div class="page">
+  <!-- =========================== HEADER =========================== -->
+  <header class="hdr">
+    <div class="hdr-left">
+      <h1 class="title">Places</h1>
+      <span class="count">
+        {{ facade.visiblePlaces().length }}
+        @if (filterStore.anyFilterActive() && placesStore.entities().length !== facade.visiblePlaces().length) {
+          <span class="count-of">of {{ placesStore.entities().length }}</span>
+        }
+        {{ facade.visiblePlaces().length === 1 ? 'place' : 'places' }}
+      </span>
+    </div>
+
+    <div class="hdr-right">
+      <!-- Filter button -->
+      <div class="popover-anchor">
+        <button
+          class="btn ghost"
+          [class.on]="filterStore.anyFilterActive()"
+          (click)="toggleFilters()"
+          [attr.aria-expanded]="showFilters()"
+        >
+          <i class="ti ti-filter"></i>
+          Filter
+          @if (filterStore.anyFilterActive()) {
+            <span class="dot-on"></span>
+          }
+        </button>
+        @if (showFilters()) {
+          <div class="popover-host">
+            <wf-filter-popover (closed)="onFilterClosed()" />
+          </div>
+        }
+      </div>
+
+      <!-- Sort button + dropdown -->
+      <div class="popover-anchor">
+        <button
+          class="btn ghost"
+          (click)="toggleSortMenu()"
+          [attr.aria-expanded]="showSortMenu()"
+        >
+          <i class="ti ti-arrows-sort"></i>
+          {{ sortLabel() }}
+          <i class="ti ti-chevron-down chev"></i>
+        </button>
+        @if (showSortMenu()) {
+          <div class="sort-backdrop" (click)="onSortBackdrop()"></div>
+          <div class="sort-menu" role="menu">
+            @for (opt of sortOptions; track opt.value) {
+              <button
+                class="sort-item"
+                [class.sel]="facade.sort() === opt.value"
+                (click)="pickSort(opt.value)"
+                role="menuitemradio"
+                [attr.aria-checked]="facade.sort() === opt.value"
+              >
+                @if (facade.sort() === opt.value) {
+                  <i class="ti ti-check"></i>
+                } @else {
+                  <span class="check-spacer"></span>
+                }
+                {{ opt.label }}
+              </button>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  </header>
+
+  <!-- ===================== SELECT MODE HEADER ===================== -->
+  @if (facade.selectMode()) {
+    <div class="select-bar">
+      <label class="select-all">
+        <input
+          type="checkbox"
+          [checked]="facade.allVisibleSelected()"
+          (change)="facade.toggleSelectAllVisible()"
+        />
+        <span>
+          Select all visible
+        </span>
+      </label>
+      <span class="select-summary">
+        {{ facade.selectedCount() }} selected
+        @if (facade.hiddenSelectedCount() > 0) {
+          <span class="hidden-hint">
+            ({{ facade.hiddenSelectedCount() }} hidden by filter)
+          </span>
+        }
+      </span>
+      <button class="btn ghost small" (click)="facade.exitSelectMode()">
+        <i class="ti ti-x"></i>
+        Exit select
+      </button>
+    </div>
+  }
+
+  <!-- =========================== LIST ============================ -->
+  <!--
+    Volume hook: when this list gets large (say 200+), wrap the @for in
+    <cdk-virtual-scroll-viewport itemSize="..."> from @angular/cdk/scrolling.
+    facade.visiblePlaces() is already a sliced/sorted signal so the swap is
+    local to this block.
+  -->
+  @if (facade.visiblePlaces().length === 0) {
+    @if (placesStore.entities().length === 0) {
+      <div class="empty">
+        <i class="ti ti-map-pin-off empty-icon"></i>
+        <p class="empty-head">No places saved yet</p>
+        <p class="empty-sub">
+          Drop a pin on the map or paste a Google Maps link to start your
+          collection.
+        </p>
+        <a class="btn primary" routerLink="/">Open map</a>
+      </div>
+    } @else {
+      <div class="empty">
+        <i class="ti ti-filter-off empty-icon"></i>
+        <p class="empty-head">No places match these filters</p>
+        <p class="empty-sub">
+          Try clearing a filter or two.
+        </p>
+        <button class="btn" (click)="filterStore.clearAll()">Clear filters</button>
+      </div>
+    }
+  } @else {
+    <div class="place-list">
+      @for (p of facade.visiblePlaces(); track p.id) {
+        @let cat = categoryById().get(p.categoryId);
+        <div
+          class="place"
+          [class.selected]="facade.isSelected(p.id)"
+          [class.select-mode]="facade.selectMode()"
+          (click)="onRowClick(p)"
+          (contextmenu)="onRowContextMenu($event, p)"
+          (pointerdown)="onRowPointerDown($event, p)"
+          (pointerup)="onRowPointerUp()"
+          (pointermove)="onRowPointerMove()"
+          (pointercancel)="onRowPointerCancel()"
+        >
+          @if (facade.selectMode()) {
+            <label
+              class="row-check"
+              (click)="$event.stopPropagation()"
+            >
+              <input
+                type="checkbox"
+                [checked]="facade.isSelected(p.id)"
+                (change)="facade.toggle(p.id)"
+              />
+            </label>
+          }
+
+          <div class="ico" [style.background]="cat?.color || '#FF6B5B'">
+            <i class="ti" [class]="'ti-' + (cat?.icon || 'circle')"></i>
+          </div>
+
+          <div class="info">
+            <div class="nm">{{ p.customName ?? p.name }}</div>
+            <div class="meta">
+              <span
+                class="badge"
+                [class.visited]="p.status === 'visited'"
+                [class.planned]="p.status === 'planned'"
+              >
+                {{ p.status }}
+              </span>
+              @if (cat?.name) {
+                <span class="sep">·</span>
+                <span class="cat">{{ cat?.name }}</span>
+              }
+              @if (p.locality) {
+                <span class="sep">·</span>
+                <span class="locality">{{ p.locality }}</span>
+              }
+              @for (tagName of vibeTagsFor(p.vibeTagIds); track tagName) {
+                <span class="sep">·</span>
+                <span class="vibe">{{ tagName }}</span>
+              }
+              @if (lastVisitedLabel(p); as lv) {
+                <span class="sep">·</span>
+                <span class="last-visit">visited {{ lv }}</span>
+              }
+            </div>
+          </div>
+
+          @if (p.isFavorite) {
+            <span class="star" aria-label="Favorite">✦</span>
+          }
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ====================== BULK ACTION BAR ======================= -->
+  @if (facade.selectMode() && facade.selectedCount() > 0) {
+    <div class="bulk-bar" role="toolbar" aria-label="Bulk actions">
+      <span class="bulk-count">{{ facade.selectedCount() }} selected</span>
+      <div class="bulk-actions">
+        <button class="bulk-btn" (click)="onBulkAddToCollection()" title="Add to collection">
+          <i class="ti ti-folder-plus"></i>
+          <span>Add to collection</span>
+        </button>
+        <button class="bulk-btn" (click)="onBulkMarkVisited()" title="Mark visited">
+          <i class="ti ti-circle-check"></i>
+          <span>Mark visited</span>
+        </button>
+        <button class="bulk-btn" (click)="onBulkMarkPlanned()" title="Mark planned">
+          <i class="ti ti-bookmark"></i>
+          <span>Mark planned</span>
+        </button>
+        <button class="bulk-btn" (click)="onBulkFavorite()" title="Add to favorites">
+          <i class="ti ti-star"></i>
+          <span>Favorite</span>
+        </button>
+        <button class="bulk-btn" (click)="onBulkUnfavorite()" title="Remove favorite">
+          <i class="ti ti-star-off"></i>
+          <span>Unfavorite</span>
+        </button>
+        <button class="bulk-btn danger" (click)="onBulkDelete()" title="Delete">
+          <i class="ti ti-trash"></i>
+          <span>Delete</span>
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- =========================== MODALS =========================== -->
+
+  <!-- Place detail panel (mounted at page level; opens on row click) -->
+  <wf-place-detail
+    (closed)="onPlaceDetailClosed()"
+    (editRequested)="onEditPlace($event)"
+  />
+
+  <!-- Bulk delete confirmation -->
+  @if (showBulkDelete()) {
+    <wf-delete-confirm
+      [count]="facade.selectedCount()"
+      (confirmed)="onBulkDeleteConfirmed()"
+      (cancelled)="onBulkDeleteCancelled()"
+    />
+  }
+
+  <!-- Collection picker for "add to collection" bulk action -->
+  @if (showCollectionPicker()) {
+    <wf-collection-picker
+      [title]="'Add ' + facade.selectedCount() + ' place' + (facade.selectedCount() === 1 ? '' : 's') + ' to'"
+      (picked)="onCollectionPickerPicked($event)"
+      (cancelled)="onCollectionPickerCancelled()"
+    />
+  }
+</div>
+

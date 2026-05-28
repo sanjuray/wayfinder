@@ -7,6 +7,7 @@ import { Routes } from '@angular/router';
  *   ├── ''                HomeComponent       (map + sidebar)
  *   ├── 'collections'     CollectionsList
  *   ├── 'collections/:id' CollectionDetail
+ *   ├── 'places'          PlacesList         [Phase 5]
  *   ├── 'trips'           TripsSoFar
  *   └── 'trips/:id'       TripPlan
  *
@@ -41,6 +42,13 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/collections/collection-detail.component').then(
             (m) => m.CollectionDetailComponent
+          ),
+      },
+      {
+        path: 'places',
+        loadComponent: () =>
+          import('./features/places/places-list/places-list.component').then(
+            (m) => m.PlacesListComponent
           ),
       },
       {

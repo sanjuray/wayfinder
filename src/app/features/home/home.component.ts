@@ -10,6 +10,8 @@ import {
   OnDestroy,
   ChangeDetectionStrategy,
 } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FilterStateStore } from '../../core/stores/filter-state.store';
 import { EmptyStateComponent } from './empty-state.component';
 import { FilterPopoverComponent } from './filter-popover.component';
@@ -131,6 +133,34 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
       if (this.map && this.clusterGroup) {
         this.syncMarkers(filteredPlaces, categories);
       }
+    });
+
+    // ?edit=:id handoff from /places (or any future route that wants to
+    // jump back to the map and open a place for editing). Fires once per
+    // navigation that carries the param, after the places store has loaded
+    // so getById can resolve the id. Then clears the param so a reload
+    // doesn't re-trigger.
+    const route = inject(ActivatedRoute);
+    const router = inject(Router);
+    const editId = toSignal(route.queryParamMap, { initialValue: null });
+    let handled: string | null = null;
+    effect(() => {
+      const params = editId();
+      const id = params?.get('edit');
+      if (!id || handled === id) return;
+      const places = this.places.entities();
+      if (places.length === 0) return; // wait for store load
+      const place = this.places.getById(id);
+      if (!place) {
+        // id not found — clear the param silently and move on
+        handled = id;
+        router.navigate([], { queryParams: { edit: null }, queryParamsHandling: 'merge', replaceUrl: true });
+        return;
+      }
+      handled = id;
+      this.editingPlace.set(place);
+      this.showAddModal.set(true);
+      router.navigate([], { queryParams: { edit: null }, queryParamsHandling: 'merge', replaceUrl: true });
     });
   }
 
