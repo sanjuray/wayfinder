@@ -22,6 +22,7 @@ import 'leaflet.markercluster';
 import { CollectionsStore } from '../../core/stores/collections.store';
 import { CategoriesStore } from '../../core/stores/categories.store';
 import { VibeTagsStore } from '../../core/stores/vibe-tags.store';
+import { TripsStore } from '../../core/stores/trips.store';
 import { gradientCss } from '../../core/constants/collection-covers';
 import { CollectionEditFacade } from './collection-edit.facade';
 import { GradientPickerComponent } from '../../shared/gradient-picker/gradient-picker.component';
@@ -70,6 +71,7 @@ export class CollectionDetailComponent implements AfterViewInit, OnDestroy {
   protected collections = inject(CollectionsStore);
   protected categories = inject(CategoriesStore);
   protected vibeTags = inject(VibeTagsStore);
+  protected tripsStore = inject(TripsStore);
   private router = inject(Router);
   private injector = inject(Injector);
 
@@ -424,6 +426,22 @@ export class CollectionDetailComponent implements AfterViewInit, OnDestroy {
   protected deleteFromOverflow(): void {
     this.showOverflowMenu.set(false);
     this.facade.showDeleteConfirm.set(true);
+  }
+
+  /**
+   * Create a new empty draft trip named after this collection and
+   * navigate the user into the planner. Per the product decision in
+   * Phase 6c, we do NOT pre-populate stops — the user explicitly asks
+   * for stops via "+ Add stop" in the planner. This keeps the action
+   * lightweight (no surprise list of 20 stops to prune) and avoids
+   * picking an order on the user's behalf.
+   */
+  protected async onPlanTrip(): Promise<void> {
+    const col = this.facade.collection();
+    if (!col) return;
+    const tripName = `Trip in ${col.name}`;
+    const trip = await this.tripsStore.create(tripName);
+    this.router.navigate(['/trips', trip.id]);
   }
 
   /** Click anywhere closes any open small menu. */

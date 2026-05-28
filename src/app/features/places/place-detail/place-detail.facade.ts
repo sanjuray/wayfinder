@@ -1,30 +1,26 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
 import { PlacesStore } from '../../../core/stores/places.store';
 import { IdService } from '../../../core/services/id.service';
+import {
+  placeMapsQueryVariants,
+  buildPlaceMapsUrl,
+} from '../../../core/utils/place-maps-query';
 import type { Place, PlaceStatus, Visit, VisitRating } from '../../../core/models';
 
 /**
  * One option in the "Open in Google Maps" dropdown. The first variant in the
  * list is the smart default that the primary button click uses.
+ *
+ * This is the facade-local presentation shape: it adds `preview` (what the
+ * user sees) and `url` (pre-built href) on top of the pure-data variant
+ * coming from `core/utils/place-maps-query`. Kept separate so the template
+ * doesn't need to know about URL building.
  */
 export interface MapsQueryVariant {
-  /** Stable identifier — used for tracking and *ngFor track-by. */
   key: string;
-  /** Human-readable label shown in the dropdown row. */
   label: string;
-  /** What the actual query string looks like (shown as a preview). */
   preview: string;
-  /** Pre-built Google Maps URL ready to drop into an <a href>. */
   url: string;
-}
-
-/**
- * Builds a Google Maps search URL from a free-form query string.
- * Uses the /maps/search/?api=1&query=... format which accepts addresses,
- * place names, coordinates, or any combination.
- */
-function buildMapsUrl(query: string): string {
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
 }
 
 @Injectable()
@@ -64,89 +60,28 @@ export class PlaceDetailFacade {
 
   /**
    * Available Google Maps query variants for the current place, in priority
-   * order. The first entry is the smart default; the rest are user overrides
-   * surfaced via the split-button dropdown in place-detail.
+   * order. The first entry is the smart default; subsequent entries are
+   * surfaced via the split-button popover for one-time override OR
+   * save-as-default selection.
    *
-   * Why a list and not a single computed URL: addresses like "Mantri Cosmos,
-   * ISB Road, Gachibowli" used to fall through to "address only", which sent
-   * Maps to the street instead of the apartment. We now combine name +
-   * address by default. The user can still pick a narrower or broader query
-   * if Google indexes the place differently than Nominatim does.
+   * Derivation logic (which variants exist, how they're labelled, and the
+   * promotion of a saved-default variant to position 0) lives in
+   * `core/utils/place-maps-query.ts` — shared between this screen and the
+   * trip planner so they stay consistent.
    *
-   * Each variant has a stable key (for tracking), a human label, a preview
-   * (what the query actually looks like), and the final maps URL.
+   * This computed wraps the util's pure-data variants with presentation
+   * fields (`preview` = the query string itself, displayed under the
+   * label; `url` = pre-built href).
    */
   readonly mapsQueryVariants = computed<MapsQueryVariant[]>(() => {
     const p = this.place();
     if (!p) return [];
-
-    const customName = p.customName?.trim();
-    const displayAddress = p.displayAddress?.trim();
-    const name = p.name?.trim();
-    const locality = [p.locality, p.region].filter(Boolean).join(', ');
-    const coords = `${p.lat},${p.lng}`;
-
-    const variants: MapsQueryVariant[] = [];
-
-    // Tier 1: customName + displayAddress (user-named, fully addressed)
-    if (customName && displayAddress) {
-      variants.push({
-        key: 'custom-name-and-address',
-        label: 'Custom name + address',
-        preview: `${customName}, ${displayAddress}`,
-        url: buildMapsUrl(`${customName}, ${displayAddress}`),
-      });
-    }
-
-    // Tier 2: name + displayAddress (NEW — the Mantri Cosmos fix)
-    if (name && displayAddress) {
-      variants.push({
-        key: 'name-and-address',
-        label: 'Name + address',
-        preview: `${name}, ${displayAddress}`,
-        url: buildMapsUrl(`${name}, ${displayAddress}`),
-      });
-    }
-
-    // Tier 3: customName + locality (broader than full address)
-    if (customName && locality) {
-      variants.push({
-        key: 'custom-name-and-locality',
-        label: 'Custom name + city',
-        preview: `${customName}, ${locality}`,
-        url: buildMapsUrl(`${customName}, ${locality}`),
-      });
-    }
-
-    // Tier 4: displayAddress only
-    if (displayAddress) {
-      variants.push({
-        key: 'address-only',
-        label: 'Address only',
-        preview: displayAddress,
-        url: buildMapsUrl(displayAddress),
-      });
-    }
-
-    // Tier 5: name only
-    if (name) {
-      variants.push({
-        key: 'name-only',
-        label: 'Place name only',
-        preview: name,
-        url: buildMapsUrl(name),
-      });
-    }
-
-    // Tier 6: coordinates — always available as a last-resort
-    variants.push({
-      key: 'coords',
-      label: 'Coordinates',
-      preview: coords,
-      url: buildMapsUrl(coords),
-    });
-
-    return variants;
+    return placeMapsQueryVariants(p).map((v) => ({
+      key: v.key,
+      label: v.label,
+      preview: v.query,
+      url: buildPlaceMapsUrl(v.query),
+    }));
   });
 
   /**
@@ -203,6 +138,19 @@ export class PlaceDetailFacade {
     const p = this.place();
     if (!p) return;
     await this.placesStore.updatePartial(p.id, { isFavorite: !p.isFavorite });
+  }
+
+  /**
+   * Persist the user's preferred Google Maps query variant for this place.
+   * Called from the popover when the user clicks a variant with the
+   * "Set as default" checkbox ticked. The variant's key (not URL) is
+   * stored so future changes to URL building don't invalidate preferences.
+   */
+  async saveMapsQueryKey(key: string): Promise<void> {
+    const p = this.place();
+    if (!p) return;
+    if (p.googleMapsQueryKey === key) return; // no-op
+    await this.placesStore.updatePartial(p.id, { googleMapsQueryKey: key });
   }
 
   startAddVisit(): void {

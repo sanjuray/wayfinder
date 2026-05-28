@@ -1,0 +1,178 @@
+<div class="page">
+  <!-- =========== HEADER =========== -->
+  <header class="hdr">
+    <div class="hdr-left">
+      <h1 class="title">Trips so far</h1>
+      <div class="sub">{{ subtitle() }}</div>
+    </div>
+    <div class="hdr-right">
+      <div class="filter-wrap">
+        <button
+          class="btn"
+          [class.on]="anyFilterActive()"
+          (click)="toggleFilter($event)"
+          aria-haspopup="dialog"
+          [attr.aria-expanded]="showFilter()"
+        >
+          <i class="ti ti-filter"></i>
+          Filter
+          @if (anyFilterActive()) {
+            <span class="dot" aria-label="filters active"></span>
+          }
+        </button>
+        @if (showFilter()) {
+          <wf-trips-filter-popover
+            [filter]="filter()"
+            (filterChange)="onFilterChange($event)"
+            (cancelled)="onFilterClosed()"
+          />
+        }
+      </div>
+      @if (!creating()) {
+        <button class="btn primary" (click)="startCreating()">
+          <i class="ti ti-plus"></i>
+          New trip
+        </button>
+      }
+    </div>
+  </header>
+
+  <!-- =========== INLINE CREATE =========== -->
+  @if (creating()) {
+    <div class="create-row">
+      <input
+        class="create-input"
+        [ngModel]="newName()"
+        (ngModelChange)="newName.set($event)"
+        (keydown.enter)="confirmCreate()"
+        (keydown.escape)="cancelCreating()"
+        placeholder="Name your trip — e.g. Vietnam coast loop"
+        autofocus
+      />
+      <button class="btn ghost" (click)="cancelCreating()" [disabled]="saving()">
+        Cancel
+      </button>
+      <button
+        class="btn primary"
+        [disabled]="!newName().trim() || saving()"
+        (click)="confirmCreate()"
+      >
+        @if (saving()) {
+          Creating…
+        } @else {
+          Create &amp; plan
+        }
+      </button>
+    </div>
+  }
+
+  <!-- =========== EMPTY STATE =========== -->
+  @if (totalCount() === 0 && !creating()) {
+    <div class="empty">
+      <i class="ti ti-route empty-icon"></i>
+      <p class="empty-head">No trips planned yet</p>
+      <p class="empty-sub">
+        A trip is a sequence of places you want to visit — string together a
+        weekend, a road trip, or a 6-month odyssey. Start with a name; you can
+        add stops next.
+      </p>
+      <button class="btn primary" (click)="startCreating()">
+        <i class="ti ti-plus"></i>
+        New trip
+      </button>
+    </div>
+  }
+
+  <!-- =========== SECTIONS =========== -->
+  @if (totalCount() > 0) {
+    @let visibleSections = sections();
+
+    @if (!hasAnyMatches() && anyFilterActive()) {
+      <div class="no-matches">
+        <i class="ti ti-filter-off"></i>
+        <p>No trips match these filters.</p>
+        <button class="btn ghost" (click)="onFilterChange({ query: '', statuses: emptySet, travelModes: emptySet })">
+          Clear filters
+        </button>
+      </div>
+    }
+
+    @for (sec of visibleSections; track sec.key) {
+      @if (sec.items.length > 0 || (sec.key === 'drafts' && !anyFilterActive())) {
+      <section class="section">
+        <h2 class="section-head" [attr.data-accent]="sec.accent">
+          <i class="ti section-icon" [class]="sec.icon"></i>
+          <span>{{ sec.label }}</span>
+          <span class="section-count">{{ sec.items.length }}</span>
+          <span class="section-line"></span>
+        </h2>
+
+        <div class="cards">
+          @for (t of sec.items; track t.id) {
+            <article
+              class="trip-card"
+              [class.draft]="sec.key === 'drafts'"
+              [class.past]="sec.key === 'past'"
+              (click)="openTrip(t)"
+            >
+              <div
+                class="status-pill"
+                [class.live]="sec.key === 'in-progress'"
+                [class.upcoming]="sec.key === 'upcoming'"
+                [class.draft]="sec.key === 'drafts'"
+                [class.past]="sec.key === 'past'"
+              >
+                {{ pillText(t, sec.key) }}
+              </div>
+
+              <wf-trip-card-preview
+                [coords]="stopCoords(t)"
+                [variant]="previewVariant(sec.key)"
+              />
+
+              <div class="meta-row">
+                <div class="nm">{{ t.name }}</div>
+                <div class="info-line">
+                  @if (datePretty(t.plannedDate); as d) {
+                    <span class="pip">
+                      <i class="ti ti-calendar"></i>
+                      {{ d }}
+                    </span>
+                  } @else {
+                    <span class="pip">
+                      <i class="ti ti-calendar-off"></i>
+                      no date
+                    </span>
+                  }
+                  <span class="dot-sep">·</span>
+                  <span class="pip">
+                    <i class="ti ti-map-pin"></i>
+                    {{ stopCountLabel(t) }}
+                  </span>
+                  @if (totalDistance(t); as dist) {
+                    <span class="dot-sep">·</span>
+                    <span class="pip">
+                      <i class="ti" [class]="travelModeIcon(t)"></i>
+                      {{ dist }}
+                    </span>
+                  }
+                </div>
+              </div>
+            </article>
+          }
+
+          <!-- "+ New trip" affordance always shown at the end of Drafts.
+               Provides a second entry point to creation that matches the
+               mockup layout (an empty card with a + glyph). -->
+          @if (sec.key === 'drafts' && !creating()) {
+            <button class="new-trip-card" (click)="startCreating()">
+              <i class="ti ti-plus"></i>
+              <div class="nm">New trip</div>
+            </button>
+          }
+        </div>
+      </section>
+    }
+  }
+  }
+</div>

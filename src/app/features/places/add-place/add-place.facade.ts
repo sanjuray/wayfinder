@@ -283,8 +283,13 @@ async save(): Promise<Place | null> {
     if (!draft || !categoryId) return null;
 
     const editedName = this.customName().trim();
-    const customName =
-      editedName && editedName !== draft.name ? editedName : undefined;
+    // Always store customName when present, even if equal to draft.name.
+    // Rationale (Phase 6d): the place-detail's "Open in Google Maps" popover
+    // surfaces "Custom name + ..." variants only when customName exists. We
+    // used to suppress customName when it matched name, which made those
+    // variants invisible for any place the user didn't bother to rename.
+    // Storing it unconditionally makes the variant list stable across places.
+    const customName = editedName || undefined;
     const now = new Date().toISOString();
 
     if (this.isEditMode()) {
@@ -318,7 +323,6 @@ async save(): Promise<Place | null> {
       status: this.status(),
       isFavorite: this.isFavorite(),
       visits: [],
-      // Save custom name only if it differs from the default — keeps records clean
       customName,
       sourceUrl: draft.sourceUrl,
       createdAt: now,

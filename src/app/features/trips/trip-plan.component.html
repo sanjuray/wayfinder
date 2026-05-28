@@ -1,0 +1,244 @@
+@if (!facade.loaded()) {
+  <div class="loading">
+    <p>Loading trip…</p>
+  </div>
+} @else if (facade.trip() === null) {
+  <div class="missing">
+    <h2>Trip not found</h2>
+    <p>This trip may have been deleted, or the link is wrong.</p>
+    <a class="btn primary" routerLink="/trips">Back to trips</a>
+  </div>
+} @else {
+  @let t = facade.trip()!;
+
+  <div class="planner">
+    <!-- ============= LEFT: STOPS + METADATA ============= -->
+    <aside class="side" aria-label="Trip details">
+      <a routerLink="/trips" class="back">
+        <i class="ti ti-arrow-left"></i>
+        trips so far
+      </a>
+
+      @if (editingName()) {
+        <input
+          class="name-input"
+          [ngModel]="nameDraft()"
+          (ngModelChange)="nameDraft.set($event)"
+          (keydown.enter)="commitName()"
+          (keydown.escape)="cancelEditingName()"
+          (blur)="commitName()"
+          autofocus
+        />
+      } @else {
+        <h2 class="name" (click)="startEditingName()" title="Click to rename">
+          {{ t.name }}
+          <i class="ti ti-pencil edit-hint"></i>
+        </h2>
+      }
+
+      <!-- Subtitle: date · stop count -->
+      <div class="sub">
+        <label class="date-pill">
+          <i class="ti ti-calendar"></i>
+          @if (dateLabel(); as d) {
+            <span>{{ d }}</span>
+          } @else {
+            <span class="dim">no date</span>
+          }
+          <input
+            class="date-input"
+            type="date"
+            [value]="t.plannedDate ?? ''"
+            (change)="onDateChange($any($event.target).value)"
+          />
+        </label>
+        <span class="sep">·</span>
+        <span>{{ totals().stopCount }} {{ totals().stopCount === 1 ? 'stop' : 'stops' }}</span>
+      </div>
+
+      <!-- Stops + legs -->
+      <section class="stops-section">
+        @if (t.stops.length === 0) {
+          <div class="stops-empty">
+            <i class="ti ti-route-off empty-icon"></i>
+            <p>No stops yet. Add some places to get started.</p>
+            <button class="btn primary" (click)="openPicker()">
+              <i class="ti ti-plus"></i> Add stop
+            </button>
+          </div>
+        } @else {
+          <div
+            class="stops"
+            cdkDropList
+            (cdkDropListDropped)="onDrop($event)"
+          >
+            @for (item of facade.stopsWithPlace(); track item.stop.id; let i = $index) {
+              <wf-trip-stop-card
+                [stop]="item.stop"
+                [place]="item.place"
+                [category]="item.place ? (categoryById().get(item.place.categoryId) ?? null) : null"
+                [index]="i"
+                [totalCount]="t.stops.length"
+                (remove)="onRemoveStop($event)"
+                (noteChanged)="onStopNoteChanged($event)"
+              />
+
+              @if (!$last) {
+                @let leg = legs()[i];
+                <div class="leg" aria-hidden="true">
+                  <span class="leg-km">{{ formatDistance(leg.km) }}*</span>
+                  <span class="leg-line"></span>
+                  <span class="leg-time">
+                    <i class="ti" [class]="legIcon(t.defaultTravelMode)"></i>
+                    {{ formatTime(leg.minutes) }}
+                  </span>
+                </div>
+              }
+            }
+          </div>
+
+          <button class="add-stop" (click)="openPicker()">
+            <i class="ti ti-plus"></i> Add stop
+          </button>
+        }
+      </section>
+
+      <!-- Totals -->
+      @if (t.stops.length >= 2) {
+        <div class="totals">
+          <div class="t-row">
+            <span class="t-label">Total distance</span>
+            <span class="t-value">{{ formatDistance(totals().km) }}*</span>
+          </div>
+          <div class="t-row">
+            <span class="t-label">Estimated time</span>
+            <span class="t-value">
+              {{ formatTime(totals().minutes) }} {{ travelLabel(t.defaultTravelMode) }}
+            </span>
+          </div>
+          <div class="t-row">
+            <span class="t-label">Stops</span>
+            <span class="t-value">{{ totals().stopCount }}</span>
+          </div>
+        </div>
+
+        <p class="disclaim">
+          *Distances are straight-line approximations — point of reference
+          only. Open in Google Maps for actual road routes.
+        </p>
+
+        <div class="mode-row">
+          <span class="mode-label">Open as:</span>
+          <select
+            class="mode-select"
+            [value]="t.defaultTravelMode"
+            (change)="onTravelModeChange($any($event.target).value)"
+          >
+            <option value="auto">Let Google decide</option>
+            <option value="walking">Walking</option>
+            <option value="driving">Driving</option>
+            <option value="cycling">Cycling</option>
+            <option value="transit">Transit</option>
+          </select>
+        </div>
+
+        <button
+          class="export-btn"
+          (click)="openInGoogleMaps()"
+          [disabled]="googleMapsUrls().length === 0"
+        >
+          <i class="ti ti-external-link"></i>
+          Open trip in Google Maps
+        </button>
+
+        @if (exportTooLong()) {
+          <p class="export-note">
+            Trips with more than 11 stops open as multiple Google Maps tabs
+            (Google's web URL limit).
+          </p>
+        }
+      }
+
+      <!-- Notes -->
+      <label class="field">
+        <span class="field-label">Notes</span>
+        <textarea
+          class="field-input notes"
+          rows="3"
+          [ngModel]="notesDraft()"
+          (ngModelChange)="notesDraft.set($event)"
+          (blur)="commitNotes()"
+          placeholder="Trip notes (optional)"
+        ></textarea>
+      </label>
+
+      <!-- Footer actions -->
+      <div class="foot">
+        <label class="completed">
+          <input
+            type="checkbox"
+            [checked]="t.isCompleted"
+            (change)="onToggleCompleted()"
+          />
+          <span>Trip complete</span>
+        </label>
+        <button class="iconbtn danger" (click)="onDeleteTrip()" title="Delete trip">
+          <i class="ti ti-trash"></i>
+        </button>
+      </div>
+    </aside>
+
+    <!-- ============= RIGHT: MAP + (overlay) PICKER COLUMN ============= -->
+    <div class="map-region">
+      <div #mapEl class="map"></div>
+      <div class="map-hint">
+        Click a pin to view the place · use Add stop to add more
+      </div>
+
+      <!-- Picker column slides in from the right when showPicker is true.
+           Lives inside .map-region (not as a sibling) so its absolute
+           positioning is relative to the map area, not the whole planner. -->
+      <wf-picker-column
+        [isOpen]="showPicker()"
+        [availablePlaces]="facade.availablePlaces()"
+        (picked)="onPickerPicked($event)"
+        (cancelled)="onPickerCancelled()"
+        (newPlace)="onPickerNewPlace()"
+      />
+    </div>
+  </div>
+
+  <!-- Undo toast: shown while a stop removal is pending undo (30s window). -->
+  @if (facade.pendingUndoStop(); as undo) {
+    <div class="undo-toast" role="status" aria-live="polite">
+      <span class="undo-text">
+        Removed <strong>{{ undo.placeName }}</strong>
+      </span>
+      <button class="undo-action" (click)="onUndoRemove()">Undo</button>
+      <button class="undo-dismiss" (click)="onDismissUndo()" aria-label="Dismiss">×</button>
+    </div>
+  }
+
+  <!-- Place detail panel (pin click opens it). Mounted at the planner
+       level so it overlays the whole layout, same UX as on home/collections. -->
+  <wf-place-detail
+    (closed)="onPlaceDetailClosed()"
+    (editRequested)="onEditPlace($event)"
+  />
+
+  <!-- "+ Save a new place" flow: standard add-place modal. On save, the
+       new place is added as a stop in this trip. -->
+  @if (showAddPlace()) {
+    <wf-add-place
+      (saved)="onAddPlaceSaved($event)"
+      (cancelled)="onAddPlaceCancelled()"
+    />
+  }
+
+  @if (showDeleteConfirm()) {
+    <wf-delete-confirm
+      (confirmed)="onDeleteConfirmed()"
+      (cancelled)="onDeleteCancelled()"
+    />
+  }
+}

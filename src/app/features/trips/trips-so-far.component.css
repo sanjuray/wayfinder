@@ -1,0 +1,479 @@
+/* =========================================================
+   /trips — Trips so far (Phase 6e, mockup-aligned)
+   Sections with iconed titles + line filler; cards with mini
+   map preview + status pill + info line.
+   ========================================================= */
+
+.page {
+  padding: 22px 24px 48px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+/* ============ Header ============ */
+
+.hdr {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.hdr-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.title {
+  margin: 0;
+  font-family: var(--wf-font-display);
+  font-size: 26px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--wf-ink);
+}
+
+.sub {
+  font-size: 13px;
+  color: var(--wf-ink-soft);
+}
+
+.hdr-right {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.filter-wrap {
+  position: relative;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  border-radius: 10px;
+  border: 0.5px solid var(--wf-hairline);
+  background: var(--wf-bg-2);
+  color: var(--wf-ink);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn:hover {
+  background: var(--wf-bg);
+  border-color: var(--wf-ink-faint);
+}
+
+.btn.primary {
+  background: var(--wf-accent);
+  border-color: var(--wf-accent);
+  color: var(--wf-bg);
+}
+
+.btn.primary:hover {
+  filter: brightness(1.05);
+}
+
+.btn.ghost {
+  background: transparent;
+  border-color: var(--wf-hairline);
+  color: var(--wf-ink-soft);
+}
+
+.btn.ghost:hover {
+  color: var(--wf-ink);
+  background: var(--wf-bg-2);
+}
+
+.btn.on {
+  border-color: var(--wf-accent);
+  color: var(--wf-accent);
+  background: color-mix(in srgb, var(--wf-accent) 8%, transparent);
+}
+
+.btn i {
+  font-size: 13px;
+}
+
+.btn .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--wf-accent);
+  margin-left: 2px;
+}
+
+/* ============ Inline create ============ */
+
+.create-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 24px;
+  padding: 14px;
+  background: var(--wf-bg-2);
+  border: 0.5px solid var(--wf-hairline);
+  border-radius: 12px;
+}
+
+.create-input {
+  flex: 1;
+  padding: 9px 12px;
+  font: inherit;
+  font-size: 14px;
+  color: var(--wf-ink);
+  background: var(--wf-bg);
+  border: 0.5px solid var(--wf-hairline);
+  border-radius: 8px;
+}
+
+.create-input:focus {
+  outline: none;
+  border-color: var(--wf-accent);
+  box-shadow: var(--wf-glow);
+}
+
+/* ============ Empty state ============ */
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 56px 24px;
+  text-align: center;
+  color: var(--wf-ink-soft);
+}
+
+.empty-icon {
+  font-size: 38px;
+  color: var(--wf-ink-faint);
+  margin-bottom: 14px;
+}
+
+.empty-head {
+  margin: 0 0 6px;
+  font-family: var(--wf-font-display);
+  font-size: 19px;
+  font-weight: 500;
+  color: var(--wf-ink);
+}
+
+.empty-sub {
+  max-width: 460px;
+  margin: 0 0 22px;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+/* ============ No matches state (filter active, zero results) ============ */
+
+.no-matches {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 16px;
+  text-align: center;
+  color: var(--wf-ink-soft);
+  background: var(--wf-bg-2);
+  border: 0.5px dashed var(--wf-hairline);
+  border-radius: 12px;
+  margin-top: 8px;
+}
+
+.no-matches i {
+  font-size: 30px;
+  color: var(--wf-ink-faint);
+  margin-bottom: 10px;
+}
+
+.no-matches p {
+  margin: 0 0 14px;
+  font-size: 13px;
+}
+
+/* ============ Sections ============ */
+
+.section {
+  margin-top: 30px;
+}
+
+.section-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 14px;
+  padding: 0;
+  font-family: var(--wf-font-display);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--wf-ink);
+  letter-spacing: -0.005em;
+}
+
+.section-icon {
+  font-size: 14px;
+  color: var(--wf-ink-soft);
+}
+
+/* Color hint for section icon based on data-accent on the heading */
+.section-head[data-accent='teal'] .section-icon {
+  color: var(--wf-teal);
+}
+.section-head[data-accent='accent'] .section-icon {
+  color: var(--wf-accent);
+}
+
+.section-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 999px;
+  background: var(--wf-bg-2);
+  color: var(--wf-ink-soft);
+}
+
+/* The thin horizontal line that finishes the section title — matches the
+   mockup's airy section dividers. */
+.section-line {
+  flex: 1;
+  height: 0;
+  border-bottom: 0.5px solid var(--wf-hairline);
+  margin-left: 4px;
+}
+
+/* ============ Card grid ============ */
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+/* ============ Trip card ============ */
+
+.trip-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: var(--wf-bg);
+  border: 0.5px solid var(--wf-hairline);
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  transition:
+    border-color 0.12s ease,
+    transform 0.12s ease,
+    box-shadow 0.12s ease;
+}
+
+.trip-card:hover {
+  border-color: var(--wf-ink-faint);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--wf-ink) 8%, transparent);
+}
+
+.trip-card.draft {
+  background: var(--wf-bg-2);
+  border-style: dashed;
+}
+
+.trip-card.past .meta-row {
+  background: color-mix(in srgb, var(--wf-teal) 4%, var(--wf-bg));
+}
+
+/* ============ Status pill (top-right of card) ============ */
+
+.status-pill {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 3;
+  padding: 3px 9px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: lowercase;
+  letter-spacing: 0.04em;
+  border-radius: 999px;
+  background: var(--wf-bg);
+  color: var(--wf-ink-soft);
+  border: 0.5px solid var(--wf-hairline);
+  white-space: nowrap;
+}
+
+.status-pill.upcoming {
+  color: var(--wf-accent);
+  border-color: color-mix(in srgb, var(--wf-accent) 40%, transparent);
+  background: color-mix(in srgb, var(--wf-accent) 10%, var(--wf-bg));
+}
+
+.status-pill.draft {
+  color: var(--wf-ink-faint);
+  background: var(--wf-bg-2);
+  border-style: dashed;
+}
+
+.status-pill.past {
+  color: var(--wf-teal);
+  border-color: color-mix(in srgb, var(--wf-teal) 40%, transparent);
+  background: color-mix(in srgb, var(--wf-teal) 10%, var(--wf-bg));
+}
+
+/* Live pulse for in-progress trips. The pill gets a soft outward
+   pulsing halo via a pseudo-element. Lightweight — single keyframes. */
+.status-pill.live {
+  color: var(--wf-bg);
+  background: var(--wf-teal);
+  border-color: var(--wf-teal);
+  position: absolute; /* keep base positioning */
+}
+
+.status-pill.live::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--wf-teal);
+  z-index: -1;
+  animation: live-pulse 1.6s ease-out infinite;
+}
+
+@keyframes live-pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.55;
+  }
+  100% {
+    transform: scale(1.7);
+    opacity: 0;
+  }
+}
+
+/* Slight inner dot inside the live pill so it reads as a status not a label */
+.status-pill.live::after {
+  content: '';
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  background: var(--wf-bg);
+  border-radius: 50%;
+  margin-right: 4px;
+  vertical-align: middle;
+  transform: translateY(-1px);
+}
+
+/* ============ Card meta row (below the preview) ============ */
+
+.meta-row {
+  padding: 12px 14px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.nm {
+  font-family: var(--wf-font-display);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--wf-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.info-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--wf-ink-soft);
+}
+
+.info-line .pip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.info-line .pip i {
+  font-size: 12px;
+}
+
+.info-line .dot-sep {
+  color: var(--wf-ink-faint);
+}
+
+/* ============ New trip placeholder card ============ */
+
+.new-trip-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 220px;
+  padding: 24px;
+  background: var(--wf-bg-2);
+  border: 0.5px dashed var(--wf-hairline);
+  border-radius: 12px;
+  cursor: pointer;
+  color: var(--wf-ink-soft);
+  font: inherit;
+  transition:
+    color 0.12s ease,
+    border-color 0.12s ease,
+    background 0.12s ease;
+}
+
+.new-trip-card:hover {
+  color: var(--wf-accent);
+  border-color: var(--wf-accent);
+  border-style: solid;
+  background: color-mix(in srgb, var(--wf-accent) 5%, var(--wf-bg-2));
+}
+
+.new-trip-card i {
+  font-size: 26px;
+}
+
+.new-trip-card .nm {
+  font-family: var(--wf-font-display);
+  font-size: 14px;
+  font-weight: 500;
+  color: inherit;
+}
+
+/* ============ Mobile ============ */
+
+@media (max-width: 640px) {
+  .page {
+    padding: 16px 14px 32px;
+  }
+  .hdr {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .hdr-right {
+    justify-content: flex-end;
+  }
+  .cards {
+    grid-template-columns: 1fr;
+  }
+  .create-row {
+    flex-direction: column;
+  }
+}

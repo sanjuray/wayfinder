@@ -96,6 +96,16 @@
 
           <div class="action-wrap">
             <button
+              class="btn"
+              (click)="onPlanTrip()"
+              title="Create a new trip"
+            >
+              <i class="ti ti-route"></i> Plan trip
+            </button>
+          </div>
+
+          <div class="action-wrap">
+            <button
               class="btn iconbtn"
               (click)="toggleOverflowMenu($event)"
               [class.on]="showOverflowMenu()"

@@ -1,0 +1,615 @@
+/* =========================================================
+   /trips/:id — Trip planner (Phase 6c, mockup-aligned)
+   2-column layout: side column (stops + metadata) | map
+   ========================================================= */
+
+:host {
+  display: block;
+  height: 100%;
+  background: var(--wf-bg);
+}
+
+/* ============ Loading / Missing states ============ */
+
+.loading,
+.missing {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 32px;
+  text-align: center;
+  color: var(--wf-ink-soft);
+}
+
+.missing h2 {
+  font-family: var(--wf-font-display);
+  font-size: 22px;
+  color: var(--wf-ink);
+  margin: 0 0 8px;
+}
+
+.missing p {
+  margin: 0 0 20px;
+  font-size: 14px;
+}
+
+/* ============ Layout ============ */
+
+.planner {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  height: 100%;
+}
+
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px 22px 32px;
+  background: var(--wf-bg-2);
+  border-right: 0.5px solid var(--wf-hairline);
+  overflow-y: auto;
+}
+
+.map-region {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+}
+
+.map {
+  width: 100%;
+  height: 100%;
+}
+
+.map-hint {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 400;
+  padding: 6px 12px;
+  background: color-mix(in srgb, var(--wf-bg) 88%, transparent);
+  border: 0.5px solid var(--wf-hairline);
+  border-radius: 999px;
+  font-size: 11px;
+  color: var(--wf-ink-soft);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  pointer-events: none;
+  max-width: 90%;
+  text-align: center;
+}
+
+/* ============ Header (back link, name, subtitle) ============ */
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  align-self: flex-start;
+  font-size: 12px;
+  color: var(--wf-ink-soft);
+  text-decoration: none;
+  padding: 4px 8px;
+  margin-left: -8px;
+  border-radius: 6px;
+}
+
+.back i {
+  font-size: 12px;
+}
+
+.back:hover {
+  background: var(--wf-bg);
+  color: var(--wf-ink);
+}
+
+.name {
+  margin: 0;
+  font-family: var(--wf-font-display);
+  font-size: 26px;
+  font-weight: 500;
+  color: var(--wf-ink);
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  padding: 4px 6px;
+  margin-left: -6px;
+  margin-right: -6px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.name:hover {
+  background: var(--wf-bg);
+}
+
+.edit-hint {
+  font-size: 14px;
+  color: var(--wf-ink-faint);
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+
+.name:hover .edit-hint {
+  opacity: 1;
+}
+
+.name-input {
+  margin: 0;
+  font-family: var(--wf-font-display);
+  font-size: 26px;
+  font-weight: 500;
+  color: var(--wf-ink);
+  letter-spacing: -0.01em;
+  padding: 4px 6px;
+  margin-left: -6px;
+  margin-right: -6px;
+  background: var(--wf-bg);
+  border: 0.5px solid var(--wf-accent);
+  border-radius: 6px;
+  width: calc(100% + 12px);
+}
+
+.name-input:focus {
+  outline: none;
+  box-shadow: var(--wf-glow);
+}
+
+.sub {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--wf-ink-soft);
+}
+
+.sub .sep {
+  color: var(--wf-ink-faint);
+}
+
+.sub .dim {
+  color: var(--wf-ink-faint);
+  font-style: italic;
+}
+
+.date-pill {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  border: 0.5px solid var(--wf-hairline);
+  border-radius: 999px;
+  background: var(--wf-bg);
+  cursor: pointer;
+}
+
+.date-pill:hover {
+  border-color: var(--wf-ink-faint);
+}
+
+.date-pill i {
+  font-size: 13px;
+  color: var(--wf-ink-faint);
+}
+
+/* The actual <input type="date"> overlays the pill — invisible but
+   clickable, so clicking the pill opens the picker. */
+.date-input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  font: inherit;
+  color: transparent;
+}
+
+/* ============ Stops + legs ============ */
+
+.stops-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.stops {
+  display: flex;
+  flex-direction: column;
+  gap: 0; /* legs sit between cards; no gap */
+}
+
+/* CDK drop list active state */
+.stops.cdk-drop-list-dragging wf-trip-stop-card:not(.cdk-drag-placeholder) {
+  transition: transform 200ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.leg {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 14px 4px 28px; /* indent so the line dangles under the badge */
+  font-size: 11px;
+  color: var(--wf-ink-faint);
+}
+
+.leg-line {
+  flex: 1;
+  height: 0;
+  border-top: 0.5px dashed var(--wf-hairline);
+}
+
+.leg-km,
+.leg-time {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  white-space: nowrap;
+}
+
+.leg-time i {
+  font-size: 12px;
+}
+
+.add-stop {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 12px;
+  margin-top: 8px;
+  font: inherit;
+  font-size: 13px;
+  color: var(--wf-accent);
+  background: transparent;
+  border: 0.5px dashed var(--wf-accent);
+  border-radius: 8px;
+  cursor: pointer;
+  align-self: flex-start;
+}
+
+.add-stop:hover {
+  background: color-mix(in srgb, var(--wf-accent) 8%, transparent);
+}
+
+.add-stop i {
+  font-size: 14px;
+}
+
+.stops-empty {
+  padding: 28px 16px;
+  border: 0.5px dashed var(--wf-hairline);
+  border-radius: 10px;
+  text-align: center;
+  color: var(--wf-ink-soft);
+}
+
+.empty-icon {
+  font-size: 32px;
+  color: var(--wf-ink-faint);
+  display: block;
+  margin: 0 auto 10px;
+}
+
+.stops-empty p {
+  margin: 0 0 16px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* ============ Totals + disclaimer + mode + export ============ */
+
+.totals {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  margin-top: 6px;
+  background: var(--wf-bg);
+  border: 0.5px solid var(--wf-hairline);
+  border-radius: 10px;
+}
+
+.t-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+}
+
+.t-label {
+  color: var(--wf-ink-soft);
+}
+
+.t-value {
+  color: var(--wf-ink);
+  font-weight: 500;
+}
+
+.disclaim {
+  margin: -2px 0 4px;
+  font-size: 11px;
+  color: var(--wf-ink-faint);
+  font-style: italic;
+  line-height: 1.5;
+}
+
+.mode-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.mode-label {
+  color: var(--wf-ink-soft);
+}
+
+.mode-select {
+  flex: 1;
+  padding: 7px 10px;
+  font: inherit;
+  font-size: 13px;
+  color: var(--wf-ink);
+  background: var(--wf-bg);
+  border: 0.5px solid var(--wf-hairline);
+  border-radius: 8px;
+}
+
+.mode-select:focus {
+  outline: none;
+  border-color: var(--wf-accent);
+  box-shadow: var(--wf-glow);
+}
+
+.export-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 16px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--wf-bg);
+  background: var(--wf-accent);
+  border: 0.5px solid var(--wf-accent);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.export-btn:hover {
+  filter: brightness(1.05);
+}
+
+.export-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.export-btn i {
+  font-size: 16px;
+}
+
+.export-note {
+  margin: -4px 0 0;
+  font-size: 11px;
+  color: var(--wf-ink-faint);
+  font-style: italic;
+  line-height: 1.5;
+}
+
+/* ============ Notes + footer ============ */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.field-label {
+  font-size: 11px;
+  color: var(--wf-ink-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.field-input {
+  padding: 8px 11px;
+  font: inherit;
+  font-size: 13px;
+  color: var(--wf-ink);
+  background: var(--wf-bg);
+  border: 0.5px solid var(--wf-hairline);
+  border-radius: 8px;
+}
+
+.field-input:focus {
+  outline: none;
+  border-color: var(--wf-accent);
+  box-shadow: var(--wf-glow);
+}
+
+.notes {
+  resize: vertical;
+  min-height: 64px;
+  font-family: inherit;
+}
+
+.foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 10px;
+  border-top: 0.5px solid var(--wf-hairline);
+  margin-top: 4px;
+}
+
+.completed {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--wf-ink-soft);
+  cursor: pointer;
+}
+
+.completed input[type='checkbox'] {
+  accent-color: var(--wf-accent);
+  cursor: pointer;
+}
+
+.iconbtn {
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 0.5px solid var(--wf-hairline);
+  border-radius: 6px;
+  color: var(--wf-ink-soft);
+  cursor: pointer;
+}
+
+.iconbtn:hover {
+  background: var(--wf-bg);
+  color: var(--wf-ink);
+}
+
+.iconbtn.danger:hover {
+  color: var(--wf-accent);
+  background: color-mix(in srgb, var(--wf-accent) 10%, transparent);
+  border-color: color-mix(in srgb, var(--wf-accent) 40%, transparent);
+}
+
+.iconbtn i {
+  font-size: 15px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  border-radius: 10px;
+  border: 0.5px solid var(--wf-hairline);
+  background: var(--wf-bg-2);
+  color: var(--wf-ink);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.btn.primary {
+  background: var(--wf-accent);
+  border-color: var(--wf-accent);
+  color: var(--wf-bg);
+}
+
+.btn.primary:hover {
+  filter: brightness(1.05);
+}
+
+/* ============ RESPONSIVE ============ */
+
+@media (max-width: 960px) {
+  .planner {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 360px;
+    height: auto;
+  }
+
+  .side {
+    border-right: none;
+    border-bottom: 0.5px solid var(--wf-hairline);
+  }
+
+  .map-region {
+    height: 360px;
+  }
+}
+
+/* ============ Undo toast (Phase 6d) ============ */
+
+/* Pinned at the bottom of the planner viewport. Auto-dismisses after 30s
+   (timer lives in the facade). The fading ghost-pin on the map is the
+   spatial complement to this textual affordance — together they say
+   "this was here, you can bring it back." */
+.undo-toast {
+  position: fixed;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1500;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--wf-ink);
+  color: var(--wf-bg);
+  border-radius: 12px;
+  box-shadow:
+    0 12px 32px rgba(0, 0, 0, 0.22),
+    0 4px 12px rgba(0, 0, 0, 0.12);
+  font-size: 13px;
+  animation: undo-slide-up 0.18s ease;
+}
+
+@keyframes undo-slide-up {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 8px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+.undo-text {
+  color: var(--wf-bg);
+}
+
+.undo-text strong {
+  font-weight: 600;
+}
+
+.undo-action {
+  background: transparent;
+  border: none;
+  color: var(--wf-accent);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  letter-spacing: 0.02em;
+}
+
+.undo-action:hover {
+  background: color-mix(in srgb, var(--wf-accent) 18%, transparent);
+}
+
+.undo-dismiss {
+  background: transparent;
+  border: none;
+  color: color-mix(in srgb, var(--wf-bg) 70%, transparent);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.undo-dismiss:hover {
+  color: var(--wf-bg);
+}
