@@ -2,6 +2,7 @@ import { signalStore, withState, withMethods, withComputed, patchState } from '@
 import { computed, inject } from '@angular/core';
 import { STORAGE_ADAPTER } from '../storage/storage.token';
 import { IdService } from '../services/id.service';
+import { AppStateStore } from './app-state.store';
 import { randomGradientId, DEFAULT_COVER_ICON } from '../constants/collection-covers';
 import type { Collection } from '../models';
 
@@ -29,6 +30,7 @@ export const CollectionsStore = signalStore(
   withMethods((store) => {
     const storage = inject(STORAGE_ADAPTER);
     const idService = inject(IdService);
+    const appState = inject(AppStateStore);
 
     /**
      * Loads collections and backfills cover fields for any that don't have
@@ -81,12 +83,14 @@ export const CollectionsStore = signalStore(
       };
       await storage.upsertCollection(collection);
       patchState(store, { entities: [...store.entities(), collection] });
+      appState.recordChange();
       return collection;
     }
 
     async function add(c: Collection) {
       await storage.upsertCollection(c);
       patchState(store, { entities: [...store.entities(), c] });
+      appState.recordChange();
     }
 
     async function updatePartial(
@@ -104,11 +108,13 @@ export const CollectionsStore = signalStore(
       patchState(store, {
         entities: store.entities().map((c) => (c.id === id ? updated : c)),
       });
+      appState.recordChange();
     }
 
     async function remove(id: string) {
       await storage.deleteCollection(id);
       patchState(store, { entities: store.entities().filter((c) => c.id !== id) });
+      appState.recordChange();
     }
 
     async function softDelete(id: string): Promise<void> {
@@ -120,6 +126,7 @@ export const CollectionsStore = signalStore(
       patchState(store, {
         entities: store.entities().filter((c) => c.id !== id),
       });
+      appState.recordChange();
     }
 
     function getById(id: string): Collection | undefined {

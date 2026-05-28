@@ -48,7 +48,19 @@ import {
         preserveAspectRatio="none"
         aria-hidden="true"
       >
-        @if (polylinePath(); as d) {
+        <!-- Visited segment (Phase 7) — solid teal up to the current stop. -->
+        @if (visitedPath(); as d) {
+          <path
+            [attr.d]="d"
+            fill="none"
+            stroke="var(--wf-teal)"
+            stroke-width="2.5"
+            opacity="0.9"
+            stroke-linecap="round"
+          />
+        }
+        <!-- Remaining segment — dashed accent (or solid teal for past trips). -->
+        @if (remainingPath(); as d) {
           <path
             [attr.d]="d"
             fill="none"
@@ -67,10 +79,19 @@ import {
           [class.start]="pin.start"
           [class.end]="pin.end"
           [class.past]="variant() === 'past'"
+          [class.visited]="pin.visited"
           [style.left.px]="pin.x"
           [style.top.px]="pin.y"
         >
-          {{ pin.n }}
+          @if (pin.visited) {
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="3"
+              stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          } @else {
+            {{ pin.n }}
+          }
         </div>
       }
 
@@ -150,6 +171,10 @@ import {
       .mini-pin.past {
         background: var(--wf-teal);
       }
+      /* Phase 7: visited pin on in-progress cards uses teal, like past trips. */
+      .mini-pin.visited {
+        background: var(--wf-teal);
+      }
       .mini-pin.start,
       .mini-pin.end {
         box-shadow:
@@ -157,10 +182,15 @@ import {
           0 1px 3px rgba(0, 0, 0, 0.15);
       }
       .mini-pin.past.start,
-      .mini-pin.past.end {
+      .mini-pin.past.end,
+      .mini-pin.visited.start,
+      .mini-pin.visited.end {
         box-shadow:
           0 0 0 2px color-mix(in srgb, var(--wf-teal) 30%, transparent),
           0 1px 3px rgba(0, 0, 0, 0.15);
+      }
+      .mini-pin svg {
+        display: block;
       }
 
       .empty-hint {
@@ -190,34 +220,63 @@ export class TripCardPreviewComponent {
   readonly variant = input<'default' | 'draft' | 'past'>('default');
 
   /**
+   * Phase 7: index of the most-recently visited stop. Used by in-progress
+   * cards to split the polyline into visited (teal solid) and remaining
+   * (accent dashed) and mark the pins through it as completed.
+   *
+   * null = no stops visited yet (entire route renders as "remaining").
+   * Out-of-bounds values are clamped silently.
+   */
+  readonly currentIndex = input<number | null>(null);
+
+  /**
    * Pin positions in SVG-space (viewBox 280×130 — same units as
    * left/top in pixels here because preserveAspectRatio="none" and the
    * preview's CSS height is 130px; with a flexible width, x positions
    * scale proportionally — close enough for an indicative mini-map).
    */
-  protected pins = computed<Array<{ n: number; x: number; y: number; start: boolean; end: boolean }>>(
-    () => {
-      const c = this.coords();
-      if (c.length === 0) return [];
-      const points = this.normalizedPoints();
-      return points.map((p, i) => ({
-        n: i + 1,
-        x: p.x,
-        y: p.y,
-        start: i === 0,
-        end: i === c.length - 1,
-      }));
-    }
-  );
+  protected pins = computed<
+    Array<{ n: number; x: number; y: number; start: boolean; end: boolean; visited: boolean }>
+  >(() => {
+    const c = this.coords();
+    if (c.length === 0) return [];
+    const points = this.normalizedPoints();
+    const ci = this.currentIndex();
+    return points.map((p, i) => ({
+      n: i + 1,
+      x: p.x,
+      y: p.y,
+      start: i === 0,
+      end: i === c.length - 1,
+      visited: ci !== null && i <= ci,
+    }));
+  });
 
   /**
-   * Bezier SVG path data ("M x y Q ... Q ...") for the polyline. Null
-   * when there are fewer than 2 stops (nothing to draw).
+   * Visited segment path (stop 0 → currentIndex). Null when no stops are
+   * visited or only one stop is visited (no segment to draw — visited
+   * shows only as a pin color).
    */
-  protected polylinePath = computed<string | null>(() => {
+  protected visitedPath = computed<string | null>(() => {
+    const points = this.normalizedPoints();
+    const ci = this.currentIndex();
+    if (ci === null || ci < 1 || points.length < 2) return null;
+    const slice = points.slice(0, Math.min(ci, points.length - 1) + 1);
+    return buildBezierPath(slice);
+  });
+
+  /**
+   * Remaining segment path (currentIndex → end). When no stops visited,
+   * this is the entire route. When the final stop is visited, this is
+   * null (everything's covered by the visited path).
+   */
+  protected remainingPath = computed<string | null>(() => {
     const points = this.normalizedPoints();
     if (points.length < 2) return null;
-    return buildBezierPath(points);
+    const ci = this.currentIndex();
+    const startIdx = ci === null ? 0 : Math.min(ci, points.length - 1);
+    if (startIdx >= points.length - 1) return null;
+    return buildBezierPath(points.slice(startIdx));
   });
 
   protected strokeColor = computed(() =>
@@ -321,4 +380,4 @@ function bezierControl(
   const py = dx / len;
   const arc = len * 0.18 * side;
   return { x: mx + px * arc, y: my + py * arc };
-}   
+}

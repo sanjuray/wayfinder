@@ -34,7 +34,7 @@ export interface TripsFilterState {
  * Three filters chosen for v1 (Phase 6e):
  *   - Search by trip name (free text)
  *   - Status multi-select (in-progress / upcoming / draft / past)
- *   - Travel mode multi-select (walking / driving / cycling / transit / auto)
+ *   - Travel mode multi-select (walking / driving / motorcycle / transit / auto)
  *
  * State is owned by the parent — we emit changes via `filterChange`. This
  * keeps the component drop-in elsewhere if needed and means the parent's
@@ -226,7 +226,7 @@ export class TripsFilterPopoverComponent {
     { value: 'auto', label: 'Auto' },
     { value: 'walking', label: 'Walking' },
     { value: 'driving', label: 'Driving' },
-    { value: 'cycling', label: 'Cycling' },
+    { value: 'motorcycle', label: 'Motorcycle' },
     { value: 'transit', label: 'Transit' },
   ];
 

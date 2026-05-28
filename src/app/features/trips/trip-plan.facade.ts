@@ -137,10 +137,36 @@ export class TripPlanFacade {
 
   // ---- Metadata edits ----
 
-  async setName(name: string): Promise<void> {
+  /**
+   * Attempt to rename the trip. Returns true on success, false if the
+   * name collides with another trip (case-insensitive, ignoring soft-
+   * deleted). The component surfaces the error in the UI.
+   *
+   * The store throws on collision (defense-in-depth); we catch it here
+   * and translate to a clean boolean for the caller.
+   */
+  async setName(name: string): Promise<boolean> {
     const t = this.trip();
-    if (!t) return;
-    await this.tripsStore.updatePartial(t.id, { name: name.trim() });
+    if (!t) return false;
+    try {
+      await this.tripsStore.updatePartial(t.id, { name: name.trim() });
+      return true;
+    } catch (err) {
+      if (err instanceof Error && err.message === 'DUPLICATE_TRIP_NAME') {
+        return false;
+      }
+      throw err;
+    }
+  }
+
+  /**
+   * Synchronous check: is this proposed name OK for the current trip?
+   * Used by the planner's name-edit UI to show a live error indicator
+   * before the user blurs.
+   */
+  isNameAvailable(name: string): boolean {
+    const t = this.trip();
+    return this.tripsStore.nameAvailable(name, t?.id);
   }
 
   /**
@@ -318,6 +344,190 @@ export class TripPlanFacade {
         : s
     );
     await this.persistStops(stops);
+  }
+
+  // ---- Live trip (Phase 7) ----
+
+  /**
+   * True iff the trip is actively underway. Drives the "Start trip" /
+   * "Finish trip" button states, the avatar marker on the map, and the
+   * split-color polyline.
+   */
+  readonly isLive = computed<boolean>(() => {
+    const t = this.trip();
+    return !!t && !!t.startedAt && !t.isCompleted;
+  });
+
+  /**
+   * Count of stops marked visited during this trip. Drives the trips-list
+   * progress bar ("1 of 3 visited") and is the source for currentStopIndex.
+   */
+  readonly visitedCount = computed<number>(() => {
+    const t = this.trip();
+    if (!t) return 0;
+    return t.stops.filter((s) => s.visitedDuringTrip).length;
+  });
+
+  /**
+   * Index of the most-recently visited stop (highest `visitedAt`), or null
+   * if none. The avatar marker sits at this stop. We sort by `visitedAt`
+   * rather than relying on stop array order because the user can visit
+   * stops out of order — e.g. skipping stop 2 to do stop 3 first.
+   */
+  readonly currentStopIndex = computed<number | null>(() => {
+    const t = this.trip();
+    if (!t) return null;
+    let bestIdx: number | null = null;
+    let bestVisitedAt = '';
+    t.stops.forEach((s, idx) => {
+      if (!s.visitedDuringTrip) return;
+      const at = s.visitedAt ?? '';
+      // Tiebreaker: later in array order wins when timestamps are equal
+      // (e.g. all stops marked visited at app startup with no `visitedAt`).
+      if (
+        bestIdx === null ||
+        at > bestVisitedAt ||
+        (at === bestVisitedAt && idx > bestIdx)
+      ) {
+        bestIdx = idx;
+        bestVisitedAt = at;
+      }
+    });
+    return bestIdx;
+  });
+
+  /**
+   * Manually start the trip. Sets startedAt to now if unset. No-op if
+   * already started (no double-start), already completed (would be a
+   * weird state — re-opening a completed trip is via toggling
+   * isCompleted off), or no trip loaded. Idempotent.
+   */
+  async startTrip(): Promise<void> {
+    const t = this.trip();
+    if (!t || t.startedAt || t.isCompleted) return;
+    await this.tripsStore.updatePartial(t.id, {
+      startedAt: new Date().toISOString(),
+    });
+  }
+
+  /**
+   * Manually finish the trip. Sets isCompleted=true. Does not clear
+   * startedAt — past trips that completed should still show "started at
+   * X" historically. No-op if not started or already completed.
+   */
+  async finishTrip(): Promise<void> {
+    const t = this.trip();
+    if (!t || !t.startedAt || t.isCompleted) return;
+    await this.tripsStore.updatePartial(t.id, { isCompleted: true });
+  }
+
+  /**
+   * Reset an in-progress trip back to its pre-started state. Clears
+   * startedAt AND unmarks every visited stop. Visited marks are
+   * temporary state for the live trip — they don't survive a reset.
+   *
+   * Where the trip lands afterward depends on its plannedDate: future
+   * date → Upcoming, no date → Drafts, past date → Past.
+   *
+   * No-op if not started. The component is responsible for confirming
+   * before calling this when visitedCount > 0 (destructive action).
+   */
+  async resetTrip(): Promise<void> {
+    const t = this.trip();
+    if (!t || !t.startedAt) return;
+    const stops: TripStop[] = t.stops.map((s) => ({
+      ...s,
+      visitedDuringTrip: false,
+      visitedAt: undefined,
+    }));
+    await this.tripsStore.updatePartial(t.id, {
+      stops,
+      startedAt: undefined,
+    });
+  }
+
+  /**
+   * Duplicate a completed trip as a fresh draft. The new trip:
+   *   - gets a new id and a unique "<original> (copy)" name
+   *     (auto-suffixed if (copy) is already taken)
+   *   - keeps stops (with new stop ids), defaultTravelMode, notes,
+   *     per-stop notes
+   *   - clears plannedDate (the original's date is historical;
+   *     duplicates are blank slates the user dates fresh)
+   *   - clears isCompleted, startedAt, all visitedDuringTrip / visitedAt
+   *
+   * Returns the new trip id so the caller can navigate to it. No-op
+   * (returns null) if the current trip isn't completed — duplication
+   * is meant for "do this trip again" not template-cloning, which is a
+   * separate eventual phase.
+   */
+  async duplicateTrip(): Promise<string | null> {
+    const t = this.trip();
+    if (!t || !t.isCompleted) return null;
+    const uniqueName = this.tripsStore.findUniqueName(t.name);
+    const fresh = await this.tripsStore.create(uniqueName);
+    // Build fresh stops with new ids; preserve notes and place references
+    const stops: TripStop[] = t.stops.map((s) => ({
+      id: this.idService.newId(),
+      placeId: s.placeId,
+      perStopNote: s.perStopNote,
+      visitedDuringTrip: false,
+    }));
+    await this.tripsStore.updatePartial(fresh.id, {
+      stops,
+      defaultTravelMode: t.defaultTravelMode,
+      notes: t.notes,
+    });
+    return fresh.id;
+  }
+
+  /**
+   * Toggle the visited flag on a stop. If the trip wasn't started yet,
+   * marking the first visited stop auto-starts the trip (hybrid model
+   * per Phase 7 product call).
+   *
+   * Unmarking: if this was the last visited stop AND the trip is not
+   * completed, the trip rolls back to "not started" (startedAt cleared).
+   * Reasoning: a user who accidentally clicks "start" then changes mind
+   * deserves a way to undo without manual cleanup.
+   */
+  async toggleStopVisited(stopId: string): Promise<void> {
+    const t = this.trip();
+    if (!t) return;
+    const stopIdx = t.stops.findIndex((s) => s.id === stopId);
+    if (stopIdx < 0) return;
+
+    const now = new Date().toISOString();
+    const oldStop = t.stops[stopIdx];
+    const nextVisited = !oldStop.visitedDuringTrip;
+
+    const stops: TripStop[] = t.stops.map((s, i) =>
+      i === stopIdx
+        ? {
+            ...s,
+            visitedDuringTrip: nextVisited,
+            visitedAt: nextVisited ? now : undefined,
+          }
+        : s
+    );
+
+    const visitedAfter = stops.filter((s) => s.visitedDuringTrip).length;
+
+    // Determine startedAt:
+    //   - If marking first visited stop and trip not started → auto-start
+    //   - If unmarking last visited stop and trip not completed → roll back to not-started
+    //   - Otherwise: preserve current startedAt
+    let nextStartedAt: string | undefined = t.startedAt;
+    if (nextVisited && !t.startedAt) {
+      nextStartedAt = now;
+    } else if (!nextVisited && visitedAfter === 0 && !t.isCompleted) {
+      nextStartedAt = undefined;
+    }
+
+    await this.tripsStore.updatePartial(t.id, {
+      stops,
+      startedAt: nextStartedAt,
+    });
   }
 
   // ---- Delete ----

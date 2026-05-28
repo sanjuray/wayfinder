@@ -50,7 +50,7 @@ export function travelMinutes(distanceKm: number, mode: TravelMode): number {
 
 const SPEED_KMH: Record<TravelMode, number> = {
   walking: 5,
-  cycling: 15,
+  motorcycle: 35, // urban estimate — quicker than cars in traffic, slower on highways
   driving: 40,
   transit: 25,
   auto: 40,

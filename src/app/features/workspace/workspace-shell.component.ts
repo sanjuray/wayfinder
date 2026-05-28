@@ -25,32 +25,58 @@ export class WorkspaceShellComponent {
   protected appState = inject(AppStateStore);
 
   /**
-   * "saved" if recently backed up, "unsaved" if never or overdue.
+   * Whether the user has data changes that haven't been backed up yet.
+   * True when lastChangeAt is more recent than lastBackupAt, OR when
+   * lastChangeAt exists but no backup has ever happened.
+   *
+   * This is the primary driver of the saved/unsaved indicator and
+   * replaces the previous time-based "staleness" heuristic (which
+   * dishonestly showed "unsaved" after N days of inactivity even if no
+   * real changes had occurred).
    */
-  protected backupStatusLabel = computed<string>(() => {
-    const last = this.appState.lastBackupAt();
-    if (!last) return 'unsaved';
-    return this.backupIsStale() ? 'unsaved' : 'saved';
+  protected hasUnsavedChanges = computed<boolean>(() => {
+    const lastChange = this.appState.lastChangeAt();
+    if (!lastChange) return false;
+    const lastBackup = this.appState.lastBackupAt();
+    if (!lastBackup) return true;
+    return lastChange > lastBackup;
   });
+
+  /**
+   * "saved" when there are no un-backed-up changes; "unsaved" otherwise.
+   */
+  protected backupStatusLabel = computed<string>(() =>
+    this.hasUnsavedChanges() ? 'unsaved' : 'saved'
+  );
 
   protected backupStatusTooltip = computed<string>(() => {
+    if (this.hasUnsavedChanges()) {
+      const lastChange = this.appState.lastChangeAt();
+      return lastChange
+        ? `You have unsaved changes since ${formatRelative(lastChange)}. Export from Settings to back up.`
+        : 'You have unsaved changes. Export from Settings to back up.';
+    }
     const last = this.appState.lastBackupAt();
-    if (!last) return 'No backups yet. Export from Settings.';
-    const days = Math.floor(
-      (Date.now() - new Date(last).getTime()) / (1000 * 60 * 60 * 24)
-    );
-    if (days === 0) return 'Last backup: today';
-    if (days === 1) return 'Last backup: yesterday';
-    return `Last backup: ${days} days ago`;
+    if (!last) return 'No backups yet, but no changes to back up.';
+    return `Last backup: ${formatRelative(last)}`;
   });
+}
 
-  protected backupIsStale = computed<boolean>(() => {
-    const last = this.appState.lastBackupAt();
-    if (!last) return true;
-    const freq = this.appState.autoBackupFrequency();
-    if (freq === 'never') return false;
-    const days = (Date.now() - new Date(last).getTime()) / (1000 * 60 * 60 * 24);
-    const threshold = freq === 'daily' ? 1 : freq === 'weekly' ? 7 : 30;
-    return days > threshold;
-  });
+/**
+ * Short relative-time formatter for the saved-status tooltip. Returns
+ * "today", "yesterday", "3 days ago", "2 weeks ago", etc. Tolerant of
+ * invalid input — falls back to "recently".
+ */
+function formatRelative(iso: string): string {
+  const then = new Date(iso).getTime();
+  if (!Number.isFinite(then)) return 'recently';
+  const diffMs = Math.max(0, Date.now() - then);
+  const day = 86_400_000;
+  if (diffMs < day) return 'today';
+  if (diffMs < 2 * day) return 'yesterday';
+  const days = Math.floor(diffMs / day);
+  if (days < 7) return `${days} days ago`;
+  if (days < 30) return `${Math.floor(days / 7)} weeks ago`;
+  if (days < 365) return `${Math.floor(days / 30)} months ago`;
+  return `${Math.floor(days / 365)} years ago`;
 }

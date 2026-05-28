@@ -40,21 +40,27 @@
   <!-- =========== INLINE CREATE =========== -->
   @if (creating()) {
     <div class="create-row">
-      <input
-        class="create-input"
-        [ngModel]="newName()"
-        (ngModelChange)="newName.set($event)"
-        (keydown.enter)="confirmCreate()"
-        (keydown.escape)="cancelCreating()"
-        placeholder="Name your trip — e.g. Vietnam coast loop"
-        autofocus
-      />
+      <div class="create-input-wrap">
+        <input
+          class="create-input"
+          [class.error]="createNameError() !== null"
+          [ngModel]="newName()"
+          (ngModelChange)="onNewNameChange($event)"
+          (keydown.enter)="confirmCreate()"
+          (keydown.escape)="cancelCreating()"
+          placeholder="Name your trip — e.g. Vietnam coast loop"
+          autofocus
+        />
+        @if (createNameError(); as err) {
+          <p class="create-error">{{ err }}</p>
+        }
+      </div>
       <button class="btn ghost" (click)="cancelCreating()" [disabled]="saving()">
         Cancel
       </button>
       <button
         class="btn primary"
-        [disabled]="!newName().trim() || saving()"
+        [disabled]="!newName().trim() || saving() || createNameError() !== null"
         (click)="confirmCreate()"
       >
         @if (saving()) {
@@ -128,6 +134,7 @@
               <wf-trip-card-preview
                 [coords]="stopCoords(t)"
                 [variant]="previewVariant(sec.key)"
+                [currentIndex]="sec.key === 'in-progress' ? currentVisitedIndex(t) : null"
               />
 
               <div class="meta-row">
@@ -157,6 +164,21 @@
                     </span>
                   }
                 </div>
+
+                <!-- Phase 7 progress bar — only on in-progress cards. -->
+                @if (sec.key === 'in-progress') {
+                  @let v = visitedCount(t);
+                  @let total = t.stops.length;
+                  <div class="progress" aria-label="Trip progress">
+                    <span class="progress-text">{{ v }} of {{ total }} visited</span>
+                    <div class="progress-bar">
+                      <div
+                        class="progress-fill"
+                        [style.width.%]="total > 0 ? (v / total) * 100 : 0"
+                      ></div>
+                    </div>
+                  </div>
+                }
               </div>
             </article>
           }

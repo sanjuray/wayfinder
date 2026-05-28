@@ -160,6 +160,23 @@
   box-shadow: var(--wf-glow);
 }
 
+.name-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.name-input.error {
+  border-color: var(--wf-accent);
+  background: color-mix(in srgb, var(--wf-accent) 5%, var(--wf-bg));
+}
+
+.name-error {
+  margin: 0 0 0 -2px;
+  font-size: 11px;
+  color: var(--wf-accent);
+}
+
 .sub {
   display: inline-flex;
   align-items: center;
@@ -187,6 +204,8 @@
   border-radius: 999px;
   background: var(--wf-bg);
   cursor: pointer;
+  font: inherit;
+  color: inherit;
 }
 
 .date-pill:hover {
@@ -198,17 +217,35 @@
   color: var(--wf-ink-faint);
 }
 
-/* The actual <input type="date"> overlays the pill — invisible but
-   clickable, so clicking the pill opens the picker. */
-.date-input {
+/* Completed-trip lockdown — soft-disabled. Pill still visible (the date
+   itself is useful info), but un-clickable and visually muted. */
+.date-pill.locked {
+  cursor: not-allowed;
+  opacity: 0.6;
+  background: var(--wf-bg-2);
+}
+.date-pill.locked:hover {
+  border-color: var(--wf-hairline);
+}
+.date-pill .lock-hint {
+  font-size: 11px;
+  margin-left: 1px;
+}
+
+/* Real but visually hidden input. Sits off-screen so the native date
+   picker dialog can still be opened via showPicker() — invisible-but-
+   overlaid (opacity:0) is fragile across browsers (Safari especially
+   refuses to open the picker for a 0-opacity input with no hit area). */
+.date-input-offscreen {
   position: absolute;
-  inset: 0;
-  opacity: 0;
-  cursor: pointer;
-  border: none;
-  background: transparent;
-  font: inherit;
-  color: transparent;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 /* ============ Stops + legs ============ */
@@ -612,4 +649,153 @@
 
 .undo-dismiss:hover {
   color: var(--wf-bg);
+}
+
+/* ============ Live trip controls (Phase 7) ============ */
+
+/* Bar between the notes textarea and the "Trip complete" foot row. Two
+   modes:
+   - Not started: a hint + "Start trip" button
+   - Live: a pulsing dot + progress text + "Finish trip" button */
+.live-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--wf-bg);
+  border: 0.5px solid var(--wf-hairline);
+  font-size: 12px;
+  color: var(--wf-ink-soft);
+}
+
+.live-controls.live {
+  border-color: color-mix(in srgb, var(--wf-teal) 40%, transparent);
+  background: color-mix(in srgb, var(--wf-teal) 6%, var(--wf-bg));
+}
+
+/* Completed-state variant: a softer treatment, no urgency. */
+.live-controls.done {
+  border-color: color-mix(in srgb, var(--wf-ink) 8%, transparent);
+  background: var(--wf-bg-2);
+}
+
+/* Reset trip — quiet text-link affordance below the live-controls box.
+   Only rendered when the trip is live. No background, no border, ink-
+   soft color. Hover reveals the "destructive" intent via accent color.
+   Sits indented to align with the box's content padding. */
+.reset-trip-link {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 4px;
+  padding: 4px 8px 4px 12px;
+  background: transparent;
+  border: none;
+  font: inherit;
+  font-size: 11px;
+  color: var(--wf-ink-soft);
+  cursor: pointer;
+  border-radius: 6px;
+  transition: color 0.12s ease, background 0.12s ease;
+}
+.reset-trip-link:hover {
+  color: var(--wf-accent);
+  background: color-mix(in srgb, var(--wf-accent) 6%, transparent);
+}
+.reset-trip-link i {
+  font-size: 12px;
+}
+
+.live-hint {
+  flex: 1;
+  line-height: 1.4;
+}
+
+.live-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  color: var(--wf-teal);
+  font-weight: 500;
+}
+
+.live-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Tiny pulsing dot — visual reinforcement of "live now". */
+.live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--wf-teal);
+  position: relative;
+  flex-shrink: 0;
+}
+.live-dot::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+  background: var(--wf-teal);
+  opacity: 0.5;
+  animation: trip-live-dot-pulse 1.6s ease-out infinite;
+}
+@keyframes trip-live-dot-pulse {
+  0% { transform: scale(1); opacity: 0.55; }
+  100% { transform: scale(2.4); opacity: 0; }
+}
+
+.live-controls .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 12px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 8px;
+  border: 0.5px solid;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.live-controls .btn.start {
+  color: var(--wf-bg);
+  background: var(--wf-accent);
+  border-color: var(--wf-accent);
+}
+.live-controls .btn.start:hover {
+  filter: brightness(1.05);
+}
+
+.live-controls .btn.finish {
+  color: var(--wf-bg);
+  background: var(--wf-teal);
+  border-color: var(--wf-teal);
+}
+.live-controls .btn.finish:hover {
+  filter: brightness(1.05);
+}
+
+/* Duplicate button on completed trips — accent treatment because it's
+   the primary action for someone re-doing a trip. Same weight as
+   Start. */
+.live-controls .btn.duplicate {
+  color: var(--wf-bg);
+  background: var(--wf-accent);
+  border-color: var(--wf-accent);
+}
+.live-controls .btn.duplicate:hover {
+  filter: brightness(1.05);
+}
+
+.live-controls .btn i {
+  font-size: 13px;
 }

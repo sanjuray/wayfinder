@@ -105,11 +105,16 @@ function formatStop(s: GoogleMapsStop): string {
 /**
  * Wayfinder's TravelMode → Google Maps' travelmode parameter value. 'auto'
  * maps to undefined (param is omitted; Google picks).
+ *
+ * 'motorcycle' maps to Google's documented 'two-wheeler' mode (per their
+ * Maps URL API docs — "two-wheeler refers to two-wheeled motorized
+ * vehicles such as motorcycles"). Coverage varies by region; in
+ * uncovered regions Google falls back to driving routing.
  */
 const GOOGLE_MAPS_MODE: Record<TravelMode, string | undefined> = {
   auto: undefined,
   walking: 'walking',
   driving: 'driving',
-  cycling: 'bicycling', // Google's spelling
+  motorcycle: 'two-wheeler',
   transit: 'transit',
 };

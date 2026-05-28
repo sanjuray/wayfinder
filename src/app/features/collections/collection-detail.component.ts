@@ -439,7 +439,9 @@ export class CollectionDetailComponent implements AfterViewInit, OnDestroy {
   protected async onPlanTrip(): Promise<void> {
     const col = this.facade.collection();
     if (!col) return;
-    const tripName = `Trip in ${col.name}`;
+    // Auto-suffix on collision (e.g. "Trip in Lisbon (copy)") so clicking
+    // Plan trip a second time doesn't throw DUPLICATE_TRIP_NAME.
+    const tripName = this.tripsStore.findUniqueName(`Trip in ${col.name}`);
     const trip = await this.tripsStore.create(tripName);
     this.router.navigate(['/trips', trip.id]);
   }

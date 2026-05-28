@@ -26,7 +26,7 @@
 
     <div class="topbar-right">
       <span class="save-status" [title]="backupStatusTooltip()">
-        <span class="dot" [class.stale]="backupIsStale()"></span>
+        <span class="dot" [class.stale]="hasUnsavedChanges()"></span>
         {{ backupStatusLabel() }}
       </span>
       <button class="iconbtn" disabled title="Search — coming soon" aria-label="Search">

@@ -20,15 +20,21 @@
       </a>
 
       @if (editingName()) {
-        <input
-          class="name-input"
-          [ngModel]="nameDraft()"
-          (ngModelChange)="nameDraft.set($event)"
-          (keydown.enter)="commitName()"
-          (keydown.escape)="cancelEditingName()"
-          (blur)="commitName()"
-          autofocus
-        />
+        <div class="name-edit">
+          <input
+            class="name-input"
+            [class.error]="nameEditError() !== null"
+            [ngModel]="nameDraft()"
+            (ngModelChange)="onNameDraftChange($event)"
+            (keydown.enter)="commitName()"
+            (keydown.escape)="cancelEditingName()"
+            (blur)="commitName()"
+            autofocus
+          />
+          @if (nameEditError(); as err) {
+            <p class="name-error">{{ err }}</p>
+          }
+        </div>
       } @else {
         <h2 class="name" (click)="startEditingName()" title="Click to rename">
           {{ t.name }}
@@ -38,20 +44,34 @@
 
       <!-- Subtitle: date · stop count -->
       <div class="sub">
-        <label class="date-pill">
+        <button
+          type="button"
+          class="date-pill"
+          [class.locked]="t.isCompleted"
+          (click)="onDatePillClick($event, dateInput, t.isCompleted)"
+          [attr.title]="t.isCompleted ? 'Completed trips have a locked date. Uncheck Trip complete to edit.' : 'Set or change the planned date'"
+        >
           <i class="ti ti-calendar"></i>
           @if (dateLabel(); as d) {
             <span>{{ d }}</span>
           } @else {
             <span class="dim">no date</span>
           }
-          <input
-            class="date-input"
-            type="date"
-            [value]="t.plannedDate ?? ''"
-            (change)="onDateChange($any($event.target).value)"
-          />
-        </label>
+          @if (t.isCompleted) {
+            <i class="ti ti-lock lock-hint" aria-hidden="true"></i>
+          }
+        </button>
+        <!-- The actual <input> sits OFF-SCREEN, not invisibly overlaid.
+             We open the native picker via showPicker() when the pill is
+             clicked. Browser support: Chrome 99+, Safari 16.4+, Firefox
+             101+. Falls back to .click() on older browsers. -->
+        <input
+          #dateInput
+          class="date-input-offscreen"
+          type="date"
+          [value]="t.plannedDate ?? ''"
+          (change)="onDateChange($any($event.target).value)"
+        />
         <span class="sep">·</span>
         <span>{{ totals().stopCount }} {{ totals().stopCount === 1 ? 'stop' : 'stops' }}</span>
       </div>
@@ -79,8 +99,10 @@
                 [category]="item.place ? (categoryById().get(item.place.categoryId) ?? null) : null"
                 [index]="i"
                 [totalCount]="t.stops.length"
+                [tripIsLive]="facade.isLive()"
                 (remove)="onRemoveStop($event)"
                 (noteChanged)="onStopNoteChanged($event)"
+                (visitedToggle)="onToggleStopVisited($event)"
               />
 
               @if (!$last) {
@@ -137,7 +159,7 @@
             <option value="auto">Let Google decide</option>
             <option value="walking">Walking</option>
             <option value="driving">Driving</option>
-            <option value="cycling">Cycling</option>
+            <option value="motorcycle">Motorcycle</option>
             <option value="transit">Transit</option>
           </select>
         </div>
@@ -171,6 +193,68 @@
           placeholder="Trip notes (optional)"
         ></textarea>
       </label>
+
+      <!-- Live-trip controls (Phase 7).
+           Three states based on the trip's lifecycle:
+           - Idle: not started, not completed → Start trip
+           - Live: in progress → Finish (Reset shown separately below)
+           - Completed: → Duplicate trip (creates a fresh copy to run again)
+           Hidden when there are no stops (nothing to start). -->
+      @if (t.stops.length > 0) {
+        <div
+          class="live-controls"
+          [class.live]="facade.isLive()"
+          [class.done]="t.isCompleted"
+        >
+          @if (t.isCompleted) {
+            <span class="live-hint">
+              Trip complete. Want to do it again?
+            </span>
+            <button
+              class="btn duplicate"
+              (click)="onDuplicateTrip()"
+              title="Create a fresh copy of this trip"
+            >
+              <i class="ti ti-copy"></i>
+              Duplicate trip
+            </button>
+          } @else if (facade.isLive()) {
+            <div class="live-status">
+              <span class="live-dot" aria-hidden="true"></span>
+              <span class="live-text">
+                Trip in progress — {{ facade.visitedCount() }} of {{ t.stops.length }} visited
+              </span>
+            </div>
+            <button class="btn finish" (click)="onFinishTrip()" title="Mark trip complete">
+              <i class="ti ti-flag-check"></i>
+              Finish trip
+            </button>
+          } @else {
+            <span class="live-hint">Ready to go? Start the trip to track your progress.</span>
+            <button class="btn start" (click)="onStartTrip()" title="Start the trip">
+              <i class="ti ti-player-play"></i>
+              Start trip
+            </button>
+          }
+        </div>
+
+        <!-- Reset trip — secondary affordance, lives BELOW the
+             live-controls box and ONLY when the trip is live. Quiet
+             text-link styling so it doesn't compete with Finish for
+             attention. No confirm dialog by design; the de-emphasized
+             visual treatment IS the friction. -->
+        @if (facade.isLive()) {
+          <button
+            type="button"
+            class="reset-trip-link"
+            (click)="onResetTrip()"
+            title="Clear startedAt and unmark all visited stops"
+          >
+            <i class="ti ti-rotate-clockwise-2"></i>
+            Reset trip
+          </button>
+        }
+      }
 
       <!-- Footer actions -->
       <div class="foot">

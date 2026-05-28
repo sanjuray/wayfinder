@@ -1125,8 +1125,10 @@ export class SettingsComponent implements AfterViewInit, OnDestroy {
       a.download = `wayfinder-export-${date}.json`;
       a.click();
       URL.revokeObjectURL(url);
-      // Update lastBackupAt
-      this.appState.patch({ lastBackupAt: new Date().toISOString() });
+      // Mark as backed up — sets lastBackupAt = now AND clears
+      // lastChangeAt so the topbar saved/unsaved indicator flips back
+      // to "saved" immediately.
+      await this.appState.recordBackup();
       this.importResult.set('Backup exported.');
     } catch (err) {
       this.importResult.set(`Error exporting: ${err}`);

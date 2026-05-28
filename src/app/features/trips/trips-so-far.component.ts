@@ -174,25 +174,62 @@ export class TripsSoFarComponent {
 
   // ---- Create flow ----
 
+  /**
+   * Error message shown under the create-name input. Null when no error.
+   * Set when the user types a name that collides with an existing trip,
+   * or when create() throws DUPLICATE_TRIP_NAME on submit.
+   */
+  protected createNameError = signal<string | null>(null);
+
   protected startCreating(): void {
     this.creating.set(true);
     this.newName.set('');
+    this.createNameError.set(null);
   }
 
   protected cancelCreating(): void {
     this.creating.set(false);
     this.newName.set('');
+    this.createNameError.set(null);
+  }
+
+  /**
+   * Live name check: called from (ngModelChange) on the create input.
+   * Clears the error if the user has typed something new + unique.
+   */
+  protected onNewNameChange(name: string): void {
+    this.newName.set(name);
+    const trimmed = name.trim();
+    if (!trimmed) {
+      this.createNameError.set(null);
+    } else if (!this.trips.nameAvailable(trimmed)) {
+      this.createNameError.set('A trip with this name already exists.');
+    } else {
+      this.createNameError.set(null);
+    }
   }
 
   protected async confirmCreate(): Promise<void> {
     const name = this.newName().trim();
     if (!name || this.saving()) return;
+    // Pre-check, so the user sees the error before we attempt the create.
+    if (!this.trips.nameAvailable(name)) {
+      this.createNameError.set('A trip with this name already exists.');
+      return;
+    }
     this.saving.set(true);
     try {
       const trip = await this.trips.create(name);
       this.creating.set(false);
       this.newName.set('');
+      this.createNameError.set(null);
       this.router.navigate(['/trips', trip.id]);
+    } catch (err) {
+      if (err instanceof Error && err.message === 'DUPLICATE_TRIP_NAME') {
+        this.createNameError.set('A trip with this name already exists.');
+      } else {
+        throw err;
+      }
     } finally {
       this.saving.set(false);
     }
@@ -329,6 +366,39 @@ export class TripsSoFarComponent {
   }
 
   /**
+   * Phase 7: count of stops marked visited during this trip. Drives the
+   * in-progress card's progress bar. The mini-map preview reads the
+   * same count via `currentVisitedIndex` (below).
+   */
+  protected visitedCount(t: Trip): number {
+    return t.stops.filter((s) => s.visitedDuringTrip).length;
+  }
+
+  /**
+   * Index of the most-recently visited stop in `t.stops`, or null if
+   * none. Used by trip-card-preview to split the polyline into
+   * visited/remaining. Sorts by visitedAt to handle out-of-order marks;
+   * falls back to array order when timestamps are missing or equal.
+   */
+  protected currentVisitedIndex(t: Trip): number | null {
+    let bestIdx: number | null = null;
+    let bestAt = '';
+    t.stops.forEach((s, i) => {
+      if (!s.visitedDuringTrip) return;
+      const at = s.visitedAt ?? '';
+      if (
+        bestIdx === null ||
+        at > bestAt ||
+        (at === bestAt && i > bestIdx)
+      ) {
+        bestIdx = i;
+        bestAt = at;
+      }
+    });
+    return bestIdx;
+  }
+
+  /**
    * Total straight-line distance across all legs in km, rounded to one
    * decimal. Returns null when fewer than 2 stops. Uses the same
    * haversine util the planner uses — keeps cards consistent with what
@@ -356,7 +426,7 @@ export class TripsSoFarComponent {
     switch (t.defaultTravelMode) {
       case 'walking': return 'ti-walk';
       case 'driving': return 'ti-car';
-      case 'cycling': return 'ti-bike';
+      case 'motorcycle': return 'ti-motorbike';
       case 'transit': return 'ti-bus';
       case 'auto':
       default:        return 'ti-route';

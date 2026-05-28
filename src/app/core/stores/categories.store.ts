@@ -2,6 +2,7 @@ import { signalStore, withState, withMethods, withComputed, patchState } from '@
 import { computed, inject } from '@angular/core';
 import { STORAGE_ADAPTER } from '../storage/storage.token';
 import { IdService } from '../services/id.service';
+import { AppStateStore } from './app-state.store';
 import { DEFAULT_CATEGORIES } from '../seed/default-categories';
 import type { Category } from '../models';
 
@@ -25,6 +26,7 @@ export const CategoriesStore = signalStore(
   withMethods((store) => {
     const storage = inject(STORAGE_ADAPTER);
     const idService = inject(IdService);
+    const appState = inject(AppStateStore);
 
     async function load() {
       patchState(store, { loading: true, error: null });
@@ -48,6 +50,7 @@ export const CategoriesStore = signalStore(
     async function add(c: Category) {
       await storage.upsertCategory(c);
       patchState(store, { entities: [...store.entities(), c] });
+      appState.recordChange();
     }
 
     async function update(c: Category) {
@@ -55,11 +58,13 @@ export const CategoriesStore = signalStore(
       patchState(store, {
         entities: store.entities().map((x) => (x.id === c.id ? c : x)),
       });
+      appState.recordChange();
     }
 
     async function remove(id: string) {
       await storage.deleteCategory(id);
       patchState(store, { entities: store.entities().filter((c) => c.id !== id) });
+      appState.recordChange();
     }
 
     function getById(id: string): Category | undefined {

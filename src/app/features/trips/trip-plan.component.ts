@@ -221,7 +221,7 @@ export class TripPlanComponent implements OnDestroy {
     switch (mode) {
       case 'walking': return 'ti-walk';
       case 'driving': return 'ti-car';
-      case 'cycling': return 'ti-bike';
+      case 'motorcycle': return 'ti-motorbike';
       case 'transit': return 'ti-bus';
       case 'auto':
       default:        return 'ti-route';
@@ -233,7 +233,7 @@ export class TripPlanComponent implements OnDestroy {
     switch (mode) {
       case 'walking': return 'walking';
       case 'driving': return 'driving';
-      case 'cycling': return 'cycling';
+      case 'motorcycle': return 'on motorcycle';
       case 'transit': return 'on transit';
       case 'auto':
       default:        return 'mixed';
@@ -281,7 +281,14 @@ export class TripPlanComponent implements OnDestroy {
 
   private map: L.Map | null = null;
   private stopMarkers: L.Marker[] = [];
-  private polyline: L.Polyline | null = null;
+  /**
+   * Pre-Phase-7: one polyline. Phase 7: split into visited (from stop 0
+   * through the current stop, solid teal) and remaining (current stop
+   * onward, dashed accent). Both are managed independently so we can
+   * re-render one without recomputing the other.
+   */
+  private visitedPolyline: L.Polyline | null = null;
+  private remainingPolyline: L.Polyline | null = null;
 
   /**
    * Ghost-pin marker shown when an undo is pending. Re-rendered whenever
@@ -290,6 +297,28 @@ export class TripPlanComponent implements OnDestroy {
    * partial opacity, no number badge — reads as "this used to be here."
    */
   private ghostMarker: L.Marker | null = null;
+
+  /**
+   * Avatar marker shown at the most-recently-visited stop while a trip
+   * is in progress. Icon by travel mode (walking person, car, bike, bus,
+   * route). Honest "where you've gotten to" indicator — does NOT do GPS.
+   */
+  private avatarMarker: L.Marker | null = null;
+
+  /**
+   * Signal that flips to true once the Leaflet map is initialized. The
+   * avatar effect depends on this so it re-fires when the map becomes
+   * ready — fixes the "avatar missing on revisit" bug where the effect
+   * ran once with `this.map === null`, bailed early, and never re-fired
+   * because none of its other signal dependencies changed afterward
+   * (trip data is stable on revisit).
+   *
+   * Why a signal, not just `this.map !== null`: Angular signal effects
+   * only re-run when their tracked dependencies change. A bare `!this.map`
+   * check inside an effect is not reactive — flipping `this.map` to
+   * non-null doesn't trigger anything. Reading a signal does.
+   */
+  private mapReady = signal(false);
 
   // ---- Lifecycle ----
 
@@ -328,6 +357,9 @@ export class TripPlanComponent implements OnDestroy {
       // Track stops; mode changes don't need a re-sync (polyline color
       // and shape are stop-driven).
       this.facade.stopsWithPlace();
+      // Also track visited state — visited→remaining boundary moves when
+      // stops are marked, so polylines need to re-split.
+      this.facade.currentStopIndex();
       if (this.map) {
         this.syncStopMarkers();
         this.syncPolyline();
@@ -335,14 +367,42 @@ export class TripPlanComponent implements OnDestroy {
     });
 
     // Step 5: sync the ghost-pin marker when the undo state changes.
-    // When a stop is removed, facade.pendingUndoStop becomes non-null and
-    // we drop a dashed/translucent marker at the stop's old coords. On
-    // undo or auto-dismiss the signal becomes null again and we remove
-    // the marker.
     effect(() => {
       const stash = this.facade.pendingUndoStop();
       if (!this.map) return;
       this.syncGhostMarker(stash?.lat ?? null, stash?.lng ?? null);
+    });
+
+    // Step 6 (Phase 7): sync the avatar marker. When the trip is live AND
+    // at least one stop is visited, drop the avatar at the current stop.
+    // Otherwise remove it.
+    //
+    // Reads `mapReady` so the effect re-fires once the map finishes
+    // initializing — fixes the "avatar missing on revisit" bug where the
+    // effect ran once with the map still null, bailed early, and never
+    // re-fired because no other signals changed.
+    effect(() => {
+      const ready = this.mapReady();
+      const isLive = this.facade.isLive();
+      const currentIdx = this.facade.currentStopIndex();
+      const items = this.facade.stopsWithPlace();
+      const trip = this.facade.trip();
+      if (!ready || !this.map) return;
+
+      if (!isLive || currentIdx === null) {
+        this.removeAvatarMarker();
+        return;
+      }
+      const item = items[currentIdx];
+      if (!item || !item.place) {
+        this.removeAvatarMarker();
+        return;
+      }
+      this.syncAvatarMarker(
+        item.place.lat,
+        item.place.lng,
+        trip?.defaultTravelMode ?? 'auto'
+      );
     });
   }
 
@@ -351,9 +411,12 @@ export class TripPlanComponent implements OnDestroy {
       this.map.remove();
       this.map = null;
     }
+    this.mapReady.set(false);
     this.stopMarkers = [];
-    this.polyline = null;
+    this.visitedPolyline = null;
+    this.remainingPolyline = null;
     this.ghostMarker = null;
+    this.avatarMarker = null;
   }
 
   // ---- Map ----
@@ -373,6 +436,10 @@ export class TripPlanComponent implements OnDestroy {
     L.control.zoom({ position: 'bottomleft' }).addTo(map);
 
     this.map = map;
+    // Tell the avatar effect (and anyone else who depends on map
+    // readiness) that the map is now usable. See `mapReady` field
+    // comment for why this is a signal.
+    this.mapReady.set(true);
 
     this.syncStopMarkers();
     this.syncPolyline();
@@ -395,7 +462,7 @@ export class TripPlanComponent implements OnDestroy {
     items.forEach(({ stop, place }, idx) => {
       if (!place) return;
       const marker = L.marker([place.lat, place.lng], {
-        icon: this.buildNumberedIcon(idx + 1, idx, items.length),
+        icon: this.buildNumberedIcon(idx + 1, idx, items.length, stop.visitedDuringTrip),
         zIndexOffset: 1000,
       }).addTo(this.map!);
       // Phase 6d: pin click opens the place detail panel (Phase 6c removed
@@ -413,23 +480,75 @@ export class TripPlanComponent implements OnDestroy {
     });
   }
 
+  /**
+   * Render the trip's polyline as TWO segments:
+   *   - visited: stop 0 → current stop, solid teal
+   *   - remaining: current stop → last stop, dashed accent
+   *
+   * If no stops visited (currentIdx === null), only the remaining
+   * polyline shows (across all stops). If all stops visited, only the
+   * visited polyline shows. This keeps the visual continuous regardless
+   * of progress.
+   *
+   * Note: the boundary stop appears in BOTH segments — visited ends at
+   * its coords, remaining starts at them. The two polylines visually
+   * "kiss" at the current stop's pin.
+   */
   private syncPolyline(): void {
     if (!this.map) return;
-    if (this.polyline) {
-      this.polyline.remove();
-      this.polyline = null;
+
+    // Tear down both old polylines unconditionally — cheap re-render
+    if (this.visitedPolyline) {
+      this.visitedPolyline.remove();
+      this.visitedPolyline = null;
     }
+    if (this.remainingPolyline) {
+      this.remainingPolyline.remove();
+      this.remainingPolyline = null;
+    }
+
     const coords = this.facade.stopCoordinates();
     if (coords.length < 2) return;
 
-    const points = bezierPolylinePoints(coords);
-    this.polyline = L.polyline(points, {
-      color: getCssVar('--wf-accent') || '#FF6B5B',
-      weight: 3,
-      opacity: 0.85,
-      smoothFactor: 1,
-      dashArray: '6 8',
-    }).addTo(this.map);
+    const accent = getCssVar('--wf-accent') || '#FF6B5B';
+    const teal = getCssVar('--wf-teal') || '#1D9E75';
+    const currentIdx = this.facade.currentStopIndex();
+
+    // Determine where to split:
+    //   - currentIdx === null → no visited stops yet → all remaining
+    //   - currentIdx === coords.length - 1 → final stop visited → all visited
+    //   - otherwise: visited [0..currentIdx], remaining [currentIdx..end]
+    if (currentIdx === null) {
+      this.remainingPolyline = L.polyline(bezierPolylinePoints(coords), {
+        color: accent,
+        weight: 3,
+        opacity: 0.85,
+        smoothFactor: 1,
+        dashArray: '6 8',
+      }).addTo(this.map);
+      return;
+    }
+
+    if (currentIdx > 0) {
+      const visitedCoords = coords.slice(0, currentIdx + 1);
+      this.visitedPolyline = L.polyline(bezierPolylinePoints(visitedCoords), {
+        color: teal,
+        weight: 4,
+        opacity: 0.9,
+        smoothFactor: 1,
+      }).addTo(this.map);
+    }
+
+    if (currentIdx < coords.length - 1) {
+      const remainingCoords = coords.slice(currentIdx);
+      this.remainingPolyline = L.polyline(bezierPolylinePoints(remainingCoords), {
+        color: accent,
+        weight: 3,
+        opacity: 0.85,
+        smoothFactor: 1,
+        dashArray: '6 8',
+      }).addTo(this.map);
+    }
   }
 
   private fitToStops(): void {
@@ -445,26 +564,38 @@ export class TripPlanComponent implements OnDestroy {
   /**
    * Numbered teardrop pin. Start (idx=0) and end (idx=last) get a subtle
    * ring around the badge to differentiate them — matches the mockup's
-   * .start / .end styling.
+   * .start / .end styling. Phase 7: `visited=true` uses teal instead of
+   * accent and shows a checkmark in place of the number, matching the
+   * stop-card badge.
    */
-  private buildNumberedIcon(n: number, idx: number, total: number): L.DivIcon {
+  private buildNumberedIcon(
+    n: number,
+    idx: number,
+    total: number,
+    visited = false
+  ): L.DivIcon {
     const accent = getCssVar('--wf-accent') || '#FF6B5B';
+    const teal = getCssVar('--wf-teal') || '#1D9E75';
     const bg = getCssVar('--wf-bg') || '#ffffff';
+    const fill = visited ? teal : accent;
     const isEnd = idx === 0 || idx === total - 1;
     const ring = isEnd
-      ? `<circle cx="16" cy="16" r="12" fill="none" stroke="${accent}" stroke-width="2" opacity="0.35"/>`
+      ? `<circle cx="16" cy="16" r="12" fill="none" stroke="${fill}" stroke-width="2" opacity="0.35"/>`
       : '';
+    const center = visited
+      ? `<path d="M11 16 L15 20 L21 12" fill="none" stroke="${fill}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`
+      : `<text x="16" y="20" text-anchor="middle"
+            font-family="ui-sans-serif, system-ui, sans-serif"
+            font-size="11" font-weight="700" fill="${fill}">${n}</text>`;
     return L.divIcon({
       className: 'wf-trip-stop-icon',
       html: `
         <svg width="36" height="44" viewBox="-5 -5 42 50" xmlns="http://www.w3.org/2000/svg" overflow="visible">
           ${ring}
           <path d="M16 2 C8 2 2 8 2 16 C2 26 16 38 16 38 C16 38 30 26 30 16 C30 8 24 2 16 2 Z"
-            fill="${accent}" stroke="${bg}" stroke-width="2"/>
+            fill="${fill}" stroke="${bg}" stroke-width="2"/>
           <circle cx="16" cy="16" r="9" fill="${bg}"/>
-          <text x="16" y="20" text-anchor="middle"
-            font-family="ui-sans-serif, system-ui, sans-serif"
-            font-size="11" font-weight="700" fill="${accent}">${n}</text>
+          ${center}
         </svg>`,
       iconSize: [36, 44],
       iconAnchor: [16, 40],
@@ -513,6 +644,55 @@ export class TripPlanComponent implements OnDestroy {
         interactive: false,
         zIndexOffset: 500,
       }).addTo(this.map);
+    }
+  }
+
+  // ---- Phase 7: Avatar marker (live trip indicator) ----
+
+  /**
+   * Avatar icon shown at the last-visited stop while a trip is in
+   * progress. Uses a Tabler icon based on the trip's travel mode. Offset
+   * slightly above the stop's numbered pin so they don't overlap.
+   */
+  private buildAvatarIcon(mode: TravelMode): L.DivIcon {
+    const teal = getCssVar('--wf-teal') || '#1D9E75';
+    const bg = getCssVar('--wf-bg') || '#ffffff';
+    // Map travel mode → SVG glyph (inline so the Tabler font isn't a
+    // requirement). Each is hand-drawn from the Tabler outline path,
+    // scaled to fit a 16px viewport inside the 28px badge.
+    const glyph = avatarGlyph(mode, bg);
+    return L.divIcon({
+      className: 'wf-trip-avatar-icon',
+      html: `
+        <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" overflow="visible">
+          <circle cx="16" cy="16" r="14" fill="${teal}" stroke="${bg}" stroke-width="3"/>
+          ${glyph}
+        </svg>`,
+      iconSize: [32, 32],
+      iconAnchor: [16, 16],
+    });
+  }
+
+  private syncAvatarMarker(lat: number, lng: number, mode: TravelMode): void {
+    if (!this.map) return;
+    // If we already have one, just move it instead of recreating —
+    // smoother visually and cheaper.
+    if (this.avatarMarker) {
+      this.avatarMarker.setLatLng([lat, lng]);
+      this.avatarMarker.setIcon(this.buildAvatarIcon(mode));
+      return;
+    }
+    this.avatarMarker = L.marker([lat, lng], {
+      icon: this.buildAvatarIcon(mode),
+      interactive: false,
+      zIndexOffset: 2000, // above stop markers (1000)
+    }).addTo(this.map);
+  }
+
+  private removeAvatarMarker(): void {
+    if (this.avatarMarker) {
+      this.avatarMarker.remove();
+      this.avatarMarker = null;
     }
   }
 
@@ -574,21 +754,101 @@ export class TripPlanComponent implements OnDestroy {
     this.editingName.set(true);
   }
 
+  /**
+   * Error from the most recent name commit, if any. Null when no error.
+   * The template shows this under the editable name; clearing happens
+   * either on cancel or on a successful commit.
+   */
+  protected nameEditError = signal<string | null>(null);
+
   protected async commitName(): Promise<void> {
     const v = this.nameDraft().trim();
-    if (v && v !== this.facade.trip()?.name) {
-      await this.facade.setName(v);
+    const current = this.facade.trip()?.name;
+    if (!v || v === current) {
+      this.editingName.set(false);
+      this.nameEditError.set(null);
+      return;
+    }
+    // Pre-check to surface the friendly error before the throw path.
+    if (!this.facade.isNameAvailable(v)) {
+      this.nameEditError.set('A trip with this name already exists.');
+      return;
+    }
+    const ok = await this.facade.setName(v);
+    if (!ok) {
+      this.nameEditError.set('A trip with this name already exists.');
+      return;
     }
     this.editingName.set(false);
+    this.nameEditError.set(null);
   }
 
   protected cancelEditingName(): void {
     this.editingName.set(false);
+    this.nameEditError.set(null);
     this.nameDraft.set(this.facade.trip()?.name ?? '');
+  }
+
+  /**
+   * Live name-availability check called from (ngModelChange) on the
+   * name input. Clears the error when the user types something valid.
+   */
+  protected onNameDraftChange(name: string): void {
+    this.nameDraft.set(name);
+    const trimmed = name.trim();
+    const current = this.facade.trip()?.name;
+    if (!trimmed || trimmed === current) {
+      this.nameEditError.set(null);
+    } else if (!this.facade.isNameAvailable(trimmed)) {
+      this.nameEditError.set('A trip with this name already exists.');
+    } else {
+      this.nameEditError.set(null);
+    }
   }
 
   protected async onDateChange(value: string): Promise<void> {
     await this.facade.setPlannedDate(value || undefined);
+  }
+
+  /**
+   * Click handler for the date pill. Opens the native date picker
+   * programmatically via `showPicker()` (well-supported on modern
+   * browsers; falls back to `.click()` for older Safari/iOS).
+   *
+   * If the trip is completed, the pill is locked — clicking does
+   * nothing (a tooltip explains why). This prevents accidental edits
+   * to historical trip dates. The user can re-enable editing by
+   * unchecking "Trip complete" in the footer.
+   *
+   * The previous implementation used an invisible <input> overlaid on
+   * the pill with `opacity: 0`. That pattern is unreliable across
+   * browsers — Safari especially refuses to open the native picker for
+   * an invisible input with no real hit area. The current pattern keeps
+   * the input off-screen but real, and triggers it explicitly.
+   */
+  protected onDatePillClick(
+    event: MouseEvent,
+    inputEl: HTMLInputElement,
+    isCompleted: boolean
+  ): void {
+    event.preventDefault();
+    if (isCompleted) return;
+    // showPicker() is the modern API; older browsers fall back to focus + click
+    // which usually opens the picker too.
+    type WithShowPicker = HTMLInputElement & { showPicker?: () => void };
+    const el = inputEl as WithShowPicker;
+    if (typeof el.showPicker === 'function') {
+      try {
+        el.showPicker();
+        return;
+      } catch {
+        // Some browsers throw if showPicker is called from a non-user-
+        // initiated context, but ours is from a click — falls through to
+        // the legacy path anyway.
+      }
+    }
+    inputEl.focus();
+    inputEl.click();
   }
 
   protected async onTravelModeChange(value: TravelMode): Promise<void> {
@@ -606,6 +866,42 @@ export class TripPlanComponent implements OnDestroy {
   protected async onToggleCompleted(): Promise<void> {
     const current = this.facade.trip()?.isCompleted ?? false;
     await this.facade.setIsCompleted(!current);
+  }
+
+  // ---- Live trip actions (Phase 7) ----
+
+  protected onStartTrip(): void {
+    void this.facade.startTrip();
+  }
+
+  protected onFinishTrip(): void {
+    void this.facade.finishTrip();
+  }
+
+  /**
+   * Reset the live trip back to its pre-started state. Clears
+   * startedAt AND unmarks every visited stop. No confirmation dialog —
+   * the button's secondary styling + position is the friction. If users
+   * report accidental clicks, we add a confirm later.
+   */
+  protected onResetTrip(): void {
+    void this.facade.resetTrip();
+  }
+
+  /**
+   * Duplicate the completed trip. Navigates to the new trip's planner
+   * on success. No-op (returns null) on a non-completed trip; the button
+   * is only rendered when isCompleted so this guard is defensive.
+   */
+  protected async onDuplicateTrip(): Promise<void> {
+    const newId = await this.facade.duplicateTrip();
+    if (newId) {
+      void this.router.navigate(['/trips', newId]);
+    }
+  }
+
+  protected onToggleStopVisited(stopId: string): void {
+    void this.facade.toggleStopVisited(stopId);
   }
 
   // ---- Stop actions ----
@@ -718,4 +1014,65 @@ function bezierPolylinePoints(
   }
 
   return out;
+}
+
+/**
+ * Inline SVG glyph for the live-trip avatar, by travel mode. Hand-coded
+ * from Tabler outline paths so the dependency on the Tabler icon font
+ * isn't required at SVG render time (Leaflet divIcons inject raw HTML).
+ *
+ * All glyphs are sized to fit within a 32×32 viewBox, roughly centered.
+ * `fillColor` is used for the inner stroke — typically the badge's
+ * background color so the icon punches through.
+ */
+function avatarGlyph(mode: TravelMode, fillColor: string): string {
+  const stroke = `stroke="${fillColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"`;
+  switch (mode) {
+    case 'walking':
+      // Tabler ti-walk simplified
+      return `
+        <g transform="translate(8 8)" ${stroke}>
+          <circle cx="8.5" cy="2.5" r="1.5"/>
+          <path d="M6 16 l2 -4 -1.5 -3 l-2 -1"/>
+          <path d="M8 12 l3 -1 l2 3"/>
+          <path d="M6 9 l1.5 -3 l2 -1 l3 1"/>
+        </g>`;
+    case 'driving':
+      // Tabler ti-car simplified
+      return `
+        <g transform="translate(7 9)" ${stroke}>
+          <path d="M2 9 v-2 a1 1 0 0 1 1 -1 h12 a1 1 0 0 1 1 1 v2"/>
+          <path d="M3 6 l1.5 -4 a1 1 0 0 1 1 -1 h7 a1 1 0 0 1 1 1 l1.5 4"/>
+          <circle cx="5" cy="10" r="1.5"/>
+          <circle cx="13" cy="10" r="1.5"/>
+        </g>`;
+    case 'motorcycle':
+      // Tabler ti-motorbike simplified — front wheel, body angle, rear wheel
+      return `
+        <g transform="translate(7 9)" ${stroke}>
+          <circle cx="3" cy="11" r="2"/>
+          <circle cx="14" cy="11" r="2"/>
+          <path d="M5 11 l3 -3 h3 l2 3"/>
+          <path d="M8 8 l-1.5 -3 h-2"/>
+          <path d="M11 8 l1 -2"/>
+        </g>`;
+    case 'transit':
+      // Tabler ti-bus simplified
+      return `
+        <g transform="translate(8 8)" ${stroke}>
+          <rect x="1" y="2" width="14" height="11" rx="2"/>
+          <path d="M1 8 h14"/>
+          <circle cx="4" cy="11" r="0.8" fill="${fillColor}"/>
+          <circle cx="12" cy="11" r="0.8" fill="${fillColor}"/>
+        </g>`;
+    case 'auto':
+    default:
+      // Tabler ti-route simplified (a winding arrow path)
+      return `
+        <g transform="translate(8 8)" ${stroke}>
+          <circle cx="3" cy="3" r="1.5"/>
+          <circle cx="13" cy="13" r="1.5"/>
+          <path d="M3 4.5 v3 a2 2 0 0 0 2 2 h6 a2 2 0 0 1 2 2 v0.5"/>
+        </g>`;
+  }
 }

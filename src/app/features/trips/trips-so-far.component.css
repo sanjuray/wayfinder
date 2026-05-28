@@ -4,8 +4,18 @@
    map preview + status pill + info line.
    ========================================================= */
 
+/* The workspace shell mounts this route inside an .outlet with
+   overflow:hidden — every route is expected to own its own internal
+   scroll. Mirrors the pattern used by places-list and collections-list. */
+:host {
+  display: block;
+  height: 100%;
+  overflow-y: auto;
+  background: var(--wf-bg);
+}
+
 .page {
-  padding: 22px 24px 48px;
+  padding: 22px 24px 96px;
   max-width: 1100px;
   margin: 0 auto;
 }
@@ -121,10 +131,19 @@
   background: var(--wf-bg-2);
   border: 0.5px solid var(--wf-hairline);
   border-radius: 12px;
+  align-items: flex-start;
+}
+
+.create-input-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
 }
 
 .create-input {
-  flex: 1;
+  width: 100%;
   padding: 9px 12px;
   font: inherit;
   font-size: 14px;
@@ -138,6 +157,17 @@
   outline: none;
   border-color: var(--wf-accent);
   box-shadow: var(--wf-glow);
+}
+
+.create-input.error {
+  border-color: var(--wf-accent);
+  background: color-mix(in srgb, var(--wf-accent) 4%, var(--wf-bg));
+}
+
+.create-error {
+  margin: 0 0 0 4px;
+  font-size: 11px;
+  color: var(--wf-accent);
 }
 
 /* ============ Empty state ============ */
@@ -476,4 +506,33 @@
   .create-row {
     flex-direction: column;
   }
+}
+
+/* ============ Progress bar (in-progress cards, Phase 7) ============ */
+
+.progress {
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.progress-text {
+  font-size: 11px;
+  color: var(--wf-teal);
+  font-weight: 500;
+}
+
+.progress-bar {
+  height: 5px;
+  background: color-mix(in srgb, var(--wf-teal) 12%, transparent);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--wf-teal);
+  border-radius: inherit;
+  transition: width 0.25s ease;
 }
