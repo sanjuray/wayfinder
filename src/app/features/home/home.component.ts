@@ -21,8 +21,10 @@ import { QuoteService } from '../../core/services/quote.service';
 import { QuoteCardComponent } from './quote-card.component';
 import { gradientCss } from '../../core/constants/collection-covers';
 import type { CollectionCoverGradient } from '../../core/models';
-import * as L from 'leaflet';
-import 'leaflet.markercluster';
+// 1. Import types strictly for compilation
+import type * as LeafletTypes from 'leaflet';
+// 2. Import our clean runtime token
+import { LEAFLET } from '../../core/tokens/leaflet.token';
 
 import { PlacesStore } from '../../core/stores/places.store';
 import { CategoriesStore } from '../../core/stores/categories.store';
@@ -77,6 +79,8 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
   protected filters = inject(FilterStateStore);
 
   protected quoteService = inject(QuoteService);
+  // 3. Inject our global runtime Leaflet instance
+  private L = inject(LEAFLET);
 
   // Easter egg state — the floating quote card
   protected activeQuote = signal<{ text: string; x: number; y: number } | null>(null);
@@ -102,8 +106,8 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
   // because Leaflet manages its own DOM and we don't want signal reactivity
   // accidentally re-creating markers.
   private map: L.Map | null = null;
-  private clusterGroup: L.MarkerClusterGroup | null = null;
-  private markersById = new Map<string, L.Marker>();
+  private clusterGroup: LeafletTypes.MarkerClusterGroup | null = null;
+  private markersById = new Map<string, LeafletTypes.Marker>();
 
   protected sortedCategories = computed(() =>
     [...this.categories.entities()]
@@ -224,20 +228,20 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
 
   // ---- Map init ----
   private initMap(): void {
-    const map = L.map(this.mapEl.nativeElement, {
+    const map = this.L.map(this.mapEl.nativeElement, {
       zoomControl: false,
       attributionControl: true,
     }).setView([17.385, 78.4867], 12); // Hyderabad as fallback default
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    this.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
       attribution:
         '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     }).addTo(map);
 
-    L.control.zoom({ position: 'bottomleft' }).addTo(map);
+    this.L.control.zoom({ position: 'bottomleft' }).addTo(map);
 
-    const cluster = L.markerClusterGroup({
+    const cluster = this.L.markerClusterGroup({
       showCoverageOnHover: false,
       maxClusterRadius: 50,
     });
@@ -276,7 +280,7 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
       const cat = catById.get(p.categoryId);
       const color = cat?.color ?? '#FF6B5B';
 
-      const marker = L.marker([p.lat, p.lng], {
+      const marker = this.L.marker([p.lat, p.lng], {
         icon: this.buildPinIcon(color, cat?.icon ?? 'circle', p.status, p.isFavorite),
         title: p.customName ?? p.name,
       });
@@ -315,7 +319,7 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
       ? `<circle cx="25" cy="3" r="4.5" fill="#1D9E75" stroke="#fff" stroke-width="1.2"/>`
       : '';
 
-    return L.divIcon({
+    return this.L.divIcon({
       className: 'wf-pin-icon',
       html: `
         <svg width="32" height="40" viewBox="-5 -5 38 46" xmlns="http://www.w3.org/2000/svg" overflow="visible">

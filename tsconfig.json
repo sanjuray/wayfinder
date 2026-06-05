@@ -10,12 +10,14 @@
     "noFallthroughCasesInSwitch": true,
     "skipLibCheck": true,
     "isolatedModules": true,
+    "allowSyntheticDefaultImports": true,
     "experimentalDecorators": true,
     "importHelpers": true,
     "target": "ES2022",
     "module": "preserve",
     "resolveJsonModule": true,
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "types": ["leaflet", "leaflet.markcluster"]
   },
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,
