@@ -10,6 +10,7 @@ import {
 import { FormsModule } from '@angular/forms';
 
 import { CategoriesStore } from '../../core/stores/categories.store';
+import { VibeTagsStore } from '../../core/stores/vibe-tags.store';
 import { MultiSelectComponent } from '../../shared/multi-select/multi-select.component';
 import type { Place, PlaceStatus, Category } from '../../core/models';
 
@@ -63,6 +64,12 @@ import type { Place, PlaceStatus, Category } from '../../core/models';
           [options]="categoryOptions()"
           [selected]="selectedCategoryIds()"
           (selectedChange)="selectedCategoryIds.set($event)"
+        />
+        <wf-multi-select
+          label="Vibes"
+          [options]="vibeOptions()"
+          [selected]="selectedVibeIds()"
+          (selectedChange)="selectedVibeIds.set($event)"
         />
         <wf-multi-select
           label="Status"
@@ -402,11 +409,9 @@ import type { Place, PlaceStatus, Category } from '../../core/models';
 })
 export class PickerColumnComponent {
   protected categories = inject(CategoriesStore);
+  protected vibeTagsStore = inject(VibeTagsStore);
 
-  /** Whether the column is visible. Drives the CSS slide-in animation. */
   readonly isOpen = input.required<boolean>();
-
-  /** Places the user can still add (not already in the trip). */
   readonly availablePlaces = input.required<Place[]>();
 
   readonly picked = output<string>();
@@ -418,6 +423,7 @@ export class PickerColumnComponent {
   // ---- Local filter state ----
 
   protected selectedCategoryIds = signal<ReadonlySet<string>>(new Set());
+  protected selectedVibeIds = signal<ReadonlySet<string>>(new Set());
   protected selectedStatuses = signal<ReadonlySet<string>>(new Set());
   protected favoriteOnly = signal(false);
 
@@ -427,12 +433,23 @@ export class PickerColumnComponent {
   ];
 
   protected categoryOptions = computed(() =>
-    this.categories.entities().map((c) => ({
-      value: c.id,
-      label: c.name,
-      icon: c.icon,
-      iconColor: c.color,
-    }))
+    this.categories
+      .entities()
+      .filter((c) => !c.hidden)
+      .map((c) => ({
+        value: c.id,
+        label: c.name,
+        icon: c.icon,
+        iconColor: c.color,
+      }))
+  );
+
+  protected vibeOptions = computed(() =>
+    this.vibeTagsStore
+      .entities()
+      .filter((v) => !v.hidden)
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map((v) => ({ value: v.id, label: v.name }))
   );
 
   protected categoryById = computed(() => {
@@ -444,6 +461,7 @@ export class PickerColumnComponent {
   protected anyFilterActive = computed(
     () =>
       this.selectedCategoryIds().size > 0 ||
+      this.selectedVibeIds().size > 0 ||
       this.selectedStatuses().size > 0 ||
       this.favoriteOnly()
   );
@@ -451,6 +469,7 @@ export class PickerColumnComponent {
   protected filtered = computed<Place[]>(() => {
     const q = this.query().trim().toLowerCase();
     const catIds = this.selectedCategoryIds();
+    const vibeIds = this.selectedVibeIds();
     const statuses = this.selectedStatuses();
     const favOnly = this.favoriteOnly();
 
@@ -458,6 +477,7 @@ export class PickerColumnComponent {
       if (favOnly && !p.isFavorite) return false;
       if (catIds.size > 0 && !catIds.has(p.categoryId)) return false;
       if (statuses.size > 0 && !statuses.has(p.status)) return false;
+      if (vibeIds.size > 0 && !p.vibeTagIds?.some((v) => vibeIds.has(v))) return false;
       if (q) {
         const name = (p.customName ?? p.name).toLowerCase();
         const loc = (p.locality ?? '').toLowerCase();
@@ -467,8 +487,6 @@ export class PickerColumnComponent {
     });
   });
 
-  // The multi-select uses string values; we widen the type when accepting
-  // status selections back from it.
   protected onStatusChange(next: ReadonlySet<string>): void {
     this.selectedStatuses.set(next);
   }
@@ -479,6 +497,7 @@ export class PickerColumnComponent {
 
   protected clearFilters(): void {
     this.selectedCategoryIds.set(new Set());
+    this.selectedVibeIds.set(new Set());
     this.selectedStatuses.set(new Set());
     this.favoriteOnly.set(false);
   }

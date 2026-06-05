@@ -28,6 +28,19 @@ export const CategoriesStore = signalStore(
     const idService = inject(IdService);
     const appState = inject(AppStateStore);
 
+    /**
+     * Case-insensitive name uniqueness check. ignoreId excludes a
+     * specific category from the comparison — pass when renaming so the
+     * category's current name doesn't count as a self-collision.
+     */
+    function nameAvailable(candidate: string, ignoreId?: string): boolean {
+      const target = candidate.trim().toLowerCase();
+      if (!target) return false;
+      return !store.entities().some(
+        (c) => c.id !== ignoreId && c.name.trim().toLowerCase() === target
+      );
+    }
+
     async function load() {
       patchState(store, { loading: true, error: null });
       try {
@@ -71,6 +84,6 @@ export const CategoriesStore = signalStore(
       return store.entities().find((c) => c.id === id);
     }
 
-    return { load, add, update, remove, getById };
+    return { load, add, update, remove, getById, nameAvailable };
   })
 );

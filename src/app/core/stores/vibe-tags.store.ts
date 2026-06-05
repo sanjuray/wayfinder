@@ -27,6 +27,14 @@ export const VibeTagsStore = signalStore(
     const idService = inject(IdService);
     const appState = inject(AppStateStore);
 
+    function nameAvailable(candidate: string, ignoreId?: string): boolean {
+      const target = candidate.trim().toLowerCase();
+      if (!target) return false;
+      return !store.entities().some(
+        (t) => t.id !== ignoreId && t.name.trim().toLowerCase() === target
+      );
+    }
+
     async function load() {
       patchState(store, { loading: true, error: null });
       try {
@@ -51,6 +59,14 @@ export const VibeTagsStore = signalStore(
       appState.recordChange();
     }
 
+    async function update(t: VibeTag) {
+      await storage.upsertVibeTag(t);
+      patchState(store, {
+        entities: store.entities().map((x) => (x.id === t.id ? t : x)),
+      });
+      appState.recordChange();
+    }
+
     async function remove(id: string) {
       await storage.deleteVibeTag(id);
       patchState(store, { entities: store.entities().filter((t) => t.id !== id) });
@@ -61,6 +77,6 @@ export const VibeTagsStore = signalStore(
       return store.entities().find((t) => t.id === id);
     }
 
-    return { load, add, remove, getById };
+    return { load, add, update, remove, getById, nameAvailable };
   })
 );

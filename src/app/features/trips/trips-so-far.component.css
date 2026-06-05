@@ -536,3 +536,36 @@
   border-radius: inherit;
   transition: width 0.25s ease;
 }
+
+/* ============ View-all-past truncation ============ */
+
+.view-all-row {
+  display: flex;
+  justify-content: center;
+  margin-top: 12px;
+}
+
+.view-all-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 14px;
+  font: inherit;
+  font-size: 12px;
+  color: var(--wf-ink-soft);
+  background: transparent;
+  border: 0.5px solid var(--wf-hairline);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: color 0.12s ease, border-color 0.12s ease, background 0.12s ease;
+}
+
+.view-all-btn:hover {
+  color: var(--wf-ink);
+  border-color: var(--wf-ink-faint);
+  background: var(--wf-bg-2);
+}
+
+.view-all-btn i {
+  font-size: 12px;
+}

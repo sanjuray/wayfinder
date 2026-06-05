@@ -398,19 +398,91 @@ export class CollectionDetailComponent implements AfterViewInit, OnDestroy {
   // ============================================================
 
   /**
+   * Popover positions, computed when the menu opens via the anchor
+   * button's getBoundingClientRect(). Storing them as signals + binding
+   * via inline style lets the popover render as `position: fixed` —
+   * which escapes any ancestor `overflow: hidden` / scrolling, fixing
+   * the "popover gets clipped when the page scrolls" bug.
+   *
+   * The position is also viewport-edge-aware: for right-anchored menus
+   * we align by the anchor's right edge, and we clamp to keep the
+   * popover from spilling past the viewport edge.
+   *
+   * Trade-off: position is captured at OPEN time only. If the user
+   * scrolls the page while the popover is open, it stays where it was
+   * opened (the page scrolls beneath it). That's a known limitation —
+   * fix would be to recompute on scroll, but it adds listener
+   * lifecycle complexity. For a transient popover the user is about
+   * to click in, this is acceptable.
+   */
+  protected coverMenuPos = signal<{ top: number; left: number } | null>(null);
+  protected overflowMenuPos = signal<{ top: number; right: number } | null>(null);
+
+  /**
    * Toggle the Cover popover. stopPropagation so the click doesn't bubble to
    * the document handler below and immediately close what we just opened.
    */
   protected toggleCoverMenu(event: MouseEvent): void {
     event.stopPropagation();
-    this.showCoverMenu.update((v) => !v);
+    const willOpen = !this.showCoverMenu();
+    if (willOpen) {
+      this.coverMenuPos.set(this.computeLeftAnchoredPos(event.currentTarget));
+    }
+    this.showCoverMenu.set(willOpen);
     this.showOverflowMenu.set(false);
   }
 
   protected toggleOverflowMenu(event: MouseEvent): void {
     event.stopPropagation();
-    this.showOverflowMenu.update((v) => !v);
+    const willOpen = !this.showOverflowMenu();
+    if (willOpen) {
+      this.overflowMenuPos.set(
+        this.computeRightAnchoredPos(event.currentTarget)
+      );
+    }
+    this.showOverflowMenu.set(willOpen);
     this.showCoverMenu.set(false);
+  }
+
+  /**
+   * Compute fixed-position coords for a popover anchored to the LEFT
+   * edge of its trigger button, dropping below it. Clamps so the
+   * popover doesn't spill past the viewport's right edge (assumes a
+   * 240px min-width — see .menu in CSS).
+   */
+  private computeLeftAnchoredPos(
+    target: EventTarget | null
+  ): { top: number; left: number } | null {
+    if (!(target instanceof Element)) return null;
+    const rect = target.getBoundingClientRect();
+    const GAP = 6;
+    const MIN_WIDTH = 240;
+    const VIEWPORT_MARGIN = 12;
+    const top = rect.bottom + GAP;
+    let left = rect.left;
+    // Clamp to keep within viewport
+    const maxLeft = window.innerWidth - MIN_WIDTH - VIEWPORT_MARGIN;
+    if (left > maxLeft) left = maxLeft;
+    if (left < VIEWPORT_MARGIN) left = VIEWPORT_MARGIN;
+    return { top, left };
+  }
+
+  /**
+   * Compute fixed-position coords for a popover anchored to the RIGHT
+   * edge of its trigger button. Uses `right: <px from viewport right>`
+   * so the popover hugs the trigger's right edge.
+   */
+  private computeRightAnchoredPos(
+    target: EventTarget | null
+  ): { top: number; right: number } | null {
+    if (!(target instanceof Element)) return null;
+    const rect = target.getBoundingClientRect();
+    const GAP = 6;
+    const VIEWPORT_MARGIN = 12;
+    const top = rect.bottom + GAP;
+    let right = window.innerWidth - rect.right;
+    if (right < VIEWPORT_MARGIN) right = VIEWPORT_MARGIN;
+    return { top, right };
   }
 
   protected pickGradientFromMenu(): void {

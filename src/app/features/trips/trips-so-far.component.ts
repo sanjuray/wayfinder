@@ -256,6 +256,51 @@ export class TripsSoFarComponent {
     this.showFilter.set(false);
   }
 
+  // ---- Past-trips truncation ----
+
+  /**
+   * Default visible count for past trips when not expanded. Above this,
+   * the section truncates and shows a "View all" button. Threshold
+   * matches a 2-column grid showing 3 rows comfortably.
+   */
+  private readonly PAST_TRUNCATE_AT = 6;
+
+  protected pastExpanded = signal(false);
+
+  /**
+   * True iff the past section actually has enough trips to truncate.
+   * (Avoids showing the "View all" button when there are only 3 past
+   * trips — nothing to expand to.)
+   */
+  protected pastIsTruncatable = computed<boolean>(() => {
+    const past = this.sections().find((s) => s.key === 'past');
+    return (past?.items.length ?? 0) > this.PAST_TRUNCATE_AT;
+  });
+
+  protected togglePastExpanded(): void {
+    this.pastExpanded.update((v) => !v);
+  }
+
+  /**
+   * Returns the trip items to display for a given section. For 'past',
+   * truncates to PAST_TRUNCATE_AT unless expanded or a filter is active
+   * (filter results shouldn't be truncated — they're already narrowed).
+   * All other sections pass through unchanged.
+   */
+  protected displayedItems(sec: {
+    key: string;
+    items: Trip[];
+  }): Trip[] {
+    if (
+      sec.key !== 'past' ||
+      this.pastExpanded() ||
+      this.anyFilterActive()
+    ) {
+      return sec.items;
+    }
+    return sec.items.slice(0, this.PAST_TRUNCATE_AT);
+  }
+
   // ---- Card display helpers ----
 
   /**

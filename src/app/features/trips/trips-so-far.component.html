@@ -114,7 +114,7 @@
         </h2>
 
         <div class="cards">
-          @for (t of sec.items; track t.id) {
+          @for (t of displayedItems(sec); track t.id) {
             <article
               class="trip-card"
               [class.draft]="sec.key === 'drafts'"
@@ -193,6 +193,25 @@
             </button>
           }
         </div>
+
+        <!-- Past trips truncation: by default show only the first N
+             past trips with a "View all" button to expand. When expanded,
+             a "Show less" button collapses back. Threshold + state live
+             on the component. Skipped when the user has filters active —
+             a filter result list shouldn't truncate. -->
+        @if (sec.key === 'past' && pastIsTruncatable() && !anyFilterActive()) {
+          <div class="view-all-row">
+            <button class="view-all-btn" (click)="togglePastExpanded()">
+              @if (pastExpanded()) {
+                <i class="ti ti-chevron-up"></i>
+                Show less
+              } @else {
+                <i class="ti ti-chevron-down"></i>
+                View all {{ sec.items.length }} past trips
+              }
+            </button>
+          </div>
+        }
       </section>
     }
   }

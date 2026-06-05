@@ -44,12 +44,8 @@
   gap: 6px;
 }
 
-/* ============ CATEGORY SECTION ============ */
-.cat-section {
-  position: relative;
-}
-.cat-header {
-  position: relative;
+/* ============ SIDEBAR SECTION HEADERS ============ */
+.section-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -75,6 +71,59 @@
   background: var(--wf-accent);
   color: var(--wf-bg);
   border-color: var(--wf-accent);
+}
+
+/* ============ SHOW MORE / LESS BUTTON ============ */
+.show-more-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  padding: 4px 6px;
+  background: none;
+  border: none;
+  font: inherit;
+  font-size: 11px;
+  color: var(--wf-ink-faint);
+  cursor: pointer;
+  border-radius: 4px;
+  width: 100%;
+}
+.show-more-btn:hover {
+  color: var(--wf-ink-soft);
+  background: var(--wf-bg-2);
+}
+.show-more-btn i {
+  font-size: 11px;
+}
+
+/* ============ VIBE CHIPS ============ */
+.vibe-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.vibe-chip {
+  padding: 4px 9px;
+  font-size: 11px;
+  font: inherit;
+  font-size: 11px;
+  border-radius: 999px;
+  border: 0.5px solid var(--wf-hairline);
+  background: var(--wf-bg-2);
+  color: var(--wf-ink-soft);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.1s, color 0.1s, border-color 0.1s;
+}
+.vibe-chip:hover {
+  color: var(--wf-ink);
+  border-color: var(--wf-ink-faint);
+}
+.vibe-chip.active {
+  background: var(--wf-ink);
+  color: var(--wf-bg);
+  border-color: var(--wf-ink);
 }
 
 /* ============ CATEGORY LIST ITEMS ============ */

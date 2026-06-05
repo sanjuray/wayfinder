@@ -18,6 +18,8 @@ import { VibeTagsStore } from '../../core/stores/vibe-tags.store';
 import { AppStateStore } from '../../core/stores/app-state.store';
 import { STORAGE_ADAPTER } from '../../core/storage/storage.token';
 import { IconPickerComponent } from '../../shared/icon-picker/icon-picker.component';
+import { CategoryManagerComponent } from '../../shared/category-manager/category-manager.component';
+import { VibeTagManagerComponent } from '../../shared/vibe-tag-manager/vibe-tag-manager.component';
 import { gradientCss, DEFAULT_COVER_ICON } from '../../core/constants/collection-covers';
 import type { ThemeName, AppState } from '../../core/models';
 
@@ -39,7 +41,7 @@ interface ThemeTile {
 @Component({
   selector: 'wf-settings',
   standalone: true,
-  imports: [FormsModule, IconPickerComponent, RouterLink],
+  imports: [FormsModule, IconPickerComponent, CategoryManagerComponent, VibeTagManagerComponent, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="wrap">
@@ -82,32 +84,11 @@ interface ThemeTile {
             <!-- ===== CATEGORIES & VIBES ===== -->
             <section #section id="section-categories" data-section="categories">
               <div class="set-card">
-                <h3>Categories</h3>
-                <div class="desc">
-                  {{ categories.entities().length }} categories — Wayfinder ships with sensible defaults.
-                  Edit a name, change a color, or remove the ones you'll never use.
-                </div>
-                <div class="cats-list">
-                  @for (cat of categories.entities(); track cat.id) {
-                    <span class="cat-pill">
-                      <span class="sw" [style.background]="cat.color"></span>
-                      {{ cat.name }}
-                    </span>
-                  }
-                </div>
-                <p class="hint">Inline editing of categories is coming in a later release.</p>
+                <wf-category-manager />
               </div>
 
               <div class="set-card">
-                <h3>Vibe tags</h3>
-                <div class="desc">
-                  {{ vibeTags.entities().length }} default vibes — multi-select on each place.
-                </div>
-                <div class="cats-list">
-                  @for (v of vibeTags.entities(); track v.id) {
-                    <span class="vibe-pill">{{ v.name }}</span>
-                  }
-                </div>
+                <wf-vibe-tag-manager />
               </div>
             </section>
 

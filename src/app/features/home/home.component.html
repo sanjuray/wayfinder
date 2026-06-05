@@ -1,50 +1,87 @@
 <div class="map-view">
   <div class="body">
-    <!-- Sidebar (map-only — Categories + Collections filter the map) -->
+    <!-- Sidebar (map-only — Categories + Collections + Vibes filter the map) -->
     <aside class="sidebar">
+
+      <!-- Categories -->
       <div class="section">
-        <section class="cat-section">
-          <div class="cat-header">
-            <h3 class="aside-label">Categories</h3>
-            <button
-              class="filter-btn"
-              [class.active]="filters.anyFilterActive()"
-              (click)="toggleFilterPopover()"
-              aria-label="Open filters"
-              title="Filters"
+        <div class="section-head">
+          <h3 class="aside-label">Categories</h3>
+          <button
+            class="filter-btn"
+            [class.active]="filters.anyFilterActive()"
+            (click)="toggleFilterPopover()"
+            aria-label="Open filters"
+            title="More filters"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 6h18M7 12h10M11 18h2"/>
+            </svg>
+          </button>
+        </div>
+        <ul class="cat-list">
+          @for (cat of displayedCategories(); track cat.id) {
+            <li
+              class="cat-item"
+              [class.active]="filters.selectedCategoryIds().includes(cat.id)"
+              (click)="onSidebarCategoryClick(cat.id)"
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M3 6h18M7 12h10M11 18h2"/>
-              </svg>
-            </button>
-          </div>
-          <ul class="cat-list">
-            @for (cat of categories.entities(); track cat.id) {
-              <li
-                class="cat-item"
-                [class.active]="filters.selectedCategoryIds().includes(cat.id)"
-                (click)="onSidebarCategoryClick(cat.id)"
-              >
-                <span class="dot" [style.background]="cat.color"></span>
-                <span class="cat-name">{{ cat.name }}</span>
-                <span class="cat-count">{{ categoryCount(cat.id) }}</span>
-              </li>
+              <span class="dot" [style.background]="cat.color"></span>
+              <span class="cat-name">{{ cat.name }}</span>
+              <span class="cat-count">{{ categoryCount(cat.id) }}</span>
+            </li>
+          }
+        </ul>
+        @if (sortedCategories().length > CAT_LIMIT) {
+          <button class="show-more-btn" (click)="catExpanded.update(v => !v)">
+            @if (catExpanded()) {
+              <i class="ti ti-chevron-up"></i> Show less
+            } @else {
+              <i class="ti ti-chevron-down"></i> {{ sortedCategories().length - CAT_LIMIT }} more
             }
-          </ul>
-        </section>
+          </button>
+        }
       </div>
 
+      <!-- Vibe Tags — inline chips with show more/less -->
+      @if (sortedVibes().length > 0) {
+        <div class="section">
+          <h3 class="aside-label">Vibes</h3>
+          <div class="vibe-list">
+            @for (v of displayedVibes(); track v.id) {
+              <button
+                class="vibe-chip"
+                [class.active]="filters.selectedVibeIds().includes(v.id)"
+                (click)="filters.toggleSidebarVibe(v.id)"
+              >
+                {{ v.name }}
+              </button>
+            }
+          </div>
+          @if (sortedVibes().length > VIBE_LIMIT) {
+            <button class="show-more-btn" (click)="vibeExpanded.update(v => !v)">
+              @if (vibeExpanded()) {
+                <i class="ti ti-chevron-up"></i> Show less
+              } @else {
+                <i class="ti ti-chevron-down"></i> {{ sortedVibes().length - VIBE_LIMIT }} more
+              }
+            </button>
+          }
+        </div>
+      }
+
+      <!-- Collections -->
       <div class="section">
         <h3 class="aside-label">Collections</h3>
         @if (sortedCollections().length === 0) {
           <p class="empty">No collections yet.</p>
         } @else {
           <ul class="coll-list">
-            @for (col of sortedCollections(); track col.id) {
+            @for (col of displayedCollections(); track col.id) {
               <li
                 class="coll-item"
-                [class.active]="filters.selectedCollectionId() === col.id"
+                [class.active]="filters.selectedCollectionIds().includes(col.id)"
                 (click)="onSidebarCollectionClick(col.id)"
               >
                 <div class="coll-cover" [style.background]="coverGradientFor(col)">
@@ -55,6 +92,15 @@
               </li>
             }
           </ul>
+          @if (sortedCollections().length > COL_LIMIT) {
+            <button class="show-more-btn" (click)="colExpanded.update(v => !v)">
+              @if (colExpanded()) {
+                <i class="ti ti-chevron-up"></i> Show less
+              } @else {
+                <i class="ti ti-chevron-down"></i> {{ sortedCollections().length - COL_LIMIT }} more
+              }
+            </button>
+          }
         }
       </div>
     </aside>

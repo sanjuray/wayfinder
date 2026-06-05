@@ -21,6 +21,7 @@ import * as L from 'leaflet';
 import { PlacesStore } from '../../core/stores/places.store';
 import { CategoriesStore } from '../../core/stores/categories.store';
 import { TripsStore } from '../../core/stores/trips.store';
+import { AppStateStore } from '../../core/stores/app-state.store';
 
 import { TripPlanFacade } from './trip-plan.facade';
 import { TripStopCardComponent } from './trip-stop-card.component';
@@ -107,6 +108,15 @@ export class TripPlanComponent implements OnDestroy {
   protected places = inject(PlacesStore);
   protected categories = inject(CategoriesStore);
   protected trips = inject(TripsStore);
+  /**
+   * AppStateStore is read so the map effects (polyline, stop markers,
+   * avatar marker) can re-fire when the theme changes mid-session.
+   * Without this dependency, polyline colors stay baked in from the
+   * first render — getCssVar() is called at render time, not reactively.
+   * Tracking themePreference in the effects forces a re-render on theme
+   * change.
+   */
+  private appState = inject(AppStateStore);
   private router = inject(Router);
 
   /**
@@ -360,6 +370,13 @@ export class TripPlanComponent implements OnDestroy {
       // Also track visited state — visited→remaining boundary moves when
       // stops are marked, so polylines need to re-split.
       this.facade.currentStopIndex();
+      // Theme reactivity: re-render markers + polyline when the user
+      // switches themes mid-session. The colors are baked in at render
+      // time via getCssVar(); without this signal dep the polyline keeps
+      // its old-theme color until the next stop edit. Reading the signal
+      // here is enough to register the dep — the value itself isn't
+      // needed since getCssVar() reads from the live DOM.
+      this.appState.themePreference();
       if (this.map) {
         this.syncStopMarkers();
         this.syncPolyline();
@@ -369,6 +386,9 @@ export class TripPlanComponent implements OnDestroy {
     // Step 5: sync the ghost-pin marker when the undo state changes.
     effect(() => {
       const stash = this.facade.pendingUndoStop();
+      // Theme reactivity for the ghost icon too — same baked-in-color
+      // problem, less frequent but still real.
+      this.appState.themePreference();
       if (!this.map) return;
       this.syncGhostMarker(stash?.lat ?? null, stash?.lng ?? null);
     });
@@ -387,6 +407,9 @@ export class TripPlanComponent implements OnDestroy {
       const currentIdx = this.facade.currentStopIndex();
       const items = this.facade.stopsWithPlace();
       const trip = this.facade.trip();
+      // Theme reactivity: avatar marker also needs to re-render on
+      // theme change to pick up the new --wf-teal / --wf-bg colors.
+      this.appState.themePreference();
       if (!ready || !this.map) return;
 
       if (!isLive || currentIdx === null) {

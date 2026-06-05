@@ -230,10 +230,13 @@
 }
 
 /* ============ MENUS ============ */
+/* Menus are positioned with `position: fixed` + inline top/left or
+   top/right computed at open-time from the anchor button's bounding
+   rect. This escapes any ancestor `overflow: hidden` / scroll
+   containers — fixes the long-standing "popover gets clipped" bug.
+   See collection-detail.component.ts → computeLeftAnchoredPos() etc. */
 .menu {
-  position: absolute;
-  top: calc(100% + 6px);
-  left: 0;
+  position: fixed;
   min-width: 240px;
   background: var(--wf-bg);
   border: 0.5px solid var(--wf-hairline);
@@ -242,9 +245,11 @@
   padding: 6px;
   z-index: 1100;
 }
+/* The .menu-right modifier is a holdover — the right-anchored menus
+   now position via inline style. Kept as a marker class in case future
+   styling needs to discriminate (e.g. arrow direction). */
 .menu-right {
-  left: auto;
-  right: 0;
+  /* no-op; positioning is via inline style now */
 }
 .menu-item {
   display: flex;

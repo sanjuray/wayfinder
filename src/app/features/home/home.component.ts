@@ -27,6 +27,7 @@ import 'leaflet.markercluster';
 import { PlacesStore } from '../../core/stores/places.store';
 import { CategoriesStore } from '../../core/stores/categories.store';
 import { CollectionsStore } from '../../core/stores/collections.store';
+import { VibeTagsStore } from '../../core/stores/vibe-tags.store';
 
 import { AddPlaceComponent } from '../places/add-place/add-place.component';
 import { PinDropCelebrationComponent } from '../places/add-place/pin-drop-celebration.component';
@@ -72,6 +73,7 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
   protected places = inject(PlacesStore);
   protected categories = inject(CategoriesStore);
   protected collections = inject(CollectionsStore);
+  protected vibeTags = inject(VibeTagsStore);
   protected filters = inject(FilterStateStore);
 
   protected quoteService = inject(QuoteService);
@@ -84,10 +86,17 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
   protected celebration = signal<CelebrationState | null>(null);
   protected pendingClickCoords = signal<{ lat: number; lng: number } | null>(null);
   protected showFilterPopover = signal(false);
-
   protected editingPlace = signal<Place | null>(null);
-
   protected isPlaceDetailOpen = signal(false);
+
+  // Sidebar truncation state — collapsed by default, expand on demand
+  protected catExpanded = signal(false);
+  protected colExpanded = signal(false);
+  protected vibeExpanded = signal(false);
+
+  protected readonly CAT_LIMIT = 6;
+  protected readonly COL_LIMIT = 5;
+  protected readonly VIBE_LIMIT = 8;
 
   // Leaflet instance + cluster group, kept as instance fields (not signals)
   // because Leaflet manages its own DOM and we don't want signal reactivity
@@ -97,12 +106,52 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
   private markersById = new Map<string, L.Marker>();
 
   protected sortedCategories = computed(() =>
-    [...this.categories.entities()].sort((a, b) => a.name.localeCompare(b.name))
+    [...this.categories.entities()]
+      .filter((c) => !c.hidden)
+      .sort((a, b) => a.name.localeCompare(b.name))
+  );
+
+  protected displayedCategories = computed(() =>
+    this.catExpanded()
+      ? this.sortedCategories()
+      : this.sortedCategories().slice(0, this.CAT_LIMIT)
   );
 
   protected sortedCollections = computed(() =>
     [...this.collections.entities()].sort((a, b) => a.name.localeCompare(b.name))
   );
+
+  protected displayedCollections = computed(() =>
+    this.colExpanded()
+      ? this.sortedCollections()
+      : this.sortedCollections().slice(0, this.COL_LIMIT)
+  );
+
+  protected sortedVibes = computed(() =>
+    [...this.vibeTags.entities()]
+      .filter((v) => !v.hidden)
+      .sort((a, b) => a.name.localeCompare(b.name))
+  );
+
+  protected displayedVibes = computed(() =>
+    this.vibeExpanded()
+      ? this.sortedVibes()
+      : this.sortedVibes().slice(0, this.VIBE_LIMIT)
+  );
+
+  /** Options shape for wf-multi-select in the sidebar. */
+  protected vibeOptions = computed(() =>
+    this.sortedVibes().map((v) => ({ value: v.id, label: v.name }))
+  );
+
+  /** ReadonlySet adapter for wf-multi-select — store keeps string[]. */
+  protected selectedVibesSet = computed<ReadonlySet<string>>(
+    () => new Set(this.filters.selectedVibeIds())
+  );
+
+  protected onSidebarVibeChange(s: ReadonlySet<string>): void {
+    this.filters.setSelectedVibeIds([...s]);
+  }
 
   protected categoryCounts = computed(() => {
     const map = new Map<string, number>();
@@ -445,22 +494,31 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
    */
   protected filterSummary = computed<string>(() => {
     const catIds = this.filters.selectedCategoryIds();
-    const colId = this.filters.selectedCollectionId();
+    const colIds = this.filters.selectedCollectionIds();
+    const vibeIds = this.filters.selectedVibeIds();
     const loc = this.filters.selectedLocality();
     const cats = this.categories.entities();
     const cols = this.collections.entities();
+    const vibes = this.vibeTags.entities();
 
     const parts: string[] = [];
     if (catIds.length === 1) {
-      const cat = cats.find((c) => c.id === catIds[0]);
-      parts.push(cat?.name ?? 'Category');
+      parts.push(cats.find((c) => c.id === catIds[0])?.name ?? 'Category');
     } else if (catIds.length > 1) {
       parts.push(`${catIds.length} categories`);
     }
 
-    if (colId) {
-      const col = cols.find((c) => c.id === colId);
+    if (colIds.length === 1) {
+      const col = cols.find((c) => c.id === colIds[0]);
       parts.push(col ? `📁 ${col.name}` : 'Collection');
+    } else if (colIds.length > 1) {
+      parts.push(`${colIds.length} collections`);
+    }
+
+    if (vibeIds.length === 1) {
+      parts.push(vibes.find((v) => v.id === vibeIds[0])?.name ?? 'Vibe');
+    } else if (vibeIds.length > 1) {
+      parts.push(`${vibeIds.length} vibes`);
     }
 
     if (loc) parts.push(loc);

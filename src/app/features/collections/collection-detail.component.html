@@ -75,7 +75,13 @@
               <i class="ti ti-photo"></i> Cover
             </button>
             @if (showCoverMenu()) {
-              <div class="menu" role="menu" (click)="$event.stopPropagation()">
+              <div
+                class="menu"
+                role="menu"
+                (click)="$event.stopPropagation()"
+                [style.top.px]="coverMenuPos()?.top"
+                [style.left.px]="coverMenuPos()?.left"
+              >
                 <button class="menu-item" (click)="pickGradientFromMenu()">
                   <i class="ti ti-palette"></i>
                   <div class="menu-item-text">
@@ -116,7 +122,13 @@
               <i class="ti ti-dots"></i>
             </button>
             @if (showOverflowMenu()) {
-              <div class="menu menu-right" role="menu" (click)="$event.stopPropagation()">
+              <div
+                class="menu menu-right"
+                role="menu"
+                (click)="$event.stopPropagation()"
+                [style.top.px]="overflowMenuPos()?.top"
+                [style.right.px]="overflowMenuPos()?.right"
+              >
                 <button class="menu-item danger" (click)="deleteFromOverflow()">
                   <i class="ti ti-trash"></i>
                   <div class="menu-item-text">

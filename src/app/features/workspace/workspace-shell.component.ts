@@ -3,6 +3,7 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
 import { TaglineService } from '../../core/services/tagline.service';
 import { AppStateStore } from '../../core/stores/app-state.store';
+import { SearchStateService } from '../../core/services/search-state.service';
 
 /**
  * Persistent workspace chrome — topbar with brand, nav tabs, save-status and
@@ -23,6 +24,7 @@ import { AppStateStore } from '../../core/stores/app-state.store';
 export class WorkspaceShellComponent {
   protected tagline = inject(TaglineService);
   protected appState = inject(AppStateStore);
+  protected search = inject(SearchStateService);
 
   /**
    * Whether the user has data changes that haven't been backed up yet.
