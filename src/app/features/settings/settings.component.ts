@@ -9,7 +9,7 @@ import {
   OnDestroy,
   ChangeDetectionStrategy,
 } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CollectionsStore } from '../../core/stores/collections.store';
 import { PlacesStore } from '../../core/stores/places.store';
@@ -18,6 +18,8 @@ import { VibeTagsStore } from '../../core/stores/vibe-tags.store';
 import { AppStateStore } from '../../core/stores/app-state.store';
 import { STORAGE_ADAPTER } from '../../core/storage/storage.token';
 import { IconPickerComponent } from '../../shared/icon-picker/icon-picker.component';
+import { CategoryManagerComponent } from '../../shared/category-manager/category-manager.component';
+import { VibeTagManagerComponent } from '../../shared/vibe-tag-manager/vibe-tag-manager.component';
 import { gradientCss, DEFAULT_COVER_ICON } from '../../core/constants/collection-covers';
 import type { ThemeName, AppState } from '../../core/models';
 
@@ -39,7 +41,7 @@ interface ThemeTile {
 @Component({
   selector: 'wf-settings',
   standalone: true,
-  imports: [FormsModule, IconPickerComponent],
+  imports: [FormsModule, IconPickerComponent, CategoryManagerComponent, VibeTagManagerComponent, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="wrap">
@@ -82,32 +84,11 @@ interface ThemeTile {
             <!-- ===== CATEGORIES & VIBES ===== -->
             <section #section id="section-categories" data-section="categories">
               <div class="set-card">
-                <h3>Categories</h3>
-                <div class="desc">
-                  {{ categories.entities().length }} categories — Wayfinder ships with sensible defaults.
-                  Edit a name, change a color, or remove the ones you'll never use.
-                </div>
-                <div class="cats-list">
-                  @for (cat of categories.entities(); track cat.id) {
-                    <span class="cat-pill">
-                      <span class="sw" [style.background]="cat.color"></span>
-                      {{ cat.name }}
-                    </span>
-                  }
-                </div>
-                <p class="hint">Inline editing of categories is coming in a later release.</p>
+                <wf-category-manager />
               </div>
 
               <div class="set-card">
-                <h3>Vibe tags</h3>
-                <div class="desc">
-                  {{ vibeTags.entities().length }} default vibes — multi-select on each place.
-                </div>
-                <div class="cats-list">
-                  @for (v of vibeTags.entities(); track v.id) {
-                    <span class="vibe-pill">{{ v.name }}</span>
-                  }
-                </div>
+                <wf-vibe-tag-manager />
               </div>
             </section>
 
@@ -145,35 +126,46 @@ interface ThemeTile {
                           />
                           <button class="link" (click)="cancelCollectionEdit()">Cancel</button>
                           <button class="link primary" (click)="saveCollectionEdit()">Save</button>
-                        } @else {
-                          <button
-                            class="col-cover"
-                            [style.background]="coverGradientFor(c)"
-                            (click)="openIconPickerFor(c.id)"
-                            aria-label="Change icon"
-                            title="Change icon"
-                          >
-                            <i class="ti" [class]="'ti-' + (c.coverIcon || defaultCoverIcon)"></i>
-                          </button>
-                          <span class="col-name">{{ c.name }}</span>
-                          <span class="col-count">
-                            {{ placesInCollection(c.id) }}
-                            place{{ placesInCollection(c.id) === 1 ? '' : 's' }}
-                          </span>
-                          <button
-                            class="icon-btn"
-                            (click)="startEditCollection(c.id, c.name)"
-                            aria-label="Rename"
-                          >
-                            <i class="ti ti-pencil"></i>
-                          </button>
-                          <button
-                            class="icon-btn danger"
-                            (click)="deleteCollection(c.id)"
-                            aria-label="Delete"
-                          >
-                            <i class="ti ti-trash"></i>
-                          </button>
+                      } @else {
+                        <button
+                          class="col-cover"
+                          [style.background]="coverGradientFor(c)"
+                          (click)="openIconPickerFor(c.id)"
+                          aria-label="Change icon"
+                          title="Change icon"
+                        >
+                          <i class="ti" [class]="'ti-' + (c.coverIcon || defaultCoverIcon)"></i>
+                        </button>
+                        <span class="col-name">{{ c.name }}</span>
+                        <span class="col-count">
+                          {{ placesInCollection(c.id) }}
+                          place{{ placesInCollection(c.id) === 1 ? '' : 's' }}
+                        </span>
+                        
+                        <!-- Phase 4 (e): Open in detail view -->
+                        <a
+                          class="col-open"
+                          [routerLink]="['/collections', c.id]"
+                          aria-label="Open collection"
+                          title="Open collection"
+                        >
+                          Open <i class="ti ti-arrow-up-right"></i>
+                        </a>
+                        
+                        <button
+                          class="icon-btn"
+                          (click)="startEditCollection(c.id, c.name)"
+                          aria-label="Rename"
+                        >
+                          <i class="ti ti-pencil"></i>
+                        </button>
+                        <button
+                          class="icon-btn danger"
+                          (click)="deleteCollection(c.id)"
+                          aria-label="Delete"
+                        >
+                          <i class="ti ti-trash"></i>
+                        </button>
                         }
                       </li>
                     }
@@ -658,6 +650,30 @@ interface ThemeTile {
         transform: scale(1.04);
         box-shadow: 0 4px 12px color-mix(in srgb, var(--wf-ink) 12%, transparent);
       }
+      
+      .col-open {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: var(--wf-ink-soft);
+        text-decoration: none;
+        padding: 4px 8px;
+        border-radius: 6px;
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        font-weight: 500;
+        transition: all 0.15s ease;
+      }
+        
+      .col-open:hover {
+        color: var(--wf-accent);
+        background: color-mix(in srgb, var(--wf-accent) 8%, transparent);
+      }
+
+      .col-open i {
+        font-size: 11px;
+      }
 
       /* Tabler icon sizing inside Settings icon buttons */
       .icon-btn i.ti {
@@ -1090,8 +1106,10 @@ export class SettingsComponent implements AfterViewInit, OnDestroy {
       a.download = `wayfinder-export-${date}.json`;
       a.click();
       URL.revokeObjectURL(url);
-      // Update lastBackupAt
-      this.appState.patch({ lastBackupAt: new Date().toISOString() });
+      // Mark as backed up — sets lastBackupAt = now AND clears
+      // lastChangeAt so the topbar saved/unsaved indicator flips back
+      // to "saved" immediately.
+      await this.appState.recordBackup();
       this.importResult.set('Backup exported.');
     } catch (err) {
       this.importResult.set(`Error exporting: ${err}`);

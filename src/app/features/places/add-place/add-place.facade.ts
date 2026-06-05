@@ -254,6 +254,28 @@ export class AddPlaceFacade {
     );
   }
 
+  /**
+  * Create a new collection from inside the save step and auto-select it
+  * for the current draft. Returns the new id so callers can confirm or
+  * focus follow-up UI.
+  *
+  * Trimming + empty-name guarding is the caller's responsibility (the
+  * save-step does this before calling); we still no-op on empty input
+  * to be safe.
+  *
+  * Phase 4 (d) addition — see PHASES_DETAIL §"Inline + New collection".
+  */
+ async newCollection(name: string): Promise<string | null> {
+   const trimmed = name.trim();
+   if (!trimmed) return null;
+   const collection = await this.collectionsStore.create(trimmed);
+   // Auto-select for the place currently being saved
+   this.collectionIds.update((ids) =>
+     ids.includes(collection.id) ? ids : [...ids, collection.id]
+   );
+   return collection.id;
+ }
+
   
 async save(): Promise<Place | null> {
     const draft = this.draft();
@@ -261,8 +283,13 @@ async save(): Promise<Place | null> {
     if (!draft || !categoryId) return null;
 
     const editedName = this.customName().trim();
-    const customName =
-      editedName && editedName !== draft.name ? editedName : undefined;
+    // Always store customName when present, even if equal to draft.name.
+    // Rationale (Phase 6d): the place-detail's "Open in Google Maps" popover
+    // surfaces "Custom name + ..." variants only when customName exists. We
+    // used to suppress customName when it matched name, which made those
+    // variants invisible for any place the user didn't bother to rename.
+    // Storing it unconditionally makes the variant list stable across places.
+    const customName = editedName || undefined;
     const now = new Date().toISOString();
 
     if (this.isEditMode()) {
@@ -296,7 +323,6 @@ async save(): Promise<Place | null> {
       status: this.status(),
       isFavorite: this.isFavorite(),
       visits: [],
-      // Save custom name only if it differs from the default — keeps records clean
       customName,
       sourceUrl: draft.sourceUrl,
       createdAt: now,

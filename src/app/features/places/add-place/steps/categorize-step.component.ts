@@ -139,9 +139,13 @@ export class CategorizeStepComponent {
   private vibeTags = inject(VibeTagsStore);
 
   protected sortedCategories = computed(() =>
-    [...this.categories.entities()].sort((a, b) => a.name.localeCompare(b.name))
+    [...this.categories.entities()]
+      .filter((c) => !c.hidden)
+      .sort((a, b) => a.name.localeCompare(b.name))
   );
   protected sortedVibeTags = computed(() =>
-    [...this.vibeTags.entities()].sort((a, b) => a.name.localeCompare(b.name))
+    [...this.vibeTags.entities()]
+      .filter((v) => !v.hidden)
+      .sort((a, b) => a.name.localeCompare(b.name))
   );
 }

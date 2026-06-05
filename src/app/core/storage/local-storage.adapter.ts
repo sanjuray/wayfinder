@@ -116,7 +116,20 @@ export class LocalStorageAdapter implements StorageAdapter {
   }
 
   async importAll(envelope: unknown, mode: ImportMode): Promise<ImportResult> {
-    const parsed = this.validateEnvelope(envelope);
+
+    // Accept either the parsed envelope object OR a raw JSON string. Callers
+    // reading from File/Blob will pass the string; programmatic callers
+    // (tests, future sync code) may pass the object directly.
+    let candidate: unknown = envelope;
+    if (typeof envelope === 'string') {
+      try {
+        candidate = JSON.parse(envelope);
+      } catch {
+        throw new Error('Backup file is not valid JSON.');
+      }
+    }
+
+    const parsed = this.validateEnvelope(candidate);
 
     const recomputed = await sha256(JSON.stringify(parsed.data));
     if (recomputed !== parsed.wayfinder.checksum) {
@@ -154,7 +167,7 @@ export class LocalStorageAdapter implements StorageAdapter {
     }
     if (e.wayfinder.schemaVersion !== 1) {
       throw new Error(
-        'Unsupported schema version: ${e.wayfinder.schemaVersion}. Expected 1.'
+        `Unsupported schema version: ${e.wayfinder.schemaVersion}. Expected 1.`
       );
     }
     if (typeof e.wayfinder.checksum !== 'string') {

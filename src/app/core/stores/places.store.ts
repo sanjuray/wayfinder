@@ -1,6 +1,7 @@
 import { signalStore, withState, withMethods, withComputed, patchState } from '@ngrx/signals';
 import { computed, inject } from '@angular/core';
 import { STORAGE_ADAPTER } from '../storage/storage.token';
+import { AppStateStore } from './app-state.store';
 import type { Place } from '../models';
 
 interface PlacesState {
@@ -41,6 +42,7 @@ export const PlacesStore = signalStore(
   })),
   withMethods((store) => {
     const storage = inject(STORAGE_ADAPTER);
+    const appState = inject(AppStateStore);
 
     async function load() {
       patchState(store, { loading: true, error: null });
@@ -57,6 +59,7 @@ export const PlacesStore = signalStore(
     async function add(place: Place) {
       await storage.upsertPlace(place);
       patchState(store, { entities: [...store.entities(), place] });
+      appState.recordChange();
     }
     
     async function update(place: Place) {
@@ -65,11 +68,13 @@ export const PlacesStore = signalStore(
       patchState(store, {
         entities: store.entities().map((p) => (p.id === place.id ? updated : p)),
       });
+      appState.recordChange();
     }
 
     async function remove(id: string) {
       await storage.deletePlace(id);
       patchState(store, { entities: store.entities().filter((p) => p.id !== id) });
+      appState.recordChange();
     }
 
     /**
@@ -89,6 +94,7 @@ export const PlacesStore = signalStore(
       patchState(store, {
         entities: store.entities().map((p) => (p.id === id ? updated : p)),
       });
+      appState.recordChange();
       return updated;
     }
 
@@ -105,6 +111,7 @@ export const PlacesStore = signalStore(
       patchState(store, {
         entities: store.entities().filter((p) => p.id !== id),
       });
+      appState.recordChange();
     }
 
 

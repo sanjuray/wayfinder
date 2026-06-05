@@ -1,34 +1,69 @@
 import { Routes } from '@angular/router';
 
+/**
+ * Routing structure:
+ *
+ * /                       WorkspaceShell (topbar always visible)
+ *   ├── ''                HomeComponent       (map + sidebar)
+ *   ├── 'collections'     CollectionsList
+ *   ├── 'collections/:id' CollectionDetail
+ *   ├── 'places'          PlacesList         [Phase 5]
+ *   ├── 'trips'           TripsSoFar
+ *   └── 'trips/:id'       TripPlan
+ *
+ * /settings               SettingsComponent   (own breadcrumb layout — no shell topbar)
+ *
+ * Settings sits outside the shell deliberately. The mockup uses a breadcrumb-
+ * style header for Settings, not the workspace topbar — see screen-settings in
+ * the mockup. Clicking the gear in the topbar is a "leave the workspace" gesture.
+ */
 export const routes: Routes = [
   {
     path: '',
     loadComponent: () =>
-      import('./features/home/home.component').then((m) => m.HomeComponent),
-  },
-  {
-    path: 'collections',
-    loadComponent: () =>
-      import('./features/collections/collections-list.component').then(
-        (m) => m.CollectionsListComponent
+      import('./features/workspace/workspace-shell.component').then(
+        (m) => m.WorkspaceShellComponent
       ),
-  },
-  {
-    path: 'collections/:id',
-    loadComponent: () =>
-      import('./features/collections/collection-detail.component').then(
-        (m) => m.CollectionDetailComponent
-      ),
-  },
-  {
-    path: 'trips',
-    loadComponent: () =>
-      import('./features/trips/trips-so-far.component').then((m) => m.TripsSoFarComponent),
-  },
-  {
-    path: 'trips/:id',
-    loadComponent: () =>
-      import('./features/trips/trip-plan.component').then((m) => m.TripPlanComponent),
+    children: [
+      {
+        path: '',
+        loadComponent: () =>
+          import('./features/home/home.component').then((m) => m.HomeComponent),
+      },
+      {
+        path: 'collections',
+        loadComponent: () =>
+          import('./features/collections/collections-list.component').then(
+            (m) => m.CollectionsListComponent
+          ),
+      },
+      {
+        path: 'collections/:id',
+        loadComponent: () =>
+          import('./features/collections/collection-detail.component').then(
+            (m) => m.CollectionDetailComponent
+          ),
+      },
+      {
+        path: 'places',
+        loadComponent: () =>
+          import('./features/places/places-list/places-list.component').then(
+            (m) => m.PlacesListComponent
+          ),
+      },
+      {
+        path: 'trips',
+        loadComponent: () =>
+          import('./features/trips/trips-so-far.component').then(
+            (m) => m.TripsSoFarComponent
+          ),
+      },
+      {
+        path: 'trips/:id',
+        loadComponent: () =>
+          import('./features/trips/trip-plan.component').then((m) => m.TripPlanComponent),
+      },
+    ],
   },
   {
     path: 'settings',

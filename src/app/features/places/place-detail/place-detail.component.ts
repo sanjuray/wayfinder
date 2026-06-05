@@ -3,6 +3,7 @@ import {
   inject,
   output,
   signal,
+  HostListener,
   ChangeDetectionStrategy,
 } from '@angular/core';
 import { DecimalPipe, DatePipe } from '@angular/common';
@@ -115,7 +116,15 @@ import type { VisitRating } from '../../../core/models';
 
         <section class="block">
           <div class="label">Address</div>
-          <p class="addr">{{ p.displayAddress || p.name }}</p>
+          <p class="addr">
+            @if (p.displayAddress && p.name && p.name !== p.displayAddress) {
+              <span class="addr-name">{{ p.name }}</span>
+              <span class="addr-sep"> — </span>
+              <span class="addr-rest">{{ p.displayAddress }}</span>
+            } @else {
+              {{ p.displayAddress || p.name }}
+            }
+          </p>
           <p class="coords">
             {{ p.lat | number: '1.4-4' }}°N, {{ p.lng | number: '1.4-4' }}°E
           </p>
@@ -234,9 +243,82 @@ import type { VisitRating } from '../../../core/models';
         </section>
 
         <section class="block actions-block">
-          <a class="action" [href]="facade.googleMapsUrl()" target="_blank" rel="noopener">
-            Open in Google Maps <i class="ti ti-external-link"></i>
-          </a>
+          <!-- Split button: main click opens the smart default; chevron opens
+               a popover with all variants for one-time override. -->
+          <div class="action-split">
+            <a
+              class="action action-main"
+              [href]="facade.googleMapsUrl()"
+              target="_blank"
+              rel="noopener"
+            >
+              Open in Google Maps <i class="ti ti-external-link"></i>
+            </a>
+            <button
+              type="button"
+              class="action action-chev"
+              [class.on]="showMapsVariants()"
+              (click)="toggleMapsVariants($event)"
+              aria-label="Choose how to open in Google Maps"
+              [attr.aria-expanded]="showMapsVariants()"
+              aria-haspopup="menu"
+            >
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2.5"
+                stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </button>
+
+            @if (showMapsVariants()) {
+              <div class="maps-popover" role="menu" (click)="$event.stopPropagation()">
+                <div class="maps-popover-head">Open with</div>
+
+                <!-- Helper hint: explains the picker's purpose without burying
+                     the options. Sits at the top of the list per the Phase 6d
+                     direction. -->
+                <div class="maps-popover-hint" role="note">
+                  <span class="maps-popover-hint-icon" aria-hidden="true">!</span>
+                  <span>
+                    Google's default lookup isn't always perfect. Try another
+                    option if the pin lands in the wrong spot.
+                  </span>
+                </div>
+
+                @for (v of facade.mapsQueryVariants(); track v.key; let i = $index) {
+                  <a
+                    class="maps-variant"
+                    role="menuitem"
+                    [href]="v.url"
+                    target="_blank"
+                    rel="noopener"
+                    (click)="onVariantPick(v.key)"
+                  >
+                    <div class="maps-variant-row">
+                      <span class="maps-variant-label">{{ v.label }}</span>
+                      @if (i === 0) {
+                        <span class="maps-variant-default">default</span>
+                      }
+                    </div>
+                    <div class="maps-variant-preview">{{ v.preview }}</div>
+                  </a>
+                }
+
+                <!-- Save-as-default: when ticked, the next variant click also
+                     persists that variant as Place.googleMapsQueryKey, so
+                     subsequent main-button clicks (and trip exports) use it. -->
+                <label class="maps-popover-save">
+                  <input
+                    type="checkbox"
+                    [checked]="saveAsDefault()"
+                    (change)="saveAsDefault.set($any($event.target).checked)"
+                  />
+                  <span>Set the picked option as default for this place</span>
+                </label>
+              </div>
+            }
+          </div>
+
           <button class="action" (click)="onEdit()">Edit place</button>
         </section>
       }
@@ -609,6 +691,169 @@ import type { VisitRating } from '../../../core/models';
         border-color: var(--wf-ink-soft);
       }
 
+      /* ============ ADDRESS — name + address inline ============ */
+      .addr-name {
+        font-weight: 500;
+        color: var(--wf-ink);
+      }
+      .addr-sep {
+        color: var(--wf-ink-faint);
+      }
+      .addr-rest {
+        color: var(--wf-ink-soft);
+      }
+
+      /* ============ SPLIT BUTTON: Open in Google Maps ============ */
+      .action-split {
+        position: relative;
+        display: flex;
+        gap: 0;
+      }
+      .action-main {
+        flex: 1;
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
+        border-right: none;
+      }
+      .action-chev {
+        padding: 0 10px;
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+        flex-shrink: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--wf-ink-soft);
+      }
+      .action-chev:hover {
+        color: var(--wf-ink);
+      }
+      .action-chev.on {
+        background: var(--wf-ink);
+        color: var(--wf-bg);
+        border-color: var(--wf-ink);
+      }
+
+      /* ============ MAPS VARIANT POPOVER ============ */
+      .maps-popover {
+        position: absolute;
+        bottom: calc(100% + 6px);
+        right: 0;
+        left: 0;
+        background: var(--wf-bg);
+        border: 0.5px solid var(--wf-hairline);
+        border-radius: 10px;
+        box-shadow:
+          0 8px 24px rgba(0, 0, 0, 0.12),
+          0 2px 6px rgba(0, 0, 0, 0.06);
+        z-index: 1200;
+        padding: 6px;
+        max-height: 320px;
+        overflow-y: auto;
+      }
+      .maps-popover-head {
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: var(--wf-ink-faint);
+        padding: 6px 8px 4px;
+        font-weight: 500;
+      }
+      .maps-variant {
+        display: block;
+        padding: 8px 10px;
+        border-radius: 6px;
+        text-decoration: none;
+        color: var(--wf-ink);
+        cursor: pointer;
+        transition: background 0.12s ease;
+      }
+      .maps-variant:hover {
+        background: var(--wf-bg-2);
+      }
+      .maps-variant-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 2px;
+      }
+      .maps-variant-label {
+        font-size: 12px;
+        font-weight: 500;
+      }
+      .maps-variant-default {
+        font-size: 9px;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        color: var(--wf-accent);
+        background: color-mix(in srgb, var(--wf-accent) 12%, transparent);
+        padding: 1px 5px;
+        border-radius: 3px;
+        font-weight: 500;
+      }
+      .maps-variant-preview {
+        font-size: 11px;
+        color: var(--wf-ink-soft);
+        font-family: var(--wf-font-mono, ui-monospace, monospace);
+        line-height: 1.35;
+        word-break: break-word;
+      }
+
+      /* Helper hint at the top of the popover list (Phase 6d). The "!" is a
+         small badge, not the standard browser native alert glyph — keeps the
+         tone informational rather than warning-y. */
+      .maps-popover-hint {
+        display: flex;
+        align-items: flex-start;
+        gap: 7px;
+        margin: 2px 6px 6px;
+        padding: 7px 9px;
+        background: color-mix(in srgb, var(--wf-accent) 6%, transparent);
+        border: 0.5px solid color-mix(in srgb, var(--wf-accent) 30%, transparent);
+        border-radius: 6px;
+        font-size: 11px;
+        line-height: 1.4;
+        color: var(--wf-ink-soft);
+      }
+      .maps-popover-hint-icon {
+        flex-shrink: 0;
+        width: 16px;
+        height: 16px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background: var(--wf-accent);
+        color: var(--wf-bg);
+        font-size: 11px;
+        font-weight: 700;
+        font-family: var(--wf-font-display);
+        line-height: 1;
+      }
+
+      /* Save-as-default checkbox at the bottom of the popover. Visually
+         separated from the variants list by a hairline. */
+      .maps-popover-save {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 10px;
+        margin-top: 4px;
+        border-top: 0.5px solid var(--wf-hairline);
+        font-size: 11px;
+        color: var(--wf-ink-soft);
+        cursor: pointer;
+        user-select: none;
+      }
+      .maps-popover-save input[type='checkbox'] {
+        accent-color: var(--wf-accent);
+        cursor: pointer;
+        flex-shrink: 0;
+      }
+      .maps-popover-save:hover {
+        color: var(--wf-ink);
+      }
+
       .link {
         background: none;
         border: none;
@@ -642,10 +887,26 @@ export class PlaceDetailComponent {
 
   protected showDelete = signal(false);
 
+  /**
+   * Whether the maps-variants popover is open. Closes on outside click, on
+   * variant pick, on panel close, and on Escape.
+   */
+  protected showMapsVariants = signal(false);
+
+  /**
+   * Bound to the "Set the picked option as default for this place" checkbox
+   * at the bottom of the maps-variants popover. When ticked, clicking a
+   * variant persists its key to Place.googleMapsQueryKey before opening
+   * the URL. Reset whenever the popover is reopened — the user has to
+   * explicitly opt in each time they want to change the default.
+   */
+  protected saveAsDefault = signal(false);
+
   /** Public: parent calls this to open the detail panel for a place. */
   open(placeId: string): void {
     this.facade.open(placeId);
     this.showDelete.set(false);
+    this.showMapsVariants.set(false);
   }
 
   /**
@@ -658,6 +919,7 @@ export class PlaceDetailComponent {
 
   protected onClose(): void {
     this.facade.close();
+    this.showMapsVariants.set(false);
     this.closed.emit();
   }
 
@@ -704,5 +966,53 @@ export class PlaceDetailComponent {
         return '👎';
     }
   }
-}
 
+  /**
+   * Toggle the maps-variant popover. stopPropagation so this click doesn't
+   * immediately bubble up to the document click-outside handler below and
+   * close the popover we just opened.
+   */
+  protected toggleMapsVariants(event: MouseEvent): void {
+    event.stopPropagation();
+    const willOpen = !this.showMapsVariants();
+    this.showMapsVariants.update((v) => !v);
+    // Reset the "set as default" checkbox each time the popover opens, so
+    // it's an explicit per-session opt-in rather than a sticky setting.
+    if (willOpen) this.saveAsDefault.set(false);
+  }
+
+  /**
+   * Click on a variant — the <a> tag itself opens Maps (target=_blank).
+   * If the "set as default" checkbox is ticked, persist this variant's
+   * key as the place's preferred query before the link follows. The
+   * persistence is fire-and-forget (no await) so it never blocks the
+   * navigation; if the write fails the user still gets Maps opened.
+   */
+  protected onVariantPick(key: string): void {
+    if (this.saveAsDefault()) {
+      void this.facade.saveMapsQueryKey(key);
+    }
+    this.showMapsVariants.set(false);
+    this.saveAsDefault.set(false);
+  }
+
+  /**
+   * Document-level click handler. Closes the popover when clicking anywhere
+   * outside the .action-split container. The popover's own click handler
+   * stops propagation so clicks inside don't trigger this.
+   */
+  @HostListener('document:click')
+  protected onDocumentClick(): void {
+    if (this.showMapsVariants()) {
+      this.showMapsVariants.set(false);
+    }
+  }
+
+  /** Escape closes the popover before anything else (e.g. before closing the panel). */
+  @HostListener('document:keydown.escape')
+  protected onEscape(): void {
+    if (this.showMapsVariants()) {
+      this.showMapsVariants.set(false);
+    }
+  }
+}

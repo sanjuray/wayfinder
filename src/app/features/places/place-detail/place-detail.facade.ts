@@ -1,7 +1,27 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
 import { PlacesStore } from '../../../core/stores/places.store';
 import { IdService } from '../../../core/services/id.service';
+import {
+  placeMapsQueryVariants,
+  buildPlaceMapsUrl,
+} from '../../../core/utils/place-maps-query';
 import type { Place, PlaceStatus, Visit, VisitRating } from '../../../core/models';
+
+/**
+ * One option in the "Open in Google Maps" dropdown. The first variant in the
+ * list is the smart default that the primary button click uses.
+ *
+ * This is the facade-local presentation shape: it adds `preview` (what the
+ * user sees) and `url` (pre-built href) on top of the pure-data variant
+ * coming from `core/utils/place-maps-query`. Kept separate so the template
+ * doesn't need to know about URL building.
+ */
+export interface MapsQueryVariant {
+  key: string;
+  label: string;
+  preview: string;
+  url: string;
+}
 
 @Injectable()
 export class PlaceDetailFacade {
@@ -39,39 +59,37 @@ export class PlaceDetailFacade {
   });
 
   /**
-   * Smart Google Maps URL builder.
+   * Available Google Maps query variants for the current place, in priority
+   * order. The first entry is the smart default; subsequent entries are
+   * surfaced via the split-button popover for one-time override OR
+   * save-as-default selection.
    *
-   * Priority:
-   *   1. customName + displayAddress  → "Custom Name, Full Address"
-   *   2. displayAddress only          → full Nominatim address
-   *   3. name + coords                → "POI Name @ lat,lng"
-   *   4. coords only                  → bare lat,lng
+   * Derivation logic (which variants exist, how they're labelled, and the
+   * promotion of a saved-default variant to position 0) lives in
+   * `core/utils/place-maps-query.ts` — shared between this screen and the
+   * trip planner so they stay consistent.
    *
-   * Uses Google Maps' /maps/search/?api=1&query=... format which accepts
-   * free-form text, addresses, place names, or coordinates. Falls back
-   * gracefully to coords for places that have nothing else.
+   * This computed wraps the util's pure-data variants with presentation
+   * fields (`preview` = the query string itself, displayed under the
+   * label; `url` = pre-built href).
+   */
+  readonly mapsQueryVariants = computed<MapsQueryVariant[]>(() => {
+    const p = this.place();
+    if (!p) return [];
+    return placeMapsQueryVariants(p).map((v) => ({
+      key: v.key,
+      label: v.label,
+      preview: v.query,
+      url: buildPlaceMapsUrl(v.query),
+    }));
+  });
+
+  /**
+   * The smart default — just the first variant. Used by the split button's
+   * primary click action. Empty string when no place is loaded.
    */
   readonly googleMapsUrl = computed<string>(() => {
-    const p = this.place();
-    if (!p) return '';
-
-    const customName = p.customName?.trim();
-    const displayAddress = p.displayAddress?.trim();
-    const name = p.name?.trim();
-    const coords = `${p.lat},${p.lng}`;
-
-    let query: string;
-    if (customName && displayAddress) {
-      query = `${customName}, ${displayAddress}`;
-    } else if (displayAddress) {
-      query = displayAddress;
-    } else if (name) {
-      query = `${name} ${coords}`;
-    } else {
-      query = coords;
-    }
-
-    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+    return this.mapsQueryVariants()[0]?.url ?? '';
   });
 
   // ----- actions -----
@@ -120,6 +138,19 @@ export class PlaceDetailFacade {
     const p = this.place();
     if (!p) return;
     await this.placesStore.updatePartial(p.id, { isFavorite: !p.isFavorite });
+  }
+
+  /**
+   * Persist the user's preferred Google Maps query variant for this place.
+   * Called from the popover when the user clicks a variant with the
+   * "Set as default" checkbox ticked. The variant's key (not URL) is
+   * stored so future changes to URL building don't invalidate preferences.
+   */
+  async saveMapsQueryKey(key: string): Promise<void> {
+    const p = this.place();
+    if (!p) return;
+    if (p.googleMapsQueryKey === key) return; // no-op
+    await this.placesStore.updatePartial(p.id, { googleMapsQueryKey: key });
   }
 
   startAddVisit(): void {

@@ -1,0 +1,265 @@
+@if (facade.collection(); as c) {
+  <div class="page" [class.detail-open]="isPlaceDetailOpen()">
+    <a routerLink="/collections" class="back" aria-label="Back to collections">
+      <i class="ti ti-chevron-left"></i> Collections
+    </a>
+
+    <div class="cell-wrap">
+      <!-- ============ HEAD (mockup .coll-head) ============ -->
+      <div class="coll-head">
+        <button
+          class="coll-cover-large"
+          [style.background]="coverCss()"
+          (click)="toggleCoverMenu($event)"
+          aria-label="Change cover"
+          title="Change cover"
+        >
+          <div class="pat"></div>
+          <i class="ti" [class]="'ti-' + (c.coverIcon || 'folder')"></i>
+        </button>
+
+        <div class="coll-meta">
+          @if (facade.editingName()) {
+            <input
+              #nameInput
+              class="name-input"
+              type="text"
+              maxlength="60"
+              [ngModel]="facade.editedName()"
+              (ngModelChange)="facade.editedName.set($event)"
+              (keydown.enter)="facade.commitNameEdit()"
+              (keydown.escape)="facade.cancelNameEdit()"
+              (blur)="facade.commitNameEdit()"
+            />
+          } @else {
+            <h2 class="name" (click)="facade.startEditName()" title="Click to rename">
+              {{ c.name }}
+              <i class="ti ti-pencil edit-hint"></i>
+            </h2>
+          }
+          <div class="stats">
+            <span>
+              <i class="ti ti-map-pin"></i>
+              {{ stats().total }}
+              {{ stats().total === 1 ? 'place' : 'places' }}
+            </span>
+            @if (stats().visited > 0) {
+              <span>
+                <i class="ti ti-check"></i>
+                {{ stats().visited }} visited
+              </span>
+            }
+            @if (stats().favorites > 0) {
+              <span class="stats-gold">
+                <span class="star">✦</span>
+                {{ stats().favorites }}
+                {{ stats().favorites === 1 ? 'favorite' : 'favorites' }}
+              </span>
+            }
+            <span>
+              <i class="ti ti-clock"></i>
+              {{ stats().updatedLabel }}
+            </span>
+          </div>
+        </div>
+
+        <div class="coll-actions">
+          <div class="action-wrap">
+            <button
+              class="btn"
+              (click)="toggleCoverMenu($event)"
+              [class.on]="showCoverMenu()"
+              aria-haspopup="menu"
+              [attr.aria-expanded]="showCoverMenu()"
+            >
+              <i class="ti ti-photo"></i> Cover
+            </button>
+            @if (showCoverMenu()) {
+              <div
+                class="menu"
+                role="menu"
+                (click)="$event.stopPropagation()"
+                [style.top.px]="coverMenuPos()?.top"
+                [style.left.px]="coverMenuPos()?.left"
+              >
+                <button class="menu-item" (click)="pickGradientFromMenu()">
+                  <i class="ti ti-palette"></i>
+                  <div class="menu-item-text">
+                    <span class="menu-item-label">Change gradient</span>
+                    <span class="menu-item-sub">Pick from 8 presets</span>
+                  </div>
+                </button>
+                <button class="menu-item" (click)="pickIconFromMenu()">
+                  <i class="ti ti-icons"></i>
+                  <div class="menu-item-text">
+                    <span class="menu-item-label">Change icon</span>
+                    <span class="menu-item-sub">Browse the icon library</span>
+                  </div>
+                </button>
+              </div>
+            }
+          </div>
+
+          <div class="action-wrap">
+            <button
+              class="btn"
+              (click)="onPlanTrip()"
+              title="Create a new trip"
+            >
+              <i class="ti ti-route"></i> Plan trip
+            </button>
+          </div>
+
+          <div class="action-wrap">
+            <button
+              class="btn iconbtn"
+              (click)="toggleOverflowMenu($event)"
+              [class.on]="showOverflowMenu()"
+              aria-label="More actions"
+              aria-haspopup="menu"
+              [attr.aria-expanded]="showOverflowMenu()"
+            >
+              <i class="ti ti-dots"></i>
+            </button>
+            @if (showOverflowMenu()) {
+              <div
+                class="menu menu-right"
+                role="menu"
+                (click)="$event.stopPropagation()"
+                [style.top.px]="overflowMenuPos()?.top"
+                [style.right.px]="overflowMenuPos()?.right"
+              >
+                <button class="menu-item danger" (click)="deleteFromOverflow()">
+                  <i class="ti ti-trash"></i>
+                  <div class="menu-item-text">
+                    <span class="menu-item-label">Delete collection</span>
+                    <span class="menu-item-sub">Places stay; tag is removed</span>
+                  </div>
+                </button>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ GRID (mockup .coll-grid) ============ -->
+      <div class="coll-grid">
+        <div class="place-list-wrap">
+          @if (facade.placesInCollection().length === 0) {
+            <div class="empty">
+              <i class="ti ti-map-pin-off empty-icon"></i>
+              <p class="empty-head">No places in this collection yet</p>
+              <p class="empty-sub">
+                Add places from the map view, then tag them with this collection
+                in the save step.
+              </p>
+              <a class="btn primary" routerLink="/">Open map</a>
+            </div>
+          } @else {
+            <div class="place-list">
+              @for (p of facade.placesInCollection(); track p.id) {
+                @let cat = categoryById().get(p.categoryId);
+                <div class="place" (click)="onListRowClick(p)">
+                  <div class="ico" [style.background]="cat?.color || '#FF6B5B'">
+                    <i class="ti" [class]="'ti-' + (cat?.icon || 'circle')"></i>
+                  </div>
+                  <div class="info">
+                    <div class="nm">{{ p.customName ?? p.name }}</div>
+                    <div class="meta">
+                      <span
+                        class="badge"
+                        [class.visited]="p.status === 'visited'"
+                        [class.planned]="p.status === 'planned'"
+                      >
+                        {{ p.status }}
+                      </span>
+                      @for (tagName of vibeTagsFor(p.vibeTagIds); track tagName) {
+                        <span class="sep">·</span>
+                        <span class="vibe">{{ tagName }}</span>
+                      }
+                      @if (p.isFavorite) {
+                        <span class="sep">·</span>
+                        <span class="star">✦</span>
+                      }
+                    </div>
+                  </div>
+                  <button
+                    class="row-remove"
+                    (click)="$event.stopPropagation(); facade.removePlace(p)"
+                    aria-label="Remove from collection"
+                    title="Remove from this collection"
+                  >
+                    <i class="ti ti-x"></i>
+                  </button>
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <div class="map-pane">
+          <div class="map" #mapEl></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ UNDO TOAST ============ -->
+    @if (facade.pendingUndo(); as undo) {
+      <div class="toast" role="status" aria-live="polite">
+        <span class="toast-text">
+          Removed <strong>{{ undo.placeName }}</strong> from {{ undo.collectionName }}
+        </span>
+        <button class="toast-undo" (click)="facade.undoRemove()">Undo</button>
+        <button
+          class="toast-dismiss"
+          (click)="facade.dismissUndo()"
+          aria-label="Dismiss"
+        >
+          <i class="ti ti-x"></i>
+        </button>
+      </div>
+    }
+
+    <!-- ============ PICKERS + CONFIRM ============ -->
+    @if (facade.showGradientPicker()) {
+      <wf-gradient-picker
+        [initial]="c.coverGradient"
+        (picked)="facade.applyGradient($event)"
+        (cancelled)="facade.showGradientPicker.set(false)"
+      />
+    }
+
+    @if (facade.showIconPicker()) {
+      <wf-icon-picker
+        (picked)="facade.applyIcon($event)"
+        (cancelled)="facade.showIconPicker.set(false)"
+      />
+    }
+
+    @if (facade.showDeleteConfirm()) {
+      <div class="confirm-backdrop" (click)="facade.showDeleteConfirm.set(false)"></div>
+      <div class="confirm" role="dialog" aria-modal="true" aria-labelledby="del-title">
+        <h3 id="del-title">Delete this collection?</h3>
+        <p>
+          "<strong>{{ c.name }}</strong>" will be removed. The
+          {{ stats().total }}
+          {{ stats().total === 1 ? 'place' : 'places' }} in it won't be
+          deleted — they'll just lose this tag.
+        </p>
+        <div class="confirm-actions">
+          <button class="btn" (click)="facade.showDeleteConfirm.set(false)">Cancel</button>
+          <button class="btn danger" (click)="onConfirmDelete()">Delete collection</button>
+        </div>
+      </div>
+    }
+
+    <wf-place-detail
+      (closed)="onPlaceDetailClosed()"
+      (editRequested)="onEditPlace($event)"
+    />
+  </div>
+} @else {
+  <div class="page loading">
+    <p>Loading…</p>
+  </div>
+}

@@ -65,6 +65,13 @@
               "buildTarget": "wayfinder:build:development"
             }
           },
+          "options": {
+            "prebundle": {
+              "exclude": [
+                "@iconify-json/tabler"
+              ]
+            }
+          },
           "defaultConfiguration": "development"
         },
         "test": {
