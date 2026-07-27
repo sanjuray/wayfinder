@@ -20,29 +20,30 @@ import { PlaceDetailComponent } from '../places/place-detail/place-detail.compon
 import { QuoteService } from '../../core/services/quote.service';
 import { QuoteCardComponent } from './quote-card.component';
 import { gradientCss } from '../../core/constants/collection-covers';
+import { padBounds } from '../../core/utils/geo';
 import type { CollectionCoverGradient } from '../../core/models';
 // 1. Import types strictly for compilation
 import type * as LeafletTypes from 'leaflet';
 // 2. Import our clean runtime token
 import { LEAFLET } from '../../core/tokens/leaflet.token';
-
+ 
 import { PlacesStore } from '../../core/stores/places.store';
 import { CategoriesStore } from '../../core/stores/categories.store';
 import { CollectionsStore } from '../../core/stores/collections.store';
 import { VibeTagsStore } from '../../core/stores/vibe-tags.store';
-
+ 
 import { AddPlaceComponent } from '../places/add-place/add-place.component';
 import { PinDropCelebrationComponent } from '../places/add-place/pin-drop-celebration.component';
 import type { Place, Category } from '../../core/models';
 import type { EmptyStateVariant } from './empty-state.component';
-
+ 
 interface CelebrationState {
   x: number;
   y: number;
   color: string;
   placeName: string;
 }
-
+ 
 /**
  * Map view — the default child route inside WorkspaceShellComponent.
  *
@@ -71,20 +72,20 @@ interface CelebrationState {
 export class HomeComponent implements AfterViewInit, OnDestroy {
   @ViewChild('mapEl', { static: true }) mapEl!: ElementRef<HTMLDivElement>;
   @ViewChild(PlaceDetailComponent) protected placeDetail?: PlaceDetailComponent;
-
+ 
   protected places = inject(PlacesStore);
   protected categories = inject(CategoriesStore);
   protected collections = inject(CollectionsStore);
   protected vibeTags = inject(VibeTagsStore);
   protected filters = inject(FilterStateStore);
-
+ 
   protected quoteService = inject(QuoteService);
   // 3. Inject our global runtime Leaflet instance
   private L = inject(LEAFLET);
-
+ 
   // Easter egg state — the floating quote card
   protected activeQuote = signal<{ text: string; x: number; y: number } | null>(null);
-
+ 
   // Local UI state
   protected showAddModal = signal<boolean>(false);
   protected celebration = signal<CelebrationState | null>(null);
@@ -92,23 +93,23 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
   protected showFilterPopover = signal(false);
   protected editingPlace = signal<Place | null>(null);
   protected isPlaceDetailOpen = signal(false);
-
+ 
   // Sidebar truncation state — collapsed by default, expand on demand
   protected catExpanded = signal(false);
   protected colExpanded = signal(false);
   protected vibeExpanded = signal(false);
-
+ 
   protected readonly CAT_LIMIT = 6;
   protected readonly COL_LIMIT = 5;
   protected readonly VIBE_LIMIT = 8;
-
+ 
   // Leaflet instance + cluster group, kept as instance fields (not signals)
   // because Leaflet manages its own DOM and we don't want signal reactivity
   // accidentally re-creating markers.
   private map: L.Map | null = null;
   private clusterGroup: LeafletTypes.MarkerClusterGroup | null = null;
   private markersById = new Map<string, LeafletTypes.Marker>();
-
+ 
   protected sortedCategories = computed(() =>
     [...this.categories.entities()]
       .filter((c) => !c.hidden)
@@ -120,39 +121,39 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
       ? this.sortedCategories()
       : this.sortedCategories().slice(0, this.CAT_LIMIT)
   );
-
+ 
   protected sortedCollections = computed(() =>
     [...this.collections.entities()].sort((a, b) => a.name.localeCompare(b.name))
   );
-
+ 
   protected displayedCollections = computed(() =>
     this.colExpanded()
       ? this.sortedCollections()
       : this.sortedCollections().slice(0, this.COL_LIMIT)
   );
-
+ 
   protected sortedVibes = computed(() =>
     [...this.vibeTags.entities()]
       .filter((v) => !v.hidden)
       .sort((a, b) => a.name.localeCompare(b.name))
   );
 
-  protected displayedVibes = computed(() =>
+protected displayedVibes = computed(() =>
     this.vibeExpanded()
       ? this.sortedVibes()
       : this.sortedVibes().slice(0, this.VIBE_LIMIT)
   );
-
+ 
   /** Options shape for wf-multi-select in the sidebar. */
   protected vibeOptions = computed(() =>
     this.sortedVibes().map((v) => ({ value: v.id, label: v.name }))
   );
-
+ 
   /** ReadonlySet adapter for wf-multi-select — store keeps string[]. */
   protected selectedVibesSet = computed<ReadonlySet<string>>(
     () => new Set(this.filters.selectedVibeIds())
   );
-
+ 
   protected onSidebarVibeChange(s: ReadonlySet<string>): void {
     this.filters.setSelectedVibeIds([...s]);
   }
@@ -164,30 +165,34 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
     }
     return map;
   });
-
+ 
   protected emptyStateVariant = computed<EmptyStateVariant | null>(() => {
     const filtered = this.filters.filteredPlaces();
     const all = this.places.entities();
-
+ 
     if (all.length === 0) return 'no-places';
     if (filtered.length === 0 && this.filters.anyFilterActive()) return 'no-results';
     return null;
   });
-
+ 
   protected categoryCount(categoryId: string): number {
     return this.places.entities().filter((p) => p.categoryId === categoryId).length;
   }
-
+ 
   constructor() {
-    // Whenever places change, sync markers on the map
+    // Whenever the visible set changes — attribute filters OR the map
+    // viewport moving — sync markers. Reading visiblePlaces (not
+    // filteredPlaces) is the v1 scaling win: Leaflet only ever receives
+    // markers that are actually on screen, so tens of thousands of places
+    // in IndexedDB still render instantly.
     effect(() => {
-      const filteredPlaces = this.filters.filteredPlaces();
+      const visible = this.filters.visiblePlaces();
       const categories = this.categories.entities();
       if (this.map && this.clusterGroup) {
-        this.syncMarkers(filteredPlaces, categories);
+        this.syncMarkers(visible, categories);
       }
     });
-
+ 
     // ?edit=:id handoff from /places (or any future route that wants to
     // jump back to the map and open a place for editing). Fires once per
     // navigation that carries the param, after the places store has loaded
@@ -216,23 +221,23 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
       router.navigate([], { queryParams: { edit: null }, queryParamsHandling: 'merge', replaceUrl: true });
     });
   }
-
+ 
   ngAfterViewInit(): void {
     this.initMap();
   }
-
+ 
   ngOnDestroy(): void {
     this.map?.remove();
     this.map = null;
   }
-
+ 
   // ---- Map init ----
   private initMap(): void {
     const map = this.L.map(this.mapEl.nativeElement, {
       zoomControl: false,
       attributionControl: true,
     }).setView([17.385, 78.4867], 12); // Hyderabad as fallback default
-
+ 
     this.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
       attribution:
@@ -240,38 +245,65 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
     }).addTo(map);
 
     this.L.control.zoom({ position: 'bottomleft' }).addTo(map);
-
+ 
     const cluster = this.L.markerClusterGroup({
       showCoverageOnHover: false,
       maxClusterRadius: 50,
     });
     map.addLayer(cluster);
-
+ 
     // Click anywhere on the map → open add-place flow with that location
     map.on('click', (e: L.LeafletMouseEvent) => {
       this.pendingClickCoords.set({ lat: e.latlng.lat, lng: e.latlng.lng });
       this.showAddModal.set(true);
     });
-
+ 
+    // Publish the visible bounds on every pan/zoom settle. The filter store
+    // uses them to narrow visiblePlaces so only on-screen markers render.
+    // Padded by 25% so markers just past the edge are ready before they
+    // scroll into view (no pop-in). In v2 these same bounds become the
+    // /places/viewport query params — nothing here changes.
+    const publishBounds = () => {
+      const b = map.getBounds();
+      this.filters.setViewportBounds(
+        padBounds(
+          {
+            minLat: b.getSouth(),
+            maxLat: b.getNorth(),
+            minLng: b.getWest(),
+            maxLng: b.getEast(),
+          },
+          0.25
+        )
+      );
+    };
+    map.on('moveend', publishBounds);
+ 
     this.map = map;
     this.clusterGroup = cluster;
-
+ 
+    // Seed the initial bounds immediately so the first render is already
+    // viewport-scoped, before the user pans. (moveend hasn't fired yet.)
+    publishBounds();
+ 
     // Try to get user's actual location; fall back to Hyderabad silently if denied
     this.tryGeolocate(map);
 
     // Set up triple-tap detector for the easter egg
     this.setupDoubleTapListener();
-
-    // Initial sync (in case stores already loaded before ngAfterViewInit)
-    this.syncMarkers(this.places.entities(), this.categories.entities());
+ 
+    // Initial sync (in case stores already loaded before ngAfterViewInit).
+    // Uses visiblePlaces so the very first paint is already viewport-scoped
+    // — publishBounds() above seeded the bounds a few lines earlier.
+    this.syncMarkers(this.filters.visiblePlaces(), this.categories.entities());
   }
-
+ 
   private syncMarkers(places: Place[], categories: Category[]): void {
     if (!this.clusterGroup) return;
-
+ 
     const catById = new Map(categories.map((c) => [c.id, c]));
     const seen = new Set<string>();
-
+ 
     for (const p of places) {
       seen.add(p.id);
       const existing = this.markersById.get(p.id);
@@ -279,18 +311,18 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
 
       const cat = catById.get(p.categoryId);
       const color = cat?.color ?? '#FF6B5B';
-
+ 
       const marker = this.L.marker([p.lat, p.lng], {
         icon: this.buildPinIcon(color, cat?.icon ?? 'circle', p.status, p.isFavorite),
         title: p.customName ?? p.name,
       });
-
+ 
       marker.on('click', () => this.onPinClick(p.id));
-
+ 
       this.clusterGroup.addLayer(marker);
       this.markersById.set(p.id, marker);
     }
-
+ 
     // Remove markers for places that no longer exist
     for (const [id, marker] of this.markersById) {
       if (!seen.has(id)) {
@@ -307,18 +339,18 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
     isFavorite: boolean
   ): L.DivIcon {
     const path = PIN_ICON_PATHS[iconName] ?? PIN_ICON_PATHS['circle'];
-
+ 
     // Favorite ring: rendered first so it sits behind the pin shape
     const favoriteRing = isFavorite
       ? `<path d="M14 2 C7 2 2 7 2 14 C2 23 14 34 14 34 C14 34 26 23 26 14 C26 7 21 2 14 2 Z"
            fill="none" stroke="#FFD15B" stroke-width="5" opacity="0.85"/>`
       : '';
-
+ 
     // Planned dot: top-right corner, teal
     const plannedDot = status === 'planned'
       ? `<circle cx="25" cy="3" r="4.5" fill="#1D9E75" stroke="#fff" stroke-width="1.2"/>`
       : '';
-
+ 
     return this.L.divIcon({
       className: 'wf-pin-icon',
       html: `
@@ -336,12 +368,12 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
       iconAnchor: [14, 36],
     });
   }
-
+ 
   protected onPinClick(placeId: string): void {
     this.placeDetail?.open(placeId);
     this.isPlaceDetailOpen.set(true);
   }
-
+ 
   protected onPlaceDetailClosed(): void {
     this.isPlaceDetailOpen.set(false);
   }
@@ -352,7 +384,7 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
     this.editingPlace.set(place);
     this.showAddModal.set(true);
   }
-
+ 
   private tryGeolocate(map: L.Map): void {
     if (!navigator.geolocation) return; // browser doesn't support, stay on default
     navigator.geolocation.getCurrentPosition(
@@ -374,9 +406,9 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
     const mapDiv = this.mapEl.nativeElement;
     const tapWindow = 700; // ms — two taps must occur within this window
     const distanceThreshold = 80; // px — taps must land within this radius
-
+ 
     let taps: { time: number; x: number; y: number }[] = [];
-
+ 
     mapDiv.addEventListener(
       'click',
       (e: MouseEvent) => {
@@ -384,13 +416,13 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
         const now = Date.now();
-
+ 
         // Drop expired taps
         taps = taps.filter((t) => now - t.time < tapWindow);
         taps.push({ time: now, x, y });
-
+ 
         // Two taps within window AND close together?
-        if (taps.length >= 2) {
+                if (taps.length >= 2) {
           const first = taps[0];
           const last = taps[taps.length - 1];
           const dist = Math.sqrt((last.x - first.x) * 2 + (last.y - first.y) * 2);
@@ -406,34 +438,34 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
       true // capture phase, runs before Leaflet's own
     );
   }
-
+ 
   private handleDoubleTap(clientX: number, clientY: number): void {
     const text = this.quoteService.pick();
     if (!text) return;
     this.activeQuote.set({ text, x: clientX, y: clientY });
   }
-
+ 
   // ---- UI actions ----
   protected onFabClick(): void {
     this.pendingClickCoords.set(null);
     this.showAddModal.set(true);
   }
-
+ 
   protected onPlaceSaved(place: Place): void {
     this.showAddModal.set(false);
     this.editingPlace.set(null);
     this.pendingClickCoords.set(null);
-
+ 
     const category = this.categories.entities().find((c) => c.id === place.categoryId);
     const color = category?.color ?? '#FF6B5B';
-
+ 
     if (this.map) {
       // Pan to the saved place
       this.map.flyTo([place.lat, place.lng], Math.max(this.map.getZoom(), 14), {
         animate: true,
         duration: 0.6,
       });
-
+ 
       // Wait for fly to settle, then trigger celebration anchored at the pin's pixel coords
       setTimeout(() => {
         if (!this.map) return;
@@ -451,13 +483,13 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
   protected onCelebrationDone(): void {
     this.celebration.set(null);
   }
-
+ 
   protected onCancelAdd(): void {
     this.showAddModal.set(false);
     this.pendingClickCoords.set(null);
     this.editingPlace.set(null);
   }
-
+ 
   protected onQuoteDone(): void {
     this.activeQuote.set(null);
   }
@@ -465,21 +497,21 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
   protected onSidebarCategoryClick(categoryId: string): void {
     this.filters.toggleSidebarCategory(categoryId);
   }
-
+ 
   protected onSidebarCollectionClick(collectionId: string): void {
     this.filters.toggleSidebarCollection(collectionId);
   }
-
+ 
   protected collectionCount(collectionId: string): number {
     return this.places.entities().filter((p) =>
       p.collectionIds.includes(collectionId)
     ).length;
   }
-
+ 
   protected toggleFilterPopover(): void {
     this.showFilterPopover.update((v) => !v);
   }
-
+ 
   protected onFilterPopoverClose(): void {
     this.showFilterPopover.set(false);
   }
@@ -487,12 +519,12 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
   protected clearAllFilters(): void {
     this.filters.clearAll();
   }
-
+ 
   protected onAddPlaceFromEmptyState(): void {
     this.pendingClickCoords.set(null);
     this.showAddModal.set(true);
   }
-
+ 
   /**
    * The active filter pill needs a human-readable summary. This builds it.
    */
@@ -504,29 +536,29 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
     const cats = this.categories.entities();
     const cols = this.collections.entities();
     const vibes = this.vibeTags.entities();
-
+ 
     const parts: string[] = [];
     if (catIds.length === 1) {
       parts.push(cats.find((c) => c.id === catIds[0])?.name ?? 'Category');
     } else if (catIds.length > 1) {
       parts.push(`${catIds.length} categories`);
     }
-
+ 
     if (colIds.length === 1) {
       const col = cols.find((c) => c.id === colIds[0]);
       parts.push(col ? `📁 ${col.name}` : 'Collection');
     } else if (colIds.length > 1) {
       parts.push(`${colIds.length} collections`);
     }
-
+ 
     if (vibeIds.length === 1) {
       parts.push(vibes.find((v) => v.id === vibeIds[0])?.name ?? 'Vibe');
     } else if (vibeIds.length > 1) {
       parts.push(`${vibeIds.length} vibes`);
     }
-
+ 
     if (loc) parts.push(loc);
-
+ 
     return parts.join(' · ');
   });
 
