@@ -118,6 +118,27 @@
         </div>
       }
 
+      @if (search.isOpen()) {
+        <div class="map-search">
+          <div class="map-search-field">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input
+              type="text"
+              placeholder="Search your places, collections, trips…"
+              [value]="searchQuery()"
+              (input)="searchQuery.set($any($event.target).value)"
+              (keyup.escape)="search.close()"
+              autofocus />
+            <button class="map-search-close" (click)="search.close()" aria-label="Close search">×</button>
+          </div>
+          <span class="map-search-hint">press <kbd>esc</kbd> or tap search again to close</span>
+        </div>
+      }
+
+
       <div class="map" #mapEl></div>
 
       <button class="fab" [class.detail-open]="isPlaceDetailOpen()" (click)="onFabClick()" aria-label="Add a place">

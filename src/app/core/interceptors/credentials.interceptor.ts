@@ -17,7 +17,7 @@ import { environment } from '../../../environments/environment';
  * 
  * Critically, this must NOT fire for third party requests (Nomatin, tile 
  * servers, any external API). Turning on credentialed mode makes the browser
- * enforece strict CORS on the response: the server must echo the exact origin
+ * enforece strict CORS on the response: the server must echo the exact originl
  * plus Access-Control-Allow-Credentials: true. A public API like Nominatim
  * replies with Access-Control-Allow-Origin: * and no crednetials header -
  * perfectly valid nomrally, but the browser rejects it under credentialed 

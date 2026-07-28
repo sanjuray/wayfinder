@@ -36,6 +36,7 @@ import { AddPlaceComponent } from '../places/add-place/add-place.component';
 import { PinDropCelebrationComponent } from '../places/add-place/pin-drop-celebration.component';
 import type { Place, Category } from '../../core/models';
 import type { EmptyStateVariant } from './empty-state.component';
+import { SearchStateService } from '../../core/services/search-state.service';
  
 interface CelebrationState {
   x: number;
@@ -78,6 +79,8 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
   protected collections = inject(CollectionsStore);
   protected vibeTags = inject(VibeTagsStore);
   protected filters = inject(FilterStateStore);
+  protected search = inject(SearchStateService);
+  protected searchQuery = signal('');
  
   protected quoteService = inject(QuoteService);
   // 3. Inject our global runtime Leaflet instance

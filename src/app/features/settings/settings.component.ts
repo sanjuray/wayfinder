@@ -22,6 +22,7 @@ import { CategoryManagerComponent } from '../../shared/category-manager/category
 import { VibeTagManagerComponent } from '../../shared/vibe-tag-manager/vibe-tag-manager.component';
 import { gradientCss, DEFAULT_COVER_ICON } from '../../core/constants/collection-covers';
 import type { ThemeName, AppState } from '../../core/models';
+import { BackupService } from '../../core/services/backup.service';
 
 type SettingsSection =
   | 'categories'
@@ -932,6 +933,7 @@ export class SettingsComponent implements AfterViewInit, OnDestroy {
   protected vibeTags = inject(VibeTagsStore);
   protected appState = inject(AppStateStore);
   protected storage = inject(STORAGE_ADAPTER);
+  private backup = inject(BackupService);
   private router = inject(Router);
 
   @ViewChild('scrollHost', { static: true })
@@ -1096,20 +1098,7 @@ export class SettingsComponent implements AfterViewInit, OnDestroy {
 
   protected async exportData(): Promise<void> {
     try {
-      const jsonRaw = await this.storage.exportAll();
-      const json = JSON.stringify(jsonRaw, null, 2);
-      const blob = new Blob([json], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      const date = new Date().toISOString().slice(0, 10);
-      a.download = `wayfinder-export-${date}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-      // Mark as backed up — sets lastBackupAt = now AND clears
-      // lastChangeAt so the topbar saved/unsaved indicator flips back
-      // to "saved" immediately.
-      await this.appState.recordBackup();
+      await this.backup.exportJson();
       this.importResult.set('Backup exported.');
     } catch (err) {
       this.importResult.set(`Error exporting: ${err}`);
