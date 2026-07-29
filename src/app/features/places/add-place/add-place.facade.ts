@@ -2,11 +2,12 @@ import { Injectable, inject, signal, computed } from '@angular/core';
 import { PlacesStore } from '../../../core/stores/places.store';
 import { CollectionsStore } from '../../../core/stores/collections.store';
 import { CategoriesStore } from '../../../core/stores/categories.store';
-import { GeocodingService } from '../../../core/services/geocoding.service';
+// import { GeocodingService } from '../../../core/services/geocoding.service';
 import { GoogleMapsLinkService } from '../../../core/services/google-maps-link.service';
 import { IdService } from '../../../core/services/id.service';
 import { parseCoordinates } from '../../../core/utils/coord-parser';
 import type { Place, PlaceStatus } from '../../../core/models';
+import { GEOCODER } from '../../../core/geocoding/geocoder';
 
 export type AddStep = 1 | 2 | 3 | 4;
 
@@ -36,7 +37,7 @@ export class AddPlaceFacade {
   private placesStore = inject(PlacesStore);
   private collectionsStore = inject(CollectionsStore);
   private categoriesStore = inject(CategoriesStore);
-  private geocoding = inject(GeocodingService);
+  private geocoding = inject(GEOCODER);
   private mapsLink = inject(GoogleMapsLinkService);
   private idService = inject(IdService);
 

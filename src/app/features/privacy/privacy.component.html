@@ -1,0 +1,130 @@
+<div class="privacy-page">
+  <div class="privacy-inner">
+    <a routerLink="/" class="back-link">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+      </svg>
+      Back to the map
+    </a>
+ 
+    <header class="privacy-head">
+      <h1>the full story</h1>
+      <p class="hand-note">no lawyers were harmed in the making of this page.</p>
+      <p class="lede">
+        You clicked "the full story," so here it is — the honest, plain-language version of what
+        happens to your stuff when you use wayfinder. No ten-page scroll, no fine print you need a
+        law degree to decode. Just the deal, the way we'd explain it to a friend.
+      </p>
+      <p class="updated">Last updated: {{ lastUpdated }}</p>
+    </header>
+
+    <section>
+      <h2>the one-line version</h2>
+      <p>
+        We keep the places you pin, the trips you plan, and the notes you scribble — only so your
+        map shows up the same everywhere you sign in. That's the whole trick. Everything below is
+        just us saying that more slowly.
+      </p>
+    </section>
+ 
+    <section>
+      <h2>what we hang onto</h2>
+      <p>
+        Your pins, collections, trips, notes, the visits you log — and the basics of your account:
+        an email, a password we scramble into gibberish before we store it (we genuinely never see
+        the real one), and a name if you feel like giving one. We keep this so your someday-map
+        follows you from your phone to your laptop to that borrowed tablet on a rainy afternoon.
+      </p>
+    </section>
+ 
+    <section>
+      <h2>no account? still cool.</h2>
+      <p>
+        You can wander in as a guest, poke around the community map, and drop your own private
+        pins — and those pins stay <strong>right there on your device</strong>. They never make the
+        trip to our servers, which means there's nothing of yours for us to peek at, sync, or
+        misplace. The catch is the fair one: pins that live only on this device won't teleport to
+        your other ones. Want them to follow you? That's what an account is for.
+      </p>
+    </section>
+ 
+    <section>
+      <h2>what we count (spoiler: not you)</h2>
+      <p>
+        We do peek at <strong>anonymous, add-it-all-up</strong> numbers — like "the map got opened
+        this many times today" — so we know whether wayfinder is actually useful or just vibes.
+        But those are counts of <em>moments</em>, not <em>people</em>.  As a guest you don't get a
+        secret tracking tag, and we're not sketching a little profile of you or following your IP
+        around. You're a happy blur in a total, and that's exactly how we like it.
+      </p>
+      <p class="note-box">
+        [[ NOTE TO SELF, NOT TO USERS: if we ever add a per-browser id to count unique/returning
+        guests, that stops being "just a blur" — it becomes trackable data and this section has to
+        change, honestly and out loud, with whatever consent the visitor's region expects. ]]
+      </p>
+    </section>
+
+    <section>
+      <h2>stuff we'd never pull</h2>
+      <ul>
+        <li>Selling your data. Not to advertisers, not to anyone. It's yours.</li>
+        <li>Cramming ads into your map or letting someone target you here.</li>
+        <li>Sharing your private pins. The only things that go public are the ones you deliberately
+          publish to the community — and that's always your move to make.</li>
+      </ul>
+    </section>
+ 
+    <section>
+      <h2>wherever you're wandering from</h2>
+      <p>
+        Someday-maps get made all over the world, so here's our promise regardless of which corner
+        of it you're in: we treat everyone's data with the same respect. Keep as little as we can,        be upfront about it, never sell it, and always let you walk away with your stuff. Those are
+        the rules we hold ourselves to no matter where you signed up from.
+      </p>
+    </section>
+ 
+    <section>
+      <h2>your stuff, your call</h2>
+      <ul>
+        <li><strong>Take it with you:</strong> export everything to a tidy JSON file anytime,
+          straight from the app. It's your map — carry it wherever.</li>
+        <li><strong>Want out?</strong> Ask us to forget you entirely and we'll clear your synced
+          stuff. [[ make this a real one-click delete in Settings before launch — for now it's a
+          "just reach out" promise, so keep that promise. ]]</li>
+        <li><strong>Something look off?</strong> Nudge us and we'll help you see or fix what we've
+          got.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>the small humans</h2>
+      <p>
+        wayfinder isn't built for kids under {{ age }}, and we don't
+        knowingly collect their data. Someday-maps can wait until they're a bit bigger.
+      </p>
+    </section>
+ 
+    <section>
+      <h2>if the deal changes</h2>
+      <p>
+        If we ever change how any of this works, we'll update this page and the little date up top,
+        and we'll say so in the app — out loud, not tucked into a footnote at 2am hoping nobody
+        notices. That's not how we roll.
+      </p>
+    </section>
+
+    <section>
+      <h2>say hi</h2>
+      <p>
+        Questions, worries, or just want to tell us your favourite pin? We're at
+        [[ your friendly contact — {{ contactMail }} ]]. Real humans, we promise.
+      </p>
+    </section>
+ 
+    <footer class="privacy-foot">
+      <a routerLink="/signup" class="btn primary">Okay, let's do this →</a>
+      <a routerLink="/" class="btn ghost">Just show me the map</a>
+    </footer>
+  </div>
+</div>

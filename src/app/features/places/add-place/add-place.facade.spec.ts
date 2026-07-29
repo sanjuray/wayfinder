@@ -6,6 +6,7 @@ import { GoogleMapsLinkService } from '../../../core/services/google-maps-link.s
 import { IdService } from '../../../core/services/id.service';
 import { STORAGE_ADAPTER } from '../../../core/storage/storage.token';
 import { fakeStorageAdapter } from '../../../testing/fake-storage';
+import { GEOCODER } from '../../../core/geocoding/geocoder';
 
 describe('AddPlaceFacade', () => {
   let facade: AddPlaceFacade;
@@ -20,7 +21,8 @@ describe('AddPlaceFacade', () => {
     TestBed.configureTestingModule({
       providers: [
         AddPlaceFacade,
-        { provide: GeocodingService, useValue: geocoding },
+        // { provide: GeocodingService, useValue: geocoding },
+        { provide: GEOCODER, useValue: geocoding },
         GoogleMapsLinkService,
         IdService,
         { provide: STORAGE_ADAPTER, useValue: fakeStorageAdapter() },

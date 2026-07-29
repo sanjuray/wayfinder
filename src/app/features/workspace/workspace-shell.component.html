@@ -16,21 +16,23 @@
         <span class="brand-tagline">{{ tagline.current() }}</span>
       </div>
     </div>
- 
+
     <nav class="nav">
       <a routerLink="/" routerLinkActive="on" [routerLinkActiveOptions]="{ exact: true }">Map</a>
       <a routerLink="/places" routerLinkActive="on">Places</a>
       <a routerLink="/collections" routerLinkActive="on">Collections</a>
       <a routerLink="/trips" routerLinkActive="on">Trips</a>
     </nav>
-
+ 
     <div class="topbar-right">
-      <!-- (3) saved-status with hover popover -->
-      <div class="save-status-wrap">
-        <span class="save-status" [title]="backupStatusTooltip()">
+      <!-- (3) saved-status — click to toggle the backup panel (same pattern as the account menu) -->
+      <div class="save-status-wrap" [class.open]="backupPopOpen()">
+        <button class="save-status" type="button" (click)="toggleBackupPop($event)"
+                [title]="backupStatusTooltip()" aria-haspopup="menu"
+                [attr.aria-expanded]="backupPopOpen()">
           <span class="dot" [class.stale]="hasUnsavedChanges()"></span>
           {{ backupStatusLabel() }}
-        </span>
+        </button>
         <div class="backup-pop" role="menu">
           <h5>Backups</h5>
  
@@ -48,7 +50,7 @@
             </span>
             @if (auth.isLoggedIn()) { <span class="bk-go">Sync now</span> }
           </button>
-
+ 
           <!-- Offline JSON export row — REAL, shared with Settings. -->
           <button class="backup-row is-json" type="button" (click)="exportJson()">
             <span class="bk-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"
@@ -63,7 +65,7 @@
           </button>
         </div>
       </div>
-
+ 
       <!-- (4) search — now enabled, toggles the shared search state -->
       <button class="iconbtn" [class.on]="search.isOpen()" (click)="toggleSearch()"
               aria-label="Search" title="Search">
@@ -72,7 +74,7 @@
           <circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
         </svg>
       </button>
- 
+
       <!-- (5) account pill + menu (logged in) OR guest cluster -->
       @if (auth.isLoggedIn()) {
         <div class="acct" [class.open]="menuOpen()">
@@ -98,7 +100,6 @@
             </button>
             <button class="menu-item" type="button" (click)="goToSettings('profile')">Profile</button>
             <button class="menu-item" type="button" (click)="goToSettings('billing')">Plan &amp; billing</button>
-            <button class="menu-item" type="button" (click)="goToSettings('billing')">Plan &amp; billing</button>
             @if (!auth.isCircle()) {
               <button class="menu-item upgrade" type="button" (click)="goToSettings('billing')">Upgrade to Circle</button>
             }
@@ -108,13 +109,19 @@
           </div>
         </div>
       } @else {
-        <span class="guest-chip"><span class="dot"></span> Guest</span>
-        <a routerLink="/login" class="btn-in ghost">Log in</a>
-        <a routerLink="/signup" class="btn-in">Sign up</a>
+        <a routerLink="/settings" class="iconbtn" aria-label="Settings" title="Settings">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+        </a>
+        <a routerLink="/login" class="btn ghost">Log in</a>
+        <a routerLink="/signup" class="btn primary">Sign up</a>
       }
     </div>
   </header>
-
+ 
   <div class="outlet">
     <router-outlet />
   </div>

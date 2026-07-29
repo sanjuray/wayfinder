@@ -7,6 +7,8 @@ import { STORAGE_ADAPTER } from './core/storage/storage.token';
 import { LocalStorageAdapter } from './core/storage/local-storage.adapter';
 import { credentialsInterceptor } from './core/interceptors/credentials.interceptor';
 import { AuthStore } from './core/stores/auth.store';
+import { GEOCODER } from './core/geocoding/geocoder';
+import { NominatimGeocoder } from './core/geocoding/nominatim.geocoder';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -17,6 +19,10 @@ export const appConfig: ApplicationConfig = {
     // The single point where v1 binds storage. v2 swaps this to SupabaseAdapter. Next step swaps this to
     // HttpAdapter (places -> real backend, everything else still -> IDB).
     {provide: STORAGE_ADAPTER, useClass: LocalStorageAdapter},
+
+    // The single point where the geocoder is bound. Swap to PhotoGeocoder/
+    // GoogleGeocoder here and every caller follows - same pattern as storage.
+    {provide: GEOCODER, useClass: NominatimGeocoder},
 
     // Resolve "are we logged in?" once at startup, before the app renders —
     // avoids a flash of a login screen while the /auth/me call is in flight.

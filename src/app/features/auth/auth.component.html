@@ -1,0 +1,126 @@
+<div class="auth-screen">
+  <!-- LEFT: brand panel (hidden on mobile) -->
+  <aside class="brand-panel">
+    <div class="brand-top">
+      <span class="logo-mark">
+        <svg width="34" height="40" viewBox="0 0 42 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M21 2 C9.95 2 1 10.95 1 22 C1 36 21 46 21 46 C21 46 41 36 41 22 C41 10.95 32.05 2 21 2 Z"
+            fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round" style="color: var(--wf-ink)" />
+          <path d="M21 11 L23 19 L31 21 L23 23 L21 31 L19 23 L11 21 L19 19 Z" fill="var(--wf-accent)" />
+          <circle cx="21" cy="21" r="2.2" fill="var(--wf-bg)" />
+        </svg>
+      </span>
+      <span class="brand-name">wayfinder</span>
+    </div>
+
+    <div class="brand-mid">
+      <h2 class="headline">the map of your<br /><span class="accent">maybe-someday.</span></h2>
+      <p class="blurb">Every place you've been meaning to go, pinned in one map. Sign in to pick up where your wandering left off.</p>
+    </div>
+ 
+    <div class="quote-strip"><span class="star">✦</span> the side street always wins.</div>
+  </aside>
+ 
+  <!-- RIGHT: form -->
+  <main class="form-panel">
+    <div class="form-card">
+      <div class="form-logo">
+        <span class="logo-mark">
+          <svg width="30" height="34" viewBox="0 0 42 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path  d="M21 2 C9.95 2 1 10.95 1 22 C1 36 21 46 21 46 C21 46 41 36 41 22 C41 10.95 32.05 2 21 2 Z" 
+                fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round" style="color: var(--wf-ink)" />
+            <path d="M21 11 L23 19 L31 21 L23 23 L21 31 L19 23 L11 21 L19 19 Z" fill="var(--wf-accent)" />
+            <circle cx="21" cy="21" r="2.2" fill="var(--wf-bg)" />
+          </svg>
+        </span>
+        <span class="brand-name">wayfinder</span>
+      </div>
+      <div class="form-tagline">{{ tagline.current() }}</div>
+ 
+      <h1 class="form-h">{{ isSignup() ? 'Start your map' : 'Welcome back' }}</h1>
+      <p class="form-sub">
+        {{ isSignup() ? 'One account holds every place you mean to go.' : 'Log in to get back to your map.' }}
+      </p>
+
+      @if (errorMsg()) {
+        <div class="form-error" role="alert">{{ errorMsg() }}</div>
+      }
+ 
+      @if (isSignup()) {
+        <div class="field">
+          <label for="dn">Display name</label>
+          <input id="dn" type="text" autocomplete="name" placeholder="What should we call you?"
+                 [value]="displayName()" (input)="displayName.set(val($event))" />
+        </div>
+      }
+ 
+      <div class="field">
+        <label for="em">Email</label>
+        <input id="em" type="email" autocomplete="email" placeholder="you@example.com"
+               [value]="email()" (input)="email.set(val($event))" />
+      </div>
+
+      <div class="field">
+        <label for="pw">Password</label>
+        <div class="pw-wrap">
+          <input id="pw" [type]="showPassword() ? 'text' : 'password'"
+                 [autocomplete]="isSignup() ? 'new-password' : 'current-password'"
+                 placeholder="••••••••"
+                 [value]="password()" (input)="password.set(val($event))"
+                 (keyup.enter)="submit()" />
+          <button type="button" class="peek" (click)="showPassword.set(!showPassword())"
+                  [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'">
+            {{ showPassword() ? 'Hide' : 'Show' }}
+          </button>
+        </div>
+ 
+        @if (isSignup()) {
+          <div class="pw-req">
+            <span class="req" [class.ok]="pwRules().len">8+ chars</span>
+            <span class="req" [class.ok]="pwRules().up">uppercase</span>
+            <span class="req" [class.ok]="pwRules().low">lowercase</span>
+            <span class="req" [class.ok]="pwRules().num">digit</span>
+            <span class="req" [class.ok]="pwRules().sp">symbol</span>
+          </div>
+        }
+      </div>
+ 
+      @if (!isSignup()) {
+        <div class="row-between">
+          <span></span>
+          <a class="link" href="javascript:void(0)">Forgot password?</a>
+        </div>
+      }
+ 
+      @if (isSignup()) {
+        <button type="button" class="consent" [class.on]="consent()" (click)="consent.set(!consent())">
+          <span class="box">{{ consent() ? '✓' : '' }}</span>
+          <span class="consent-copy">
+            I'm cool with wayfinder keeping my pins, trips &amp; notes so they sync across my devices.
+            <span class="consent-strong">That's it</span> — no selling your data, no ads, no creepy stuff.
+            <a class="link" routerLink="/privacy" (click)="$event.stopPropagation()">the full story →</a>
+          </span>
+        </button>
+      }
+ 
+      <button type="button" class="submit-btn" [disabled]="!canSubmit()" (click)="submit()">
+        {{ submitting() ? 'One moment…' : (isSignup() ? 'Create account' : 'Log in') }}
+      </button>
+ 
+      <div class="switch">
+        @if (isSignup()) {
+          Already have an account? <a class="link" (click)="toggleMode()">Log in</a>
+        } @else {
+          New here? <a class="link" (click)="toggleMode()">Create an account</a>
+        }
+      </div>
+
+      <div class="guest-row">
+        <span class="hair"></span>
+        <button type="button" class="guest-btn" (click)="continueAsGuest()">Continue as guest</button>
+        <span class="hair"></span>
+      </div>
+      <p class="guest-note">Browse the community map and drop pins that stay on this device. Make an account anytime to sync them.</p>
+    </div>
+  </main>
+</div>

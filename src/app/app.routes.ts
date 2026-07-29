@@ -1,9 +1,12 @@
 import { Routes } from '@angular/router';
+import { sessionGuard } from './core/guards/session.guard';
 
 /**
  * Routing structure:
  *
- * /                       WorkspaceShell (topbar always visible)
+ * /login, /signup         AuthComponent (outside the shell - no topbar)
+ * 
+ * /                       WorkspaceShell (canActivate: sessinoGuard)
  *   ├── ''                HomeComponent       (map + sidebar)
  *   ├── 'collections'     CollectionsList
  *   ├── 'collections/:id' CollectionDetail
@@ -16,10 +19,32 @@ import { Routes } from '@angular/router';
  * Settings sits outside the shell deliberately. The mockup uses a breadcrumb-
  * style header for Settings, not the workspace topbar — see screen-settings in
  * the mockup. Clicking the gear in the topbar is a "leave the workspace" gesture.
+ * 
+ * sessionGuard implements the "landing choice": a visitor with no session and
+ * no guest-mode opt-in is redirected to /login, which offers log in/ sign up/ continue as guest. 
+ * Anyone logged in OR in guest mode passes straight through.
  */
 export const routes: Routes = [
   {
+    path: 'login',
+    loadComponent: () =>
+      import('./features/auth/auth.component').then((m) => m.AuthComponent),
+    data: {mode: 'login'},
+  },
+  {
+    path: 'signup',
+    loadComponent: () =>
+      import('./features/auth/auth.component').then((m) => m.AuthComponent),
+    data: {mode: 'signup'},
+  },
+  {
+    path: 'privacy',
+    loadComponent: () =>
+      import('./features/privacy/privacy.component').then((m) => m.PrivacyComponent),
+  },
+  {
     path: '',
+    canActivate: [sessionGuard],
     loadComponent: () =>
       import('./features/workspace/workspace-shell.component').then(
         (m) => m.WorkspaceShellComponent
@@ -67,6 +92,7 @@ export const routes: Routes = [
   },
   {
     path: 'settings',
+    canActivate: [sessionGuard],
     loadComponent: () =>
       import('./features/settings/settings.component').then((m) => m.SettingsComponent),
   },

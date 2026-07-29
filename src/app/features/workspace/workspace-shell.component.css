@@ -131,7 +131,7 @@
   opacity: 0.4;
   cursor: not-allowed;
 }
-
+ 
 /* OUTLET ------------------------------- */
 /* Child routes fill the remaining height. Each route owns its own internal
  * layout (sidebar + map for home, header + grid for collections, etc.). */
@@ -140,6 +140,7 @@
   min-height: 0;
   position: relative;
   overflow: hidden;
+  z-index: 1; /* own stacking context: traps Leaflet's high z-indexes below the topbar */
 }
 /* ============================================================
    Saved-status popover · account pill/menu · guest cluster
@@ -151,6 +152,19 @@
 
 /* saved-status hover popover */
 .save-status-wrap { position: relative; }
+.save-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 4px 6px;
+  border-radius: 8px;
+  transition: background 0.12s ease;
+}
+.save-status:hover { background: var(--wf-bg-2); }
 .backup-pop {
   position: absolute;
   top: calc(100% + 12px);
@@ -167,7 +181,7 @@
   transition: opacity 0.16s ease, transform 0.16s ease, visibility 0.16s;
   z-index: 200;
 }
-.save-status-wrap:hover .backup-pop { opacity: 1; visibility: visible; transform: translateY(0); }
+.save-status-wrap.open .backup-pop { opacity: 1; visibility: visible; transform: translateY(0); }
 .backup-pop h5 {
   margin: 2px 4px 8px;
   font-size: 10px; letter-spacing: 0.5px; text-transform: uppercase;
@@ -260,14 +274,33 @@
   padding: 6px 12px 6px 10px; border-radius: var(--wf-pill, 24px);
 }
 .guest-chip .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--wf-ink-faint); }
-.btn-in {
-  display: inline-flex; align-items: center; gap: 6px; padding: 8px 15px;
-  background: var(--wf-ink); color: var(--wf-bg); border: none; border-radius: var(--wf-pill, 24px);
-  font-size: 12.5px; font-weight: 600; font-family: var(--wf-font-body); cursor: pointer;
-  text-decoration: none; transition: background 0.2s ease;
-}
-.btn-in:hover { background: var(--wf-accent); }
-.btn-in.ghost { background: transparent; color: var(--wf-ink); border: 0.5px solid var(--wf-hairline); }
-.btn-in.ghost:hover { background: var(--wf-bg-2); }
  
 @media (max-width: 720px) { .acct-name { display: none; } }
+
+/* Buttons in the topbar guest cluster — matches the app's .btn system
+   (defined per-feature elsewhere; replicated here so the shell is self-
+   contained and Log in / Sign up look identical to buttons app-wide). */
+.topbar-right .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  border-radius: 10px;
+  border: 0.5px solid var(--wf-hairline);
+  background: var(--wf-bg-2);
+  color: var(--wf-ink);
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.12s, border-color 0.12s, filter 0.12s;
+}
+.topbar-right .btn:hover { background: var(--wf-bg); border-color: var(--wf-ink-faint); }
+.topbar-right .btn.ghost { background: transparent; }
+.topbar-right .btn.primary {
+  background: var(--wf-accent);
+  border-color: var(--wf-accent);
+  color: var(--wf-bg);
+}
+.topbar-right .btn.primary:hover { filter: brightness(1.05); }
