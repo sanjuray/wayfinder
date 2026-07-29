@@ -95,13 +95,56 @@ export const AuthStore = signalStore(
       }
     }
 
+    // async function upgrade(): Promise<void> {
+    //   const res = await firstValueFrom(
+    //     http.post<{ user: UserProfile }>(`${base}/auth/upgrade`, {})
+    //   );
+    //   patchState(store, { user: res.user });
+    // }
+
     async function upgrade(): Promise<void> {
-      const res = await firstValueFrom(
-        http.post<{ user: UserProfile }>(`${base}/auth/upgrade`, {})
+      const updated = await firstValueFrom(
+        http.post<UserProfile>(`${environment.apiBaseUrl}/auth/upgrade`, {}, { withCredentials: true })
       );
-      patchState(store, { user: res.user });
+      patchState(store, { user: updated });
     }
 
-    return { checkSession, signup, login, logout, upgrade };
+    async function updateProfile(patch: { displayName?: string; handle?: string }): Promise<void> {
+      const updated = await firstValueFrom(
+        http.patch<UserProfile>(`${environment.apiBaseUrl}/auth/me`, patch, { withCredentials: true })
+      );
+      patchState(store, { user: updated });
+    }
+ 
+    async function checkHandleAvailable(handle: string): Promise<boolean> {
+      const res = await firstValueFrom(
+        http.get<{ handle: string; available: boolean }>(
+          `${environment.apiBaseUrl}/auth/handle-available`,
+          { params: { handle }, withCredentials: true }
+        )
+      );
+      return res.available;
+    }    
+
+    async function changePassword(currentPassword: string, newPassword: string): Promise<void> {
+      try {
+        await firstValueFrom(
+          http.post(`${environment.apiBaseUrl}/auth/change-password`,
+            { currentPassword, newPassword }, { withCredentials: true })
+        );
+      } catch (e: any) {
+        const code = e?.error?.code;                       // backend ApiError.code
+        throw Object.assign(new Error('change-password failed'), { code });
+      }
+    }
+    
+    async function cancelCircle(): Promise<void> {
+      const updated = await firstValueFrom(
+        http.post<UserProfile>(`${environment.apiBaseUrl}/auth/cancel`, {}, { withCredentials: true })
+      );
+      patchState(store, { user: updated });
+    }
+
+    return { checkSession, signup, login, logout, upgrade, updateProfile, checkHandleAvailable, changePassword, cancelCircle };
   })
 );

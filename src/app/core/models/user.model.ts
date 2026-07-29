@@ -8,6 +8,7 @@ export type Plan = 'freemium' | 'circle';
 export interface UserProfile {
   id: string;
   email: string;
+  handle: string;
   displayName?: string;
   plan: Plan;
 }

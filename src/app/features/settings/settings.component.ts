@@ -3,6 +3,7 @@ import {
   inject,
   signal,
   computed,
+  linkedSignal,
   ElementRef,
   ViewChild,
   AfterViewInit,
@@ -23,8 +24,11 @@ import { VibeTagManagerComponent } from '../../shared/vibe-tag-manager/vibe-tag-
 import { gradientCss, DEFAULT_COVER_ICON } from '../../core/constants/collection-covers';
 import type { ThemeName, AppState } from '../../core/models';
 import { BackupService } from '../../core/services/backup.service';
+import { AuthStore } from '../../core/stores/auth.store';
 
 type SettingsSection =
+  | 'profile'
+  | 'billing'
   | 'categories'
   | 'collections'
   | 'theme'
@@ -81,6 +85,137 @@ interface ThemeTile {
 
           <!-- RIGHT BODY: all sections rendered, sidebar scrolls to each -->
           <div class="set-body">
+
+                      <!-- ===== PROFILE ===== -->
+            <section #section id="section-profile" data-section="profile">
+              <div class="set-card">
+                <h3>Profile</h3>
+                @if (!auth.isLoggedIn()) {
+                  <div class="desc">
+                    You're browsing as a guest. <a routerLink="/login">Sign in</a> to set up a
+                    profile — a handle and display name that travel with your account.
+                  </div>
+                } @else {
+                  <div class="desc">How you show up across Wayfinder.</div>
+ 
+                  <div class="field">
+                    <label>Email</label>
+                    <div class="field-static">
+                      {{ auth.user()?.email }}
+                      <span class="field-note">permanent</span>
+                    </div>
+                  </div>
+                  <div class="field">
+                    <label for="handle">Handle</label>
+                    <div class="handle-row">
+                      <span class="handle-at">&#64;</span>
+                      <input id="handle" type="text" autocomplete="off" spellcheck="false"
+                             [value]="handleDraft()" (input)="onHandleInput($any($event.target).value)"
+                             placeholder="your_handle" />
+                      @switch (handleState()) {
+                        @case ('checking')  { <span class="handle-status checking">checking…</span> }
+                        @case ('available') { <span class="handle-status ok">available</span> }
+                        @case ('taken')     { <span class="handle-status bad">taken</span> }
+                        @case ('invalid')   { <span class="handle-status bad">invalid</span> }
+                        @case ('current')   { <span class="handle-status muted">current</span> }
+                      }
+                    </div>
+                    <div class="field-hint">lowercase letters, digits, underscore · 3–30 chars · this is how people find you</div>
+                    <button class="btn small primary" type="button"
+                            [disabled]="handleState() !== 'available' || savingHandle()"
+                            (click)="saveHandle()">
+                      {{ savingHandle() ? 'Saving…' : 'Save handle' }}
+                    </button>
+                  </div>
+ 
+                  <div class="field">
+                    <label for="dn">Display name</label>
+                    <input id="dn" type="text" [value]="nameDraft()"
+                           (input)="nameDraft.set($any($event.target).value)"
+                           placeholder="What should we call you?" />
+                    <button class="btn small primary" type="button"
+                            [disabled]="!nameDirty() || savingName()"
+                            (click)="saveName()">
+                      {{ savingName() ? 'Saving…' : 'Save name' }}
+                    </button>
+                  </div>
+ 
+                  @if (profileMsg()) { <div class="save-msg" [class.err]="profileErr()">{{ profileMsg() }}</div> }
+                }
+              </div>
+ 
+              @if (auth.isLoggedIn()) {
+                <div class="set-card">
+                  <h3>Change password</h3>
+                  <div class="desc">You'll need your current password to set a new one.</div>
+                  <div class="field">
+                    <label for="cur">Current password</label>
+                    <input id="cur" type="password" autocomplete="current-password"
+                           [value]="curPw()" (input)="curPw.set($any($event.target).value)" placeholder="••••••••" />
+                  </div>
+                  <div class="field">
+                    <label for="newpw">New password</label>
+                    <input id="newpw" type="password" autocomplete="new-password"
+                           [value]="newPw()" (input)="newPw.set($any($event.target).value)" placeholder="••••••••" />
+                    <div class="pw-req">
+                      <span class="req" [class.ok]="pwRules().len">8+ chars</span>
+                      <span class="req" [class.ok]="pwRules().up">uppercase</span>
+                      <span class="req" [class.ok]="pwRules().low">lowercase</span>
+                      <span class="req" [class.ok]="pwRules().num">digit</span>
+                      <span class="req" [class.ok]="pwRules().sp">symbol</span>
+                    </div>
+                  </div>
+                  <button class="btn small primary" type="button"
+                          [disabled]="!canChangePw() || savingPw()" (click)="changePassword()">
+                    {{ savingPw() ? 'Updating…' : 'Update password' }}
+                  </button>
+                  @if (pwMsg()) { <div class="save-msg" [class.err]="pwErr()">{{ pwMsg() }}</div> }
+                </div>
+              }
+            </section>
+
+            <!-- ===== PLAN & BILLING ===== -->
+            <section #section id="section-billing" data-section="billing">
+              <div class="set-card">
+                <h3>Plan &amp; billing</h3>
+                @if (!auth.isLoggedIn()) {
+                  <div class="desc"><a routerLink="/login">Sign in</a> to manage your plan.</div>
+                } @else {
+                  <div class="plan-row">
+                    <div class="plan-badge" [class.circle]="auth.isCircle()">
+                      {{ auth.isCircle() ? 'Circle' : 'Freemium' }}
+                    </div>
+                    <div class="plan-copy">
+                      @if (auth.isCircle()) {
+                        You're on <strong>Circle</strong> — sharing &amp; circles are unlocked. Thanks for supporting Wayfinder.
+                      } @else {
+                        You're on <strong>Freemium</strong>. Everything core is yours, free — including syncing your map across devices.
+                      }
+                    </div>
+                  </div>
+                  <div class="circle-what">
+                    <div class="cw-title">What Circle adds</div>
+                    <div class="desc">
+                      Circle is about <strong>sharing</strong> — publishing maps and inviting people into circles.
+                      It's not about sync: syncing your own places across your devices is free on every account.
+                    </div>
+                  </div>
+                  @if (!auth.isCircle()) {
+                    <button class="btn primary" type="button" [disabled]="planBusy()" (click)="upgrade()">
+                      {{ planBusy() ? 'One moment…' : 'Upgrade to Circle' }}
+                    </button>
+                  } @else {
+                    <button class="btn ghost" type="button" [disabled]="planBusy()" (click)="cancelCircle()">
+                      {{ planBusy() ? 'One moment…' : 'Cancel Circle' }}
+                    </button>
+                  }
+                  <div class="field-hint" style="margin-top:12px">
+                    Payments aren't live yet — upgrades run through a placeholder for now, so this won't charge you.
+                  </div>
+                  @if (planMsg()) { <div class="save-msg" [class.err]="planErr()">{{ planMsg() }}</div> }
+                }
+              </div>
+            </section>
 
             <!-- ===== CATEGORIES & VIBES ===== -->
             <section #section id="section-categories" data-section="categories">
@@ -923,6 +1058,66 @@ interface ThemeTile {
         }
         .freq-select { flex: 1; }
       }
+
+            /* ===== Profile + Billing (mock-accurate) ===== */
+      .field { margin-bottom: 18px; }
+      .field label {
+        display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px;
+        color: var(--wf-ink-soft); font-weight: 600; margin-bottom: 6px;
+      }
+      .field input {
+        display: block; width: 100%; padding: 10px 12px; border-radius: 10px;
+        border: 0.5px solid var(--wf-hairline); background: var(--wf-bg);
+        color: var(--wf-ink); font: inherit; font-size: 14px;
+      }
+      .field input::placeholder { color: var(--wf-ink-faint); }
+      .field input:focus { outline: none; border-color: var(--wf-accent); box-shadow: var(--wf-glow); }
+      .field-static {
+        display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px;
+        background: var(--wf-bg); border: 0.5px solid var(--wf-hairline);
+        font-size: 14px; color: var(--wf-ink);
+      }
+      .field-note {
+        margin-left: auto; font-size: 10px; letter-spacing: 0.4px; text-transform: uppercase;
+        color: var(--wf-ink-faint); background: var(--wf-bg-2); padding: 2px 8px; border-radius: 20px;
+      }
+      .field-hint { font-size: 12px; color: var(--wf-ink-soft); margin-top: 6px; line-height: 1.5; }
+      .handle-row { display: flex; align-items: center; gap: 6px; }
+      .handle-at { color: var(--wf-ink-faint); font-size: 15px; }
+      .handle-row input {
+        flex: 1; padding: 10px 12px; border-radius: 10px; border: 0.5px solid var(--wf-hairline);
+        background: var(--wf-bg); color: var(--wf-ink); font: inherit; font-size: 14px;
+      }
+      .handle-row input::placeholder { color: var(--wf-ink-faint); }
+      .handle-row input:focus { outline: none; border-color: var(--wf-accent); box-shadow: var(--wf-glow); }
+      .handle-status { font-size: 12px; font-weight: 600; white-space: nowrap; }
+      .handle-status.checking { color: var(--wf-ink-faint); }
+      .handle-status.ok { color: var(--wf-teal); }
+      .handle-status.bad { color: var(--wf-accent); }
+      .handle-status.muted { color: var(--wf-ink-faint); font-weight: 500; }
+      .pw-req { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+      .pw-req .req {
+        font-size: 11px; color: var(--wf-ink-faint); padding: 3px 8px; border-radius: 20px;
+        background: var(--wf-bg); border: 0.5px solid color-mix(in srgb, var(--wf-hairline) 60%, transparent);
+      }
+      .pw-req .req.ok { color: var(--wf-teal); border-color: color-mix(in srgb, var(--wf-teal) 40%, transparent); }
+      .save-msg { font-size: 13px; color: var(--wf-teal); margin-top: 12px; }
+      .save-msg.err { color: var(--wf-accent); }
+      .plan-row { display: flex; align-items: flex-start; gap: 14px; margin: 4px 0 18px; }
+      .plan-badge {
+        font-size: 12px; font-weight: 700; padding: 5px 12px; border-radius: 20px;
+        background: var(--wf-bg); color: var(--wf-ink-soft); border: 0.5px solid var(--wf-hairline); flex-shrink: 0;
+      }
+      .plan-badge.circle {
+        background: color-mix(in srgb, var(--wf-gold) 22%, var(--wf-bg));
+        color: var(--wf-ink); border-color: color-mix(in srgb, var(--wf-gold) 45%, transparent);
+      }
+      .plan-copy { font-size: 14px; line-height: 1.6; color: var(--wf-ink-soft); }
+      .circle-what { margin: 6px 0 18px; padding-top: 14px; border-top: 0.5px solid color-mix(in srgb, var(--wf-hairline) 60%, transparent); }
+      .cw-title { font-size: 13px; font-weight: 600; color: var(--wf-ink); margin-bottom: 6px; }
+      .btn.small { padding: 7px 12px; font-size: 12px; margin-top: 12px; }
+      .btn.ghost { background: transparent; }
+
     `,
   ],
 })
@@ -933,6 +1128,7 @@ export class SettingsComponent implements AfterViewInit, OnDestroy {
   protected vibeTags = inject(VibeTagsStore);
   protected appState = inject(AppStateStore);
   protected storage = inject(STORAGE_ADAPTER);
+  protected auth = inject(AuthStore);
   private backup = inject(BackupService);
   private router = inject(Router);
 
@@ -944,7 +1140,7 @@ export class SettingsComponent implements AfterViewInit, OnDestroy {
   private intersectionObserver?: IntersectionObserver;
 
   // Tracks which section is currently in view (for sidebar highlight)
-  protected activeSection = signal<SettingsSection>('categories');
+  protected activeSection = signal<SettingsSection>('profile');
 
   // Collections inline edit state
   protected newCollectionName = signal('');
@@ -964,6 +1160,8 @@ export class SettingsComponent implements AfterViewInit, OnDestroy {
   protected defaultCoverIcon = DEFAULT_COVER_ICON;
 
   protected navItems: { id: SettingsSection; label: string; icon: string }[] = [
+    { id: 'profile',     label: 'Profile',             icon: 'user' },
+    { id: 'billing',     label: 'Plan & billing',      icon: 'crown' },
     { id: 'categories', label: 'Categories & vibes', icon: 'tags' },
     { id: 'collections', label: 'Collections',         icon: 'folder' },
     { id: 'theme',       label: 'Theme',               icon: 'palette' },
@@ -1003,22 +1201,27 @@ export class SettingsComponent implements AfterViewInit, OnDestroy {
     );
 
     // Watch which section is most visible; update activeSection
+    // FIX (Categories highlight): rank by which section's TOP is nearest the 
+    // detection line, not by intersectionRatio. Ratio = fraction of a section
+    // visible, so a TALL section (Categories = two manager cards) never scores
+    // as high as a short one in the thin band, and the nav skips it.
     this.intersectionObserver = new IntersectionObserver(
-      (entries) => {
-        // Pick the most-visible entry by intersection ratio
-        const visible = entries
-          .filter((e) => e.isIntersecting)
-          .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
-        if (visible.length > 0) {
-          const id = (visible[0].target as HTMLElement).dataset['section'];
-          if (id) this.activeSection.set(id as SettingsSection);
+      () => {
+        const line = 88; //breadcrumb (~80px) + small offset
+        let current: SettingsSection | null = null;
+        for(const el of this.sectionElements){
+          if(el.getBoundingClientRect().top <= line + 40){
+            current = (el.dataset['section'] as SettingsSection) ?? current;
+          }
         }
+        if(!current && this.sectionElements.length){
+          current = (this.sectionElements[0].dataset['section'] as SettingsSection) ?? null;
+        }
+        if(current) this.activeSection.set(current);
       },
       {
-        // Top 1/3 of viewport biased — a section becomes "active" once its top
-        // crosses into the upper portion
-        rootMargin: '-80px 0px -50% 0px',
-        threshold: [0, 0.25, 0.5, 0.75, 1],
+        rootMargin: '-80px 0px -55% 0px',
+        threshold: [0, 0.50, 0.25, 0.5, 0.75, 1],
       }
     );
 
@@ -1164,4 +1367,93 @@ export class SettingsComponent implements AfterViewInit, OnDestroy {
     this.iconPickerForCollectionId.set(null);
   }
 
+    // ===== Profile + Billing =====
+  protected handleDraft = linkedSignal(() => this.auth.user()?.handle ?? '');
+  protected handleState = signal<'idle' | 'checking' | 'available' | 'taken' | 'invalid' | 'current'>('idle');
+  protected savingHandle = signal(false);
+  private handleDebounce?: ReturnType<typeof setTimeout>;
+  private readonly HANDLE_RE = /^[a-z][a-z0-9_]{2,29}$/;
+ 
+  protected nameDraft = linkedSignal(() => this.auth.user()?.displayName ?? '');
+  protected savingName = signal(false);
+  protected nameDirty = computed(() =>
+    this.nameDraft().trim().length > 0 &&
+    this.nameDraft().trim() !== (this.auth.user()?.displayName ?? '')
+  );
+  protected profileMsg = signal<string | null>(null);
+  protected profileErr = signal(false);
+ 
+  protected curPw = signal('');
+  protected newPw = signal('');
+  protected savingPw = signal(false);
+  protected pwMsg = signal<string | null>(null);
+  protected pwErr = signal(false);
+  protected pwRules = computed(() => {
+    const v = this.newPw();
+    return { len: v.length >= 8, up: /[A-Z]/.test(v), low: /[a-z]/.test(v), num: /\d/.test(v), sp: /[^A-Za-z0-9]/.test(v) };
+  });
+  protected canChangePw = computed(() =>
+    this.curPw().length > 0 && Object.values(this.pwRules()).every(Boolean)
+  );
+ 
+  protected planBusy = signal(false);
+  protected planMsg = signal<string | null>(null);
+  protected planErr = signal(false);
+ 
+  onHandleInput(raw: string): void {
+    const v = raw.toLowerCase().trim();
+    this.handleDraft.set(v);
+    clearTimeout(this.handleDebounce);
+    if (v === (this.auth.user()?.handle ?? '')) { this.handleState.set('current'); return; }
+    if (!this.HANDLE_RE.test(v)) { this.handleState.set('invalid'); return; }
+    this.handleState.set('checking');
+    this.handleDebounce = setTimeout(async () => {
+      try {
+        const available = await this.auth.checkHandleAvailable(v);
+        if (this.handleDraft() !== v) return;
+        this.handleState.set(available ? 'available' : 'taken');
+      } catch { this.handleState.set('idle'); }
+    }, 350);
+  }
+  async saveHandle(): Promise<void> {
+    if (this.handleState() !== 'available') return;
+    this.savingHandle.set(true); this.profileMsg.set(null);
+    try {
+      await this.auth.updateProfile({ handle: this.handleDraft() });
+      this.handleState.set('current'); this.profileErr.set(false); this.profileMsg.set('Handle updated.');
+    } catch { this.profileErr.set(true); this.profileMsg.set('Could not update handle.'); }
+    finally { this.savingHandle.set(false); }
+  }
+  async saveName(): Promise<void> {
+    if (!this.nameDirty()) return;
+    this.savingName.set(true); this.profileMsg.set(null);
+    try {
+      await this.auth.updateProfile({ displayName: this.nameDraft().trim() });
+      this.profileErr.set(false); this.profileMsg.set('Name updated.');
+    } catch { this.profileErr.set(true); this.profileMsg.set('Could not update name.'); }
+    finally { this.savingName.set(false); }
+  }
+  async changePassword(): Promise<void> {
+    if (!this.canChangePw()) return;
+    this.savingPw.set(true); this.pwMsg.set(null);
+    try {
+      await this.auth.changePassword(this.curPw(), this.newPw());
+      this.curPw.set(''); this.newPw.set(''); this.pwErr.set(false); this.pwMsg.set('Password updated.');
+    } catch (e: any) {
+      this.pwErr.set(true);
+      this.pwMsg.set(e?.code === 'INVALID_CURRENT_PASSWORD' ? 'That current password is incorrect.' : 'Could not update password.');
+    } finally { this.savingPw.set(false); }
+  }
+  async upgrade(): Promise<void> {
+    this.planBusy.set(true); this.planMsg.set(null);
+    try { await this.auth.upgrade(); this.planErr.set(false); this.planMsg.set('Welcome to Circle!'); }
+    catch { this.planErr.set(true); this.planMsg.set('Upgrade failed — please try again.'); }
+    finally { this.planBusy.set(false); }
+  }
+  async cancelCircle(): Promise<void> {
+    this.planBusy.set(true); this.planMsg.set(null);
+    try { await this.auth.cancelCircle(); this.planErr.set(false); this.planMsg.set("Circle cancelled — you're back on Freemium."); }
+    catch { this.planErr.set(true); this.planMsg.set('Could not cancel — please try again.'); }
+    finally { this.planBusy.set(false); }
+  }
 }
