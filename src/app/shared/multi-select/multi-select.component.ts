@@ -3,6 +3,7 @@ import {
   HostListener,
   ChangeDetectionStrategy,
   ElementRef,
+  ViewChild,
   computed,
   inject,
   input,
@@ -41,11 +42,13 @@ export interface MultiSelectOption {
   template: `
     <div class="ms" [class.open]="open()">
       <button
+        #trigger
         type="button"
         class="ms-button"
         [class.has-selection]="selected().size > 0"
         (click)="toggle($event)"
         [attr.aria-expanded]="open()"
+        [attr.aria-controls]="open() ? 'ms-listbox' : null"
         aria-haspopup="listbox"
       >
         <span class="ms-label">{{ label() }}</span>
@@ -221,6 +224,8 @@ export interface MultiSelectOption {
 export class MultiSelectComponent {
   private hostEl = inject<ElementRef<HTMLElement>>(ElementRef);
 
+  @ViewChild('trigger') private trigger?: ElementRef<HTMLButtonElement>;
+
   /** Display label on the button when nothing is selected. */
   readonly label = input.required<string>();
 
@@ -261,7 +266,12 @@ export class MultiSelectComponent {
 
   @HostListener('document:keydown.escape')
   protected onEsc(): void {
-    if (this.open()) this.open.set(false);
+    if (this.open()){
+      this.open.set(false);
+      // return focus to the trigger so keyboard users aren't stranded on a
+      // now-removed option element.
+      this.trigger?.nativeElement.focus();
+    }
   }
 }
 

@@ -102,4 +102,9 @@ export class AuthComponent {
   protected val(e: Event): string {
     return (e.target as HTMLInputElement).value;
   }
+
+  protected onForgotPassword(): void {
+    // TODO: Implement forgot password flow
+    console.log('Forgot password clicked');
+  }
 }

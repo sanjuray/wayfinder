@@ -15,8 +15,10 @@ import { VibeTagsStore } from '../../../../core/stores/vibe-tags.store';
     <div class="chips">
       @for (cat of sortedCategories(); track cat.id) {
         <button
+          type="button"
           class="chip cat"
           [class.sel]="facade.categoryId() === cat.id"
+          [attr.aria-pressed]="facade.categoryId() === cat.id"
           (click)="facade.categoryId.set(cat.id)"
         >
           <span class="sw" [style.background]="cat.color"></span>
@@ -29,8 +31,10 @@ import { VibeTagsStore } from '../../../../core/stores/vibe-tags.store';
     <div class="chips">
       @for (tag of sortedVibeTags(); track tag.id) {
         <button
+          type="button"
           class="chip"
           [class.sel]="facade.vibeTagIds().includes(tag.id)"
+          [attr.aria-pressed]="facade.vibeTagIds().includes(tag.id)"
           (click)="facade.toggleVibeTag(tag.id)"
         >
           {{ tag.name }}

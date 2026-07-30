@@ -40,7 +40,8 @@ import type { VisitRating } from '../../../core/models';
       <div class="backdrop" (click)="onBackdropClick()"></div>
     }
 
-    <aside class="panel" [class.show]="!!facade.place()" aria-label="Place details">
+    <aside class="panel" [class.show]="!!facade.place()" aria-label="Place details"
+            role="dialog" (keydown.escape)="onClose()">
       @if (facade.place(); as p) {
         <section class="hero">
           <div class="name-row">
@@ -877,6 +878,7 @@ import type { VisitRating } from '../../../core/models';
   ],
 })
 export class PlaceDetailComponent {
+  private previouslyFocused: HTMLElement | null = null;
   protected facade = inject(PlaceDetailFacade);
   protected categoriesStore = inject(CategoriesStore);
   protected collectionsStore = inject(CollectionsStore);
@@ -921,6 +923,14 @@ export class PlaceDetailComponent {
     this.facade.close();
     this.showMapsVariants.set(false);
     this.closed.emit();
+    // return focus to whatever opnened the panel (map marker / list row)
+    const el = this.previouslyFocused;
+    if(el && typeof el.focus === 'function') setTimeout(() => el.focus());
+  }
+
+  /** Parent calls this (or set on open) to remember the trigger for focus return. */
+  rememberTrigger(el: HTMLElement | null): void{
+    this.previouslyFocused = el;
   }
 
   /**

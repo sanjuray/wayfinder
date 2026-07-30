@@ -6,8 +6,10 @@ import {
   signal,
   computed,
   ChangeDetectionStrategy,
+  OnDestroy
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { A11yModule } from '@angular/cdk/a11y';
 
 const CONFIRM_PHRASE = 'let it go';
 
@@ -23,11 +25,12 @@ const CONFIRM_PHRASE = 'let it go';
 @Component({
   selector: 'wf-delete-confirm',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, A11yModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="backdrop" (click)="onCancel()"></div>
-    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="delete-title">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="delete-title"
+          cdkTrapFocus [cdkTrapFocusAutoCapture]="true" (keydown.escape)="onCancel()">
       <h3 id="delete-title">
         @if (count() > 1) {
           Letting go of {{ count() }} places is hard.
@@ -157,7 +160,9 @@ const CONFIRM_PHRASE = 'let it go';
     `,
   ],
 })
-export class DeleteConfirmComponent {
+export class DeleteConfirmComponent implements OnDestroy{
+  private previouslyFocused = document.activeElement as HTMLElement | null;
+
   /**
    * How many places this confirm affects. Defaults to 1 — the single-place
    * delete from place-detail doesn't need to pass anything, so existing
@@ -176,8 +181,20 @@ export class DeleteConfirmComponent {
 
   onConfirm(): void {
     if (this.canConfirm()) this.confirmed.emit();
+    this.restoreFocus();
   }
+
+  ngOnDestroy(): void {
+    this.restoreFocus();
+  }
+
+  private restoreFocus(): void{
+    const el = this.previouslyFocused;
+    if(el && typeof el.focus === 'function') setTimeout(() =>  el.focus());
+  }
+
   onCancel(): void {
     this.cancelled.emit();
+    this.restoreFocus();
   }
 }

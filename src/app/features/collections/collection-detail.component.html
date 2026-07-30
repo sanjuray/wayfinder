@@ -159,7 +159,11 @@
             <div class="place-list">
               @for (p of facade.placesInCollection(); track p.id) {
                 @let cat = categoryById().get(p.categoryId);
-                <div class="place" (click)="onListRowClick(p)">
+                <div class="place" role="button" tabindex="0"
+                  [attr.aria-label]  ="'Open '+ (p.customName ?? p.name)"
+                  (click)="onListRowClick(p)"
+                  (keydown.enter)="onListRowClick(p)"
+                  (keydown.space)="$event.preventDefault(); onListRowClick(p)">
                   <div class="ico" [style.background]="cat?.color || '#FF6B5B'">
                     <i class="ti" [class]="'ti-' + (cat?.icon || 'circle')"></i>
                   </div>

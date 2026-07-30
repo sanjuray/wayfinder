@@ -100,12 +100,13 @@ import type { VibeTag } from '../../core/models';
                 </button>
               </div>
             } @else {
-              <span class="tag-display" (click)="startEdit(v)">
+              <button type="button" class="tag-display" (click)="startEdit(v)"
+                [attr.aria-label]="'Edit vibe tag ' + v.name">
                 <span class="nm">{{ v.name }}</span>
                 @if (v.isDefault) {
                   <span class="default-badge">default</span>
                 }
-              </span>
+              </button>
               <div class="row-actions">
                 <button
                   class="icon-btn"
@@ -251,6 +252,13 @@ import type { VibeTag } from '../../core/models';
       gap: 9px;
       cursor: pointer;
       min-width: 0;
+      /* was a <span>; now a <button> for keyboard access - strip chrome */
+      border: none;
+      background: none;
+      font: inherit;
+      color: inherit;
+      text-align: left;
+      padding: 0;
     }
     .nm {
       font-size: 14px;

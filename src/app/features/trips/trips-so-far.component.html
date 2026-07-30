@@ -119,7 +119,12 @@
               class="trip-card"
               [class.draft]="sec.key === 'drafts'"
               [class.past]="sec.key === 'past'"
+              role="button"
+              tabindex="0"
+              [attr.aria-label]="'Open trip ' + t.name"
               (click)="openTrip(t)"
+              (keydown.enter)="openTrip(t)"
+              (keydown.space)="$event.preventDefault(); openTrip(t)"
             >
               <div
                 class="status-pill"

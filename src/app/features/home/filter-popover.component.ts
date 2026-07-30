@@ -11,14 +11,16 @@ import { CategoriesStore } from '../../core/stores/categories.store';
 import { CollectionsStore } from '../../core/stores/collections.store';
 import { VibeTagsStore } from '../../core/stores/vibe-tags.store';
 import { MultiSelectComponent } from '../../shared/multi-select/multi-select.component';
+import { A11yModule } from '@angular/cdk/a11y';
 
 @Component({
   selector: 'wf-filter-popover',
   standalone: true,
-  imports: [FormsModule, MultiSelectComponent],
+  imports: [FormsModule, MultiSelectComponent, A11yModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="popover">
+    <div class="popover" role="dialog" aria-modal="true" aria-label="Filters"
+          cdkTrapFocus [cdkTrapFocusAutoCapture]="true" (keydown.escape)="closed.emit()">
       <div class="header">
         <h4>Filters</h4>
         <button class="close" (click)="closed.emit()" aria-label="Close">×</button>

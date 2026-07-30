@@ -1,10 +1,11 @@
-import { Component, inject, output, input, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, output, input, OnInit, ChangeDetectionStrategy, OnDestroy } from '@angular/core';
 import { AddPlaceFacade } from './add-place.facade';
 import { PasteLinkStepComponent } from './steps/paste-link-step.component';
 import { ConfirmLocationStepComponent } from './steps/confirm-location-step.component';
 import { CategorizeStepComponent } from './steps/categorize-step.component';
 import { SaveStepComponent } from './steps/save-step.component';
 import type { Place } from '../../../core/models';
+import { A11yModule } from '@angular/cdk/a11y';
 
 @Component({
   selector: 'wf-add-place',
@@ -12,6 +13,7 @@ import type { Place } from '../../../core/models';
   // Per-flow facade — fresh state for each modal instance
   providers: [AddPlaceFacade],
   imports: [
+    A11yModule,
     PasteLinkStepComponent,
     ConfirmLocationStepComponent,
     CategorizeStepComponent,
@@ -20,7 +22,10 @@ import type { Place } from '../../../core/models';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="overlay" (click)="onCancel()"></div>
-    <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal" role="dialog" aria-model="true"
+        [attr.aria-label]="editingPlace() ? 'Edit place' : 'Add a place'"
+        cdkTrapFocus [cdkTrapFocusAutoCapture]="true"
+        (keydown.escape)="onCancel()" (click)="$event.stopPropagation()">
       <div class="step-row">
         @for (s of steps; track s) {
           <span [class.on]="facade.step() === s" [class.done]="facade.step() > s"></span>
@@ -95,7 +100,9 @@ styles: [
     `,
   ],
 })
-export class AddPlaceComponent implements OnInit{
+export class AddPlaceComponent implements OnInit, OnDestroy{
+  private previouslyFocused = document.activeElement as HTMLElement | null;
+
   protected facade = inject(AddPlaceFacade);
   protected steps = [1, 2, 3, 4];
 
@@ -126,11 +133,22 @@ export class AddPlaceComponent implements OnInit{
     if (place) {
       this.saved.emit(place);
       this.facade.reset();
+      this.restoreFocus();
     }
   }
 
   onCancel(): void {
     this.facade.reset();
     this.cancelled.emit();
+    this.restoreFocus();
+  }
+
+  ngOnDestroy(): void {
+      this.restoreFocus();
+  }
+
+  private restoreFocus(): void{
+    const el = this.previouslyFocused;
+    if(el && typeof el.focus === 'function') setTimeout(() => el.focus());
   }
 }

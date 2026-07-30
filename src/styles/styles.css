@@ -1,0 +1,123 @@
+/* You can add global styles to this file, and also import other style files */
+/* =========================================================
+   Global Styles
+   ========================================================= */
+ 
+/* Reset */
+@import 'styles/reset.css';
+ 
+/* Design Tokens */
+@import 'styles/tokens.css';
+ 
+/* Themes */
+@import 'styles/themes/paper.css';
+@import 'styles/themes/neon.css';
+@import 'styles/themes/kyoto.css';
+@import 'styles/themes/mono.css';
+@import 'styles/themes/midnight.css';
+@import 'styles/themes/subway.css';
+@import 'styles/themes/forest.css';
+ 
+ 
+/* =========================================================
+   Base Document Styles
+   ========================================================= */
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+  background: var(--wf-bg);
+  color: var(--wf-ink);
+ 
+  font-family: var(--wf-font-body);
+ 
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+ 
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
+}
+ 
+body {
+  overflow-x: hidden;
+}
+ 
+ 
+/* =========================================================
+   Global Defaults
+   ========================================================= */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+ 
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+ 
+ 
+/* =========================================================
+   Selection Styling
+   ========================================================= */
+ 
+::selection {
+  background: var(--wf-accent);
+  color: var(--wf-bg);
+}
+/* ============================================================
+   Keyboard accessibility foundation
+   :focus-visible shows a clear ring for keyboard/tab users but NOT
+   on mouse clicks, so it's helpful without being visually noisy.
+   Applies app-wide to every focusable element; components can
+   override .some-el:focus-visible if they need a tighter ring.
+   ============================================================ */
+:focus:not(:focus-visible) {
+  /* remove the default outline only when focus came from a pointer */
+  outline: none;
+}
+:focus-visible {
+  outline: none;
+  box-shadow: var(--wf-ring);
+  border-radius: 6px; /* keeps the ring from looking boxy on round-ish controls */
+}
+ 
+/* Skip-to-content link — first tab stop, visually hidden until focused.
+   Add <a class="skip-link" href="#main">Skip to content</a> as the first
+   element in the app shell, and id="main" on the primary content region. */
+.skip-link {
+  position: absolute;
+  left: 12px;
+  top: -60px;
+  z-index: 9999;
+  padding: 10px 16px;
+  background: var(--wf-ink);
+  color: var(--wf-bg);
+  border-radius: 8px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: top 0.15s ease;
+}
+.skip-link:focus {
+  top: 12px;
+}
+ 
+/* Respect users who ask for reduced motion — disable non-essential
+   transitions/animations for them. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

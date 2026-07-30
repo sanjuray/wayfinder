@@ -12,13 +12,15 @@ import { AddPlaceFacade } from '../add-place.facade';
   <p class="sub">Add a name to help you recognize this place later.</p>
 
     @if (facade.draft(); as d) {
-      <div class="label">Name this place your way.</div>
+      <label class="label" for="place-name">Name this place your way.</label>
       <input
+        id="place-name"
         class="name-input"
         [ngModel]="facade.customName()"
         (ngModelChange)="facade.customName.set($event)"
         name="customName"
         placeholder="Give it a name you'll remember"
+        (keyup.enter)="facade.canContinueStep2() && facade.goNext()"
       />
       <div class="resolved">
         <svg class="loc-icon" width="32" height="36" viewBox="-6 -2 44 44">

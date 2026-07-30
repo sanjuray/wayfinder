@@ -11,6 +11,7 @@ import { FormsModule } from '@angular/forms';
 
 import { MultiSelectComponent } from '../../shared/multi-select/multi-select.component';
 import type { TravelMode } from '../../core/models';
+import { A11yModule } from '@angular/cdk/a11y';
 
 /**
  * Filter shape applied by the trips-so-far page. Held in the parent's
@@ -43,10 +44,12 @@ export interface TripsFilterState {
 @Component({
   selector: 'wf-trips-filter-popover',
   standalone: true,
-  imports: [FormsModule, MultiSelectComponent],
+  imports: [FormsModule, MultiSelectComponent, A11yModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="popover" role="dialog" (click)="$event.stopPropagation()">
+    <div class="popover" role="dialog" aria-modal="true"  aria-label="Trip filters"
+        cdkTrapFocus [cdkTrapFocusAutoCapture]="true" (keydown.escape)="cancelled.emit()"
+        (click)="$event.stopPropagation()">
       <header class="hdr">
         <h4>Filters</h4>
         <button class="close" (click)="cancelled.emit()" aria-label="Close">×</button>

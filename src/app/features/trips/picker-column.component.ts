@@ -1,5 +1,6 @@
 import {
   Component,
+  HostListener,
   inject,
   input,
   output,
@@ -41,7 +42,7 @@ import type { Place, PlaceStatus, Category } from '../../core/models';
   imports: [FormsModule, MultiSelectComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <aside class="picker" [class.open]="isOpen()" aria-label="Add a stop">
+    <aside class="picker" [class.open]="isOpen()" role="dialog" aria-label="Add a stop">
       <header class="hdr">
         <h3>Add a stop</h3>
         <button class="close" (click)="onClose()" aria-label="Close" title="Close (Esc)">×</button>
@@ -508,5 +509,11 @@ export class PickerColumnComponent {
 
   protected onClose(): void {
     this.cancelled.emit();
+  }
+
+  /** The UI advertises "Close (Esc)" - wire it. Only acts while open. */
+  @HostListener('document:keydown.escape')
+  protected onEscape(): void{
+    if(this.isOpen()) this.onClose();
   }
 }

@@ -39,8 +39,10 @@ import { CollectionsStore } from '../../../../core/stores/collections.store';
       }
       @for (col of sortedCollections(); track col.id) {
         <button
+          type="button"
           class="chip"
           [class.sel]="facade.collectionIds().includes(col.id)"
+          [attr.aria-pressed]="facade.collectionIds().includes(col.id)"
           (click)="facade.toggleCollection(col.id)"
         >
           📁 {{ col.name }}

@@ -5,10 +5,12 @@ import {
   computed,
   ChangeDetectionStrategy,
   AfterViewInit,
+  OnDestroy,
   ElementRef,
   ViewChild,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { A11yModule } from '@angular/cdk/a11y'
 
 /**
  * Each entry from @tabler/icons' manifest. The package's `icons` export
@@ -25,11 +27,12 @@ interface IconEntry {
 @Component({
   selector: 'wf-icon-picker',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, A11yModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="backdrop" (click)="onCancel()"></div>
-    <div class="picker" role="dialog" aria-modal="true" aria-label="Pick an icon">
+    <div class="picker" role="dialog" aria-modal="true" aria-label="Pick an icon"
+      cdkTrapFocus [cdkTrapFocusAutoCapture]="true" (keydown.escape)="onCancel()">
       <header class="head">
         <h3>Pick an icon</h3>
         <button class="close" (click)="onCancel()" aria-label="Close">
@@ -291,7 +294,10 @@ interface IconEntry {
     }
   `],
 })
-export class IconPickerComponent implements AfterViewInit {
+export class IconPickerComponent implements AfterViewInit, OnDestroy {
+  /** The element focused before this modal opened, so we can restore it on close. */
+  private previouslyFocused = document.activeElement as HTMLElement | null;
+
   @ViewChild('gridEl', { static: false }) gridEl?: ElementRef<HTMLDivElement>;
 
   /** All icons in the Tabler library, loaded once on init from npm package. */
@@ -428,10 +434,27 @@ export class IconPickerComponent implements AfterViewInit {
   protected onConfirm(): void {
     const name = this.selected();
     if (name) this.picked.emit(name);
+    // Parent removes the modal on this event; restore focus to the trigger.
+    this.restoreFocus();
   }
 
   protected onCancel(): void {
     this.cancelled.emit();
+    this.restoreFocus();
+  }
+
+  ngOnDestroy(): void {
+    // Safety net in case the modal is torn down without onCancel/onConfirm.
+    this.restoreFocus();
+  }
+
+  /** Return focus to whatever was focused before the modal opened. */
+  private restoreFocus(): void {
+    const el = this.previouslyFocused;
+    if(el && typeof el.focus === 'function'){
+      // defer so it runs after the modal is removed from the DOM
+      setTimeout(() => el.focus());
+    }
   }
 }
 

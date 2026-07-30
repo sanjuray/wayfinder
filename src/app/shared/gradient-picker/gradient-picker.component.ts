@@ -3,8 +3,10 @@ import {
   input,
   output,
   signal,
+  OnDestroy,
   ChangeDetectionStrategy,
 } from '@angular/core';
+import { A11yModule } from '@angular/cdk/a11y';
 import { GRADIENT_PALETTE, gradientCss } from '../../core/constants/collection-covers';
 import type { CollectionCoverGradient } from '../../core/models';
 
@@ -22,10 +24,12 @@ import type { CollectionCoverGradient } from '../../core/models';
 @Component({
   selector: 'wf-gradient-picker',
   standalone: true,
+  imports: [A11yModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="backdrop" (click)="onCancel()"></div>
-    <div class="picker" role="dialog" aria-modal="true" aria-label="Pick a gradient">
+    <div class="picker" role="dialog" aria-modal="true" aria-label="Pick a gradient"
+        cdkTrapFocus [cdkTrapFocusAutoCapture]="true" (keydown.escape)="onCancel()">
       <header class="head">
         <h3>Pick a gradient</h3>
         <button class="close" (click)="onCancel()" aria-label="Close">
@@ -195,7 +199,9 @@ import type { CollectionCoverGradient } from '../../core/models';
     }
   `],
 })
-export class GradientPickerComponent {
+export class GradientPickerComponent implements OnDestroy{
+  private previouslyFocused = document.activeElement as HTMLElement | null;
+
   /**
    * Optional starting selection. Pre-highlights the currently-applied gradient
    * when the picker is opened from the collection editor.
@@ -226,12 +232,21 @@ export class GradientPickerComponent {
     this.selected.set(id);
   }
 
+  ngOnDestroy(): void {this.restoreFocus();}
+
+  private restoreFocus(): void{
+    const el = this.previouslyFocused;
+    if(el && typeof el.focus === 'function') setTimeout(()  => el.focus());
+  }
+
   protected onConfirm(): void {
     const id = this.selected();
     if (id) this.picked.emit(id);
+    this.restoreFocus();
   }
 
   protected onCancel(): void {
     this.cancelled.emit();
+    this.restoreFocus();
   }
 }

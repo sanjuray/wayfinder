@@ -47,4 +47,8 @@
   /* motion */
   --wf-glow: 0 4px 18px rgba(255, 107, 91, 0.25);
   --wf-glow-hover: 0 6px 24px rgba(255, 107, 91, 0.4);
+
+  /* Keyboard focus ring — derived from accent so it themes. Used app-wide
+    via :focus-visible (see styles.css). */
+  --wf-ring: 0 0 0 2px var(--wf-bg), 0 0 0 4px var(--wf-accent);
 }

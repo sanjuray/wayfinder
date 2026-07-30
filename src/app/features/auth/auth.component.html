@@ -57,6 +57,7 @@
       <div class="field">
         <label for="em">Email</label>
         <input id="em" type="email" autocomplete="email" placeholder="you@example.com"
+               [attr.aria-invalid]="errorMsg() ? true : null"
                [value]="email()" (input)="email.set(val($event))" />
       </div>
 
@@ -66,6 +67,8 @@
           <input id="pw" [type]="showPassword() ? 'text' : 'password'"
                  [autocomplete]="isSignup() ? 'new-password' : 'current-password'"
                  placeholder="••••••••"
+                 [attr.aria-invlaid]="errorMsg() ? true:null"
+                 [attr.aria-describedby]="isSignup() ? 'pw-reqs' : null"
                  [value]="password()" (input)="password.set(val($event))"
                  (keyup.enter)="submit()" />
           <button type="button" class="peek" (click)="showPassword.set(!showPassword())"
@@ -88,7 +91,7 @@
       @if (!isSignup()) {
         <div class="row-between">
           <span></span>
-          <a class="link" href="javascript:void(0)">Forgot password?</a>
+          <button class="link" class="link linkbtn" (click)="onForgotPassword()">Forgot password?</button>
         </div>
       }
  
@@ -109,9 +112,9 @@
  
       <div class="switch">
         @if (isSignup()) {
-          Already have an account? <a class="link" (click)="toggleMode()">Log in</a>
+          Already have an account? <button type="button" class="link linkbtn" (click)="toggleMode()">Log in</button>
         } @else {
-          New here? <a class="link" (click)="toggleMode()">Create an account</a>
+          New here? <button type="button" class="link linkbtn" (click)="toggleMode()">Create an account</button>
         }
       </div>
 

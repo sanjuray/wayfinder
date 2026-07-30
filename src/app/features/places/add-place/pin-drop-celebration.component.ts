@@ -26,6 +26,7 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
       <div class="overlay" [class.show]="show()"></div>
+      <div class="sr-only" role="status" aria-live="polit">Place saved.</div>
 
   <div
     class="stage"

@@ -151,7 +151,8 @@ import type { Category } from '../../core/models';
                 </button>
               </div>
             } @else {
-              <span class="cat-display" (click)="startEdit(c)">
+              <button type="button" class="cat-display" (click)="startEdit(c)"
+                [attr.aria-label]="'Edit category ' + c.name">
                 <span class="sw" [style.color]="c.color">
                   <i class="ti" [class]="'ti-' + c.icon"></i>
                 </span>
@@ -159,7 +160,7 @@ import type { Category } from '../../core/models';
                 @if (c.isDefault) {
                   <span class="default-badge">default</span>
                 }
-              </span>
+              </button>
               <div class="row-actions">
                 <button
                   class="icon-btn"
@@ -319,6 +320,13 @@ import type { Category } from '../../core/models';
       gap: 9px;
       cursor: pointer;
       min-width: 0;
+      /* was a <span>; now a <button> for keyboard access - strip chrom */
+      border: none;
+      background: none;
+      font: inherit;
+      color: inherit;
+      text-align: left;
+      padding: 0;
     }
     .sw {
       width: 22px;

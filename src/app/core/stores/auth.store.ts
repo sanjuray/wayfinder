@@ -103,15 +103,17 @@ export const AuthStore = signalStore(
     // }
 
     async function upgrade(): Promise<void> {
+      // POST /upgrade returns AuthResponse ({ user }), same wrapper as login.
       const updated = await firstValueFrom(
-        http.post<UserProfile>(`${environment.apiBaseUrl}/auth/upgrade`, {}, { withCredentials: true })
+        http.post<{ user: UserProfile }>(`${base}/auth/upgrade`, {}, {})
       );
-      patchState(store, { user: updated });
+      patchState(store, { user: updated.user });
     }
 
     async function updateProfile(patch: { displayName?: string; handle?: string }): Promise<void> {
+      // PATCH /me returns a bare UserDto (NOT wrapped) - same as GET /me
       const updated = await firstValueFrom(
-        http.patch<UserProfile>(`${environment.apiBaseUrl}/auth/me`, patch, { withCredentials: true })
+        http.patch<UserProfile>(`${base}/auth/me`, patch)
       );
       patchState(store, { user: updated });
     }
@@ -120,7 +122,7 @@ export const AuthStore = signalStore(
       const res = await firstValueFrom(
         http.get<{ handle: string; available: boolean }>(
           `${environment.apiBaseUrl}/auth/handle-available`,
-          { params: { handle }, withCredentials: true }
+          { params: { handle } }
         )
       );
       return res.available;
@@ -129,8 +131,8 @@ export const AuthStore = signalStore(
     async function changePassword(currentPassword: string, newPassword: string): Promise<void> {
       try {
         await firstValueFrom(
-          http.post(`${environment.apiBaseUrl}/auth/change-password`,
-            { currentPassword, newPassword }, { withCredentials: true })
+          http.post(`${base}/auth/change-password`,
+            { currentPassword, newPassword })
         );
       } catch (e: any) {
         const code = e?.error?.code;                       // backend ApiError.code
@@ -139,10 +141,11 @@ export const AuthStore = signalStore(
     }
     
     async function cancelCircle(): Promise<void> {
+      // POST /cancel returns AuthResponse ({ user }), same wrapper as login.
       const updated = await firstValueFrom(
-        http.post<UserProfile>(`${environment.apiBaseUrl}/auth/cancel`, {}, { withCredentials: true })
+        http.post<{user: UserProfile}>(`${base}/auth/cancel`, {})
       );
-      patchState(store, { user: updated });
+      patchState(store, { user: updated.user });
     }
 
     return { checkSession, signup, login, logout, upgrade, updateProfile, checkHandleAvailable, changePassword, cancelCircle };

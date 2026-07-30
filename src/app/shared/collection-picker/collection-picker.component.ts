@@ -6,8 +6,10 @@ import {
   signal,
   computed,
   ChangeDetectionStrategy,
+  OnDestroy
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { A11yModule } from '@angular/cdk/a11y';
 
 import { CollectionsStore } from '../../core/stores/collections.store';
 import {
@@ -31,11 +33,12 @@ import type { CollectionCoverGradient } from '../../core/models/collection.model
 @Component({
   selector: 'wf-collection-picker',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, A11yModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="backdrop" (click)="onCancel()"></div>
-    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="picker-title">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="picker-title"
+          cdkTrapFocus [cdkTrapFocusAutoCapture]="true" (keydown.escape)="onCancel()">
       <header class="hdr">
         <h3 id="picker-title">{{ title() }}</h3>
         <button class="close" (click)="onCancel()" aria-label="Close">×</button>
@@ -323,7 +326,9 @@ import type { CollectionCoverGradient } from '../../core/models/collection.model
     `,
   ],
 })
-export class CollectionPickerComponent {
+export class CollectionPickerComponent implements OnDestroy{
+  private previouslyFocussed = document.activeElement as HTMLElement | null;
+
   private collectionsStore = inject(CollectionsStore);
 
   /** Heading text. Caller provides context — "Add 3 places to", etc. */
@@ -386,9 +391,20 @@ export class CollectionPickerComponent {
   protected onConfirm(): void {
     if (this.selected().size === 0) return;
     this.picked.emit(Array.from(this.selected()));
+    this.restoreFocus();
+  }
+
+  ngOnDestroy(): void {
+      this.restoreFocus();
+  }
+
+  private restoreFocus(): void{
+    const el = this.previouslyFocussed;
+    if(el && typeof el.focus === 'function') setTimeout(() => el.focus());
   }
 
   protected onCancel(): void {
     this.cancelled.emit();
+    this.restoreFocus();
   }
 }
