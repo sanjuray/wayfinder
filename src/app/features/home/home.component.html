@@ -1,7 +1,12 @@
 <div class="map-view">
   <div class="body">
     <!-- Sidebar (map-only — Categories + Collections + Vibes filter the map) -->
-    <aside class="sidebar">
+    <aside class="sidebar" [class.sheet-open]="filterSheetOpen()">
+      <!-- Mobile-only sheet header (hidden on desktop via CSS) -->
+      <div class="sheet-handle">
+        <span class="sheet-grabber"></span>
+        <button class="sheet-close" (click)="closeFilterSheet()" aria-label="Close filters">Done</button>
+      </div>
 
       <!-- Categories -->
       <div class="section">
@@ -104,6 +109,8 @@
         }
       </div>
     </aside>
+    <!-- Mobile filter-sheet backdrop (only visible when sheet is open) -->
+    <div class="sheet-backdrop" [class.show]="filterSheetOpen()" (click)="closeFilterSheet()"></div>
 
     <!-- Map -->
     <div class="map-area">
@@ -140,6 +147,14 @@
 
 
       <div class="map" #mapEl role="application" tabindex="0" aria-label="Interactive map of your places. Use arrow keys to pan, plus and minus to zoom."></div>
+
+      <!-- Mobile-only: open the filter sheet (bottom-left, opposite the add FAB) -->
+      <button class="fab-filters" [class.has-active]="filters.anyFilterActive()"
+        (click)="toggleFilterSheet()" aria-label="Open filters">
+        <i class="ti ti-adjustments-horizontal"></i>
+        Filters
+        @if(filters.anyFilterActive()){ <span class="fab-dot" aria-hidden="true"></span>}
+      </button>
 
       <button class="fab" [class.detail-open]="isPlaceDetailOpen()" (click)="onFabClick()" aria-label="Add a place">
         + Add a place

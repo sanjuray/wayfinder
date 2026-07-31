@@ -126,6 +126,19 @@ interface IconEntry {
       box-shadow: 0 24px 48px color-mix(in srgb, var(--wf-ink) 30%, transparent);
       overflow: hidden;
     }
+
+    @media (max-width: 640px) {
+      .picker {
+        position: fixed;
+        left: 0; right: 0; bottom: 0; top: auto;
+        width: 100%;
+        max-width: 100%;
+        border-radius: 16px 16px 0 0;
+        max-height: 92dvh;
+        padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+      }
+    }
+ 
     .head {
       display: flex;
       align-items: center;

@@ -174,6 +174,21 @@ import type { Place, PlaceStatus, Category } from '../../core/models';
         transform: translateX(100%);
         transition: transform 0.2s ease;
       }
+      @media (max-width: 640px) {
+        .popover {
+          top:auto;
+          left: 0; right: 0; bottom: 0; top: auto;
+          width: 100%;
+          max-width: 100%;
+          height: auto;
+          max-height: 85dvh;
+          border-left: none;
+          border-top: 0.5px solid var(--wf-hairline);
+          border-radius: 16px 16px 0 0;
+          transform: translateY(100%);
+          padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+        }
+      }
       .picker.open {
         transform: translateX(0);
       }

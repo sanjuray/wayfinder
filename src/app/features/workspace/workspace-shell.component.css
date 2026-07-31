@@ -15,8 +15,6 @@
   background: var(--wf-bg);
   gap: 24px;
   flex-shrink: 0;
-  position: relative;
-  z-index: 30;
 }
  
 .brand {
@@ -140,8 +138,9 @@
   min-height: 0;
   position: relative;
   overflow: hidden;
-  z-index: 1; /* own stacking context: traps Leaflet's high z-indexes below the topbar */
+  z-index: 1; /** own stacking context: traps Leaflet's high z-indexes below the topbar */
 }
+
 /* ============================================================
    Saved-status popover · account pill/menu · guest cluster
    (appended — these were missing, which is why the popover
@@ -304,3 +303,42 @@
   color: var(--wf-bg);
 }
 .topbar-right .btn.primary:hover { filter: brightness(1.05); }
+
+/* ============================================================
+   Mobile topbar (≤640px)
+   The tagline is decorative → hide it. Nav stays (primary
+   navigation) but is allowed to scroll horizontally if tight.
+   Padding/gap tighten to reclaim width for the nav + icons.
+   ============================================================ */
+@media (max-width: 640px) {
+  .topbar {
+    padding: 10px 12px;
+    padding-top: calc(10px + var(--wf-safe-top));
+    gap: 10px;
+  }
+  /* hide the decorative tagline + separator */
+  .brand-sep,
+  .brand-tagline {
+    display: none;
+  }
+  /* nav: keep visible, let it scroll if it doesn't fit rather than wrap/clip */
+  .nav {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; /* Firefox */
+    flex-shrink: 1;
+    min-width: 0;
+  }
+  .nav::-webkit-scrollbar {
+    display: none; /* WebKit */
+  }
+  .nav a {
+    white-space: nowrap;
+    flex-shrink: 0;
+    padding: 7px 11px;
+  }
+  /* keep the brand from eating space — logo stays, name can shrink */
+  .brand {
+    flex-shrink: 0;
+  }
+}

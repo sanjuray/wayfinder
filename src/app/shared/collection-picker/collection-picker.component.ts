@@ -153,6 +153,19 @@ import type { CollectionCoverGradient } from '../../core/models/collection.model
         flex-direction: column;
         box-shadow: 0 24px 48px color-mix(in srgb, var(--wf-ink) 35%, transparent);
       }
+
+      @media (max-width: 640px) {
+        .modal {
+          position: fixed;
+          left: 0; right: 0; bottom: 0; top: auto;
+          width: 100%;
+          max-width: 100%;
+          border-radius: 16px 16px 0 0;
+          max-height: 92dvh;
+          padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+        }
+      }
+ 
       .hdr {
         display: flex;
         align-items: center;

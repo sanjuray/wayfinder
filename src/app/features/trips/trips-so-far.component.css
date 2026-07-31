@@ -503,8 +503,20 @@
   .cards {
     grid-template-columns: 1fr;
   }
+  /* Keep a row but allow wrapping: the input takes the full first line
+    (flex-basis 100%), which pushes the two buttons onto a second line where
+    they split the width 50/50. Column direction would stack all three and
+    make flex: 1 grow them vertically - not what we want. */
   .create-row {
-    flex-direction: column;
+    flex-direction: wrap;
+    gap: 12px;
+  }
+  .create-input-wrap{
+    flex: 1 1 100%;
+  }
+  .create0row .btn{
+    flex: 1 1 0;
+    min-height: var(--wf-touch, 44px);
   }
 }
 

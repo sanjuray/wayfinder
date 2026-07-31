@@ -71,6 +71,13 @@ interface CelebrationState {
   styleUrl: './home.component.css',
 })
 export class HomeComponent implements AfterViewInit, OnDestroy {
+  protected toggleFilterSheet(): void{
+    this.filterSheetOpen.update((v) => !v);
+  }
+  protected closeFilterSheet(): void{
+    this.filterSheetOpen.set(false);
+  } 
+
   @ViewChild('mapEl', { static: true }) mapEl!: ElementRef<HTMLDivElement>;
   @ViewChild(PlaceDetailComponent) protected placeDetail?: PlaceDetailComponent;
  
@@ -94,6 +101,8 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
   protected celebration = signal<CelebrationState | null>(null);
   protected pendingClickCoords = signal<{ lat: number; lng: number } | null>(null);
   protected showFilterPopover = signal(false);
+  /** Mobile; whether the slide-up sheet is open. */
+  protected filterSheetOpen = signal(false);
   protected editingPlace = signal<Place | null>(null);
   protected isPlaceDetailOpen = signal(false);
  

@@ -95,6 +95,14 @@ const CONFIRM_PHRASE = 'let it go';
         max-width: calc(100vw - 32px);
         box-shadow: 0 24px 48px color-mix(in srgb, var(--wf-ink) 35%, transparent);
       }
+      
+      @media (max-width: 640px) {
+        .modal {
+          width: calc(100vm - 24px);
+          max-width: 400px;
+        }
+      }
+ 
       h3 {
         margin: 0 0 10px;
         font-family: var(--wf-font-display);

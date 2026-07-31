@@ -121,3 +121,65 @@ select {
     scroll-behavior: auto !important;
   }
 }
+
+/* ============================================================
+   Mobile foundation
+   ============================================================ */
+ 
+/* Breakpoints are DOCUMENTED here but must be written as literals in @media
+   (CSS can't use var() inside a media condition). Use these consistently:
+     - phone:        max-width: 640px
+     - small tablet: max-width: 900px
+   Design mobile-first where practical; these are the "collapse" points. */
+ 
+:root {
+  /* Minimum comfortable touch target (WCAG 2.5.5 / Apple HIG ~44px). Apply to
+     icon buttons and small controls on touch devices. */
+  --wf-touch: 44px;
+  /* iOS safe-area insets (notch / home indicator). 0 on devices without them. */
+  --wf-safe-top: env(safe-area-inset-top, 0px);
+  --wf-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --wf-safe-left: env(safe-area-inset-left, 0px);
+  --wf-safe-right: env(safe-area-inset-right, 0px);
+}
+ 
+/* Prevent iOS auto-zoom on input focus: inputs must be >=16px font on phones.
+   Applied globally so no field triggers the zoom-jank. */
+@media (max-width: 640px) {
+  input,
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}
+ 
+/* On touch devices, ensure interactive controls meet the min target size.
+   Scoped to (hover: none) so it only affects touch, not desktop density. */
+@media (hover: none) and (pointer: coarse) {
+  button,
+  [role='button'],
+  a.btn,
+  .icon-btn,
+  .iconbtn {
+    min-height: var(--wf-touch);
+    min-width: var(--wf-touch);
+  }
+}
+ 
+/* Utility: full-screen sheet behaviour for modals on phones. A modal/panel
+   can add class="mobile-sheet" (or components can replicate this in their own
+   @media block) to become a bottom-anchored full-width sheet under 640px. */
+@media (max-width: 640px) {
+  .mobile-sheet {
+    position: fixed !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    top: auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    border-radius: 16px 16px 0 0 !important;
+    max-height: 90dvh !important;
+    padding-bottom: calc(16px + var(--wf-safe-bottom)) !important;
+  }
+}

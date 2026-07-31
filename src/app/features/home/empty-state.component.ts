@@ -45,7 +45,14 @@ export type EmptyStateVariant = 'no-places' | 'no-results';
         pointer-events: auto;
         z-index: 900;
       }
-.icon {
+      
+      @media (max-width: 640px){
+        .empty{
+          padding: 26px 22px;
+          max-width: calc(100vw - 40px);
+        }
+      }
+      .icon {
         font-size: 40px;
         margin-bottom: 12px;
       }

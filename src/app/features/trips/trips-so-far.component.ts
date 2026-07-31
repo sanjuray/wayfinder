@@ -3,6 +3,7 @@ import {
   inject,
   signal,
   computed,
+  ElementRef,
   ChangeDetectionStrategy,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -52,7 +53,10 @@ import type { Trip } from '../../core/models';
   styleUrls: ['./trips-so-far.component.css'],
 })
 export class TripsSoFarComponent {
+  /** The create/edit trip row = scrolled into view when creating starts. */
+
   protected trips = inject(TripsStore);
+  private host = inject(ElementRef<HTMLElement>);
   protected places = inject(PlacesStore);
   private router = inject(Router);
 
@@ -185,6 +189,20 @@ export class TripsSoFarComponent {
     this.creating.set(true);
     this.newName.set('');
     this.createNameError.set(null);
+    // The create row lives inside @if(createing()), so it's created/destroyed
+    // each time. A cached @ViewChild goes stale after the first open (points at
+    // a removed node) - which is why this only worked once. Instead, query the
+    // DOM FRESH each time, and use double-rAF so it runs after Angular renders
+    // the row AND the browser lays it out (scrollIntoView on an unlaid-out
+    // element silently no-ops - that was the "focus works but no scroll" bug).
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const row = this.host.nativeElement.querySelector('.create-row') as HTMLElement | null;
+        if(!row) return;
+        row.scrollIntoView({ behavior: 'smooth', block: 'start'});
+        row.querySelector('input')?.focus();
+      });
+    });
   }
 
   protected cancelCreating(): void {

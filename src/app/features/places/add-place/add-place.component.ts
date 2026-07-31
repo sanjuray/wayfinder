@@ -77,6 +77,19 @@ styles: [
         border: 0.5px solid var(--wf-hairline);
         box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
       }
+
+      @media (max-width: 640px) {
+        .modal {
+          position: fixed;
+          left: 0; right: 0; bottom: 0; top: auto;
+          width: 100%;
+          max-width: 100%;
+          border-radius: 16px 16px 0 0;
+          max-height: 92dvh;
+          padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+        }
+      }
+ 
       .step-row {
         display: flex;
         gap: 6px;

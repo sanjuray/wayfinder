@@ -381,6 +381,30 @@ import type { VisitRating } from '../../../core/models';
         transform: translateX(0);
       }
 
+      /* Mobile: the 240px right strip becomes a near-full-height sheet that
+        slides up from the bottom — far more room for the detail content
+        (name, status, visits, maps menu) on a phone. */
+      @media (max-width: 640px) {
+        .panel {
+          top: auto;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          width: 100%;
+          max-width: 100%;
+          height: 88dvh;
+          border-left: none;
+          border-top: 0.5px solid var(--wf-hairline);
+          border-radius: 16px 16px 0 0;
+          box-shadow: 0 -8px 24px color-mix(in srgb, var(--wf-ink) 12%, transparent);
+          transform: translateY(100%);
+          padding-bottom: calc(28px + env(safe-area-inset-bottom, 0px));
+        }
+        .panel.show {
+          transform: translateY(0);
+        }
+      } 
+
       .hero {
         margin-bottom: 16px;
       }

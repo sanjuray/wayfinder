@@ -76,9 +76,21 @@ import { A11yModule } from '@angular/cdk/a11y';
         background: var(--wf-bg);
         border: 0.5px solid var(--wf-hairline);
         border-radius: 12px;
-        padding: 16px;
+        padding: 18px 16px 16px;
         box-shadow: 0 12px 36px color-mix(in srgb, var(--wf-ink) 18%, transparent);
         z-index: 1000;
+      }
+      @media (max-width: 640px) {
+        .popover {
+          position: fixed;
+          left: 0; right: 0; bottom: 0; top: auto;
+          width: 100%;
+          max-width: 100%;
+          border-radius: 16px 16px 0 0;
+          max-height: 88dvh;
+          overflow-y:auto;
+          padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+        }
       }
       .header {
         display: flex;

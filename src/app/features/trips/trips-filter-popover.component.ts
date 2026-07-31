@@ -119,6 +119,18 @@ export interface TripsFilterState {
         flex-direction: column;
         gap: 12px;
       }
+      @media (max-width: 640px) {
+        .popover {
+          position: fixed;
+          left: 0; right: 0; bottom: 0; top: auto;
+          width: 100%;
+          max-width: 100%;
+          border-radius: 16px 16px 0 0;
+          max-height: 88dvh;
+          overflow-y:auto;
+          padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+        }
+      }
       .hdr {
         display: flex;
         align-items: center;
