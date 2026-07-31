@@ -127,21 +127,104 @@
 
       @if (search.isOpen()) {
         <div class="map-search">
-          <div class="map-search-field">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-              stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-            </svg>
-            <input
-              type="text"
-              placeholder="Search your places, collections, trips…"
-              [value]="searchQuery()"
-              (input)="searchQuery.set($any($event.target).value)"
-              (keyup.escape)="search.close()"
-              autofocus />
-            <button class="map-search-close" (click)="search.close()" aria-label="Close search">×</button>
+          <div class="map-search-field-row">
+            <div class="map-search-field">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              <input
+                type="text"
+                placeholder="Search places, collections, trips…"
+                [value]="searchQuery()"
+                (input)="searchQuery.set($any($event.target).value)"
+                (keydown)="onSearchKeydown($event)"
+                autofocus />
+              <button class="map-search-close" (click)="search.close(); searchQuery.set('')" aria-label="Close search">×</button>
+            </div>
+            <span class="map-search-hint">press <kbd>esc</kbd> or tap × to close</span>
           </div>
-          <span class="map-search-hint">press <kbd>esc</kbd> or tap search again to close</span>
+
+          @if (searchQuery().trim()) {
+            <div class="search-results" role="listbox" aria-label="Search results">
+ 
+              @if (searchResults().total === 0) {
+                <div class="sr-empty">No results for "{{ searchQuery() }}"</div>
+              }
+ 
+              @if (searchResults().places.length > 0) {
+                <div class="sr-group">
+                  <div class="sr-group-header">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                    Places
+                    <span class="sr-count">{{ searchResults().places.length }}</span>
+                  </div>
+                  @for (r of searchResults().places; track r.place.id) {
+                    <button class="sr-row" role="option"
+                      (click)="onSearchResultClick({ type: 'place', id: r.place.id, lat: r.place.lat, lng: r.place.lng })">
+                      <span class="sr-dot" [style.background]="r.categoryColor"></span>
+                      <span class="sr-main">
+                        <span class="sr-name">{{ r.place.customName ?? r.place.name }}</span>
+                        <span class="sr-sub">{{ r.categoryName }}
+                          @if (r.place.locality) { · {{ r.place.locality }} }
+                        </span>
+                      </span>
+                      <svg class="sr-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                    </button>
+                  }
+                </div>
+              }
+
+              @if (searchResults().collections.length > 0) {
+                <div class="sr-group">
+                  <div class="sr-group-header">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                    Collections
+                    <span class="sr-count">{{ searchResults().collections.length }}</span>
+                  </div>
+                  @for (r of searchResults().collections; track r.collection.id) {
+                    <button class="sr-row" role="option"
+                      (click)="onSearchResultClick({ type: 'collection', id: r.collection.id })">
+                      <span class="sr-col-icon">
+                        <i class="ti" [class]="'ti-' + (r.collection.coverIcon || 'folder')"></i>
+                      </span>
+                      <span class="sr-main">
+                        <span class="sr-name">{{ r.collection.name }}</span>
+                        <span class="sr-sub">{{ r.placeCount }} {{ r.placeCount === 1 ? 'place' : 'places' }}</span>
+                      </span>
+                      <svg class="sr-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                    </button>
+                  }
+                </div>
+              }
+ 
+              @if (searchResults().trips.length > 0) {
+                <div class="sr-group">
+                  <div class="sr-group-header">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+                    Trips
+                    <span class="sr-count">{{ searchResults().trips.length }}</span>
+                  </div>
+                  @for (r of searchResults().trips; track r.trip.id) {
+                    <button class="sr-row" role="option"
+                      (click)="onSearchResultClick({ type: 'trip', id: r.trip.id })">
+                      <span class="sr-trip-icon">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                      </span>
+                      <span class="sr-main">
+                        <span class="sr-name">{{ r.trip.name }}</span>
+                        <span class="sr-sub">{{ r.stopCount }} {{ r.stopCount === 1 ? 'stop' : 'stops' }}
+                          @if (r.trip.plannedDate) { · {{ r.trip.plannedDate | date:'mediumDate' }} }
+                        </span>
+                      </span>
+                      <svg class="sr-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                    </button>
+                  }
+                </div>
+              }
+ 
+            </div>
+          }
         </div>
       }
 

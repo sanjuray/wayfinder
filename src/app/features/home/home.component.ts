@@ -11,6 +11,7 @@ import {
   ChangeDetectionStrategy,
 } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { DatePipe } from '@angular/common';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FilterStateStore } from '../../core/stores/filter-state.store';
 import { EmptyStateComponent } from './empty-state.component';
@@ -37,6 +38,8 @@ import { PinDropCelebrationComponent } from '../places/add-place/pin-drop-celebr
 import type { Place, Category } from '../../core/models';
 import type { EmptyStateVariant } from './empty-state.component';
 import { SearchStateService } from '../../core/services/search-state.service';
+import { SearchService } from '../../core/services/search.service';
+import type { GroupedSearchResults } from '../../core/services/search.service';
  
 interface CelebrationState {
   x: number;
@@ -65,6 +68,7 @@ interface CelebrationState {
     QuoteCardComponent,
     FilterPopoverComponent,
     PlaceDetailComponent,
+    DatePipe
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './home.component.html',
@@ -87,7 +91,13 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
   protected vibeTags = inject(VibeTagsStore);
   protected filters = inject(FilterStateStore);
   protected search = inject(SearchStateService);
+  protected searchService = inject(SearchService);
+  private router = inject(Router);
   protected searchQuery = signal('');
+
+  protected searchResults = computed<GroupedSearchResults>(() => 
+    this.searchService.search(this.searchQuery())
+  );
  
   protected quoteService = inject(QuoteService);
   // 3. Inject our global runtime Leaflet instance
@@ -211,7 +221,6 @@ protected displayedVibes = computed(() =>
     // so getById can resolve the id. Then clears the param so a reload
     // doesn't re-trigger.
     const route = inject(ActivatedRoute);
-    const router = inject(Router);
     const editId = toSignal(route.queryParamMap, { initialValue: null });
     let handled: string | null = null;
     effect(() => {
@@ -224,13 +233,13 @@ protected displayedVibes = computed(() =>
       if (!place) {
         // id not found — clear the param silently and move on
         handled = id;
-        router.navigate([], { queryParams: { edit: null }, queryParamsHandling: 'merge', replaceUrl: true });
+        this.router.navigate([], { queryParams: { edit: null }, queryParamsHandling: 'merge', replaceUrl: true });
         return;
       }
       handled = id;
       this.editingPlace.set(place);
       this.showAddModal.set(true);
-      router.navigate([], { queryParams: { edit: null }, queryParamsHandling: 'merge', replaceUrl: true });
+      this.router.navigate([], { queryParams: { edit: null }, queryParamsHandling: 'merge', replaceUrl: true });
     });
   }
  
@@ -504,6 +513,35 @@ protected displayedVibes = computed(() =>
  
   protected onQuoteDone(): void {
     this.activeQuote.set(null);
+  }
+
+  protected onSearchResultClick(result: { type: string; id: string; lat?: number; lng?: number }): void {
+    this.search.close();
+    this.searchQuery.set('');
+
+    if (result.type === 'place') {
+      // Fly to the place on the map, then open the detail panel
+      if (result.lat !== undefined && result.lng !== undefined && this.map) {
+        this.map.flyTo([result.lat, result.lng], Math.max(this.map.getZoom(), 15), {
+          animate: true,
+          duration: 0.6,
+        });
+        setTimeout(() => this.placeDetail?.open(result.id), 650);
+      } else {
+        this.placeDetail?.open(result.id);
+      }
+    } else if (result.type === 'collection') {
+      this.router.navigate(['/collections', result.id]);
+    } else if (result.type === 'trip') {
+      this.router.navigate(['/trips', result.id]);
+    }
+  }
+
+  protected onSearchKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Escape') {
+      this.search.close();
+      this.searchQuery.set('');
+    }
   }
 
   protected onSidebarCategoryClick(categoryId: string): void {
