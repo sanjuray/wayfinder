@@ -72,6 +72,29 @@ select {
   background: var(--wf-accent);
   color: var(--wf-bg);
 }
+
+/* =========================================================
+   Leaflet — User Location Marker
+   .wf-user-location is injected into Leaflet's DOM (outside
+   Angular component scope), so pulse styles must live here.
+   ========================================================= */
+ 
+.wf-user-location {
+  background: transparent !important;
+  border: none !important;
+}
+ 
+@keyframes wf-loc-pulse {
+  0%   { r: 7;  opacity: 0.5; }
+  70%  { r: 11; opacity: 0;   }
+  100% { r: 11; opacity: 0;   }
+}
+ 
+.wf-loc-pulse {
+  animation: wf-loc-pulse 2s ease-out infinite;
+  transform-origin: 11px 11px;
+}
+
 /* ============================================================
    Keyboard accessibility foundation
    :focus-visible shows a clear ring for keyboard/tab users but NOT

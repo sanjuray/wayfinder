@@ -12,6 +12,38 @@ export const THEME_NAMES: ThemeName[] = [
   'subway',
 ]; // alphabetical, per the spec
 
+/**
+ * User's location preferences, stored as part of AppState so they
+ * survive across sessions and sync to the backend alongside the rest
+ * of the app state.
+ *
+ * `locationEnabled`:
+ *   - true  → use the browser Geolocation API (watchPosition) as normal.
+ *   - false → do NOT request the browser API. If `defaultLocation` is
+ *             set, fly there on map init. Otherwise stay on the app
+ *             default (Hyderabad).
+ *
+ * `defaultLocation`:
+ *   Optional fixed lat/lng the user supplies as a home base. Used as
+ *   the initial map position when geolocation is disabled, OR as a
+ *   fallback when geolocation is denied/unavailable.
+ *   Stored as plain numbers (not strings) so arithmetic (e.g. bounds
+ *   padding) works without parsing.
+ *
+ * UI surface: Settings → Advanced → Location. Not built yet — the
+ * store method `setLocationPreferences` is the write path the UI will
+ * call when it lands.
+ */
+export interface LocationPreferences {
+  locationEnabled: boolean;
+  defaultLocation?: {
+    lat: number;
+    lng: number;
+    /** Human label shown in the settings UI, e.g. "Home" or "Tokyo". */
+    label?: string;
+  };
+}
+
 export interface AppState {
   schemaVersion: 1;
   themePreference: ThemeName;
@@ -40,6 +72,13 @@ export interface AppState {
    * signal that way.
    */
   lastChangeAt: ISODate | undefined;
+    /**
+   * User's location preferences. Controls whether the browser Geolocation
+   * API is used and provides an optional fixed default location.
+   * Defaults to locationEnabled: true (opt-out model — same as browsers).
+   * @see LocationPreferences
+   */
+  locationPreferences: LocationPreferences;
   // v2 stubs (always null in v1)
   syncMode?: 'off' | 'cloud';
   authUserId?: string;
@@ -55,5 +94,10 @@ export const DEFAULT_APP_STATE: AppState = {
   lastBackupAt: undefined,
   autoBackupFrequency: 'weekly',
   lastChangeAt: undefined,
+  locationPreferences: {
+    locationEnabled: true,
+    // defaultLocation is intentionally absent — no assumption about where
+    // the user is based. Set by the user in Settings → Advanced → Location.
+  },
   syncMode: 'off',
 };

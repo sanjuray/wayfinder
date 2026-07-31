@@ -32,6 +32,7 @@ import { PlacesStore } from '../../core/stores/places.store';
 import { CategoriesStore } from '../../core/stores/categories.store';
 import { CollectionsStore } from '../../core/stores/collections.store';
 import { VibeTagsStore } from '../../core/stores/vibe-tags.store';
+import { AppStateStore } from '../../core/stores/app-state.store';
  
 import { AddPlaceComponent } from '../places/add-place/add-place.component';
 import { PinDropCelebrationComponent } from '../places/add-place/pin-drop-celebration.component';
@@ -92,6 +93,7 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
   protected filters = inject(FilterStateStore);
   protected search = inject(SearchStateService);
   protected searchService = inject(SearchService);
+  protected appState = inject(AppStateStore);
   private router = inject(Router);
   protected searchQuery = signal('');
 
@@ -131,6 +133,12 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
   private map: L.Map | null = null;
   private clusterGroup: LeafletTypes.MarkerClusterGroup | null = null;
   private markersById = new Map<string, LeafletTypes.Marker>();
+
+  /** "You are here" marker and its accuray radius circle. */
+  private locationMarker: LeafletTypes.Marker | null = null;
+  private accuracyCircle: LeafletTypes.Circle | null = null;
+  /** watchPosition handle - cleared on destroy to stop GPS polling */
+  private geoWatchId: number | null = null;
  
   protected sortedCategories = computed(() =>
     [...this.categories.entities()]
@@ -248,6 +256,10 @@ protected displayedVibes = computed(() =>
   }
  
   ngOnDestroy(): void {
+    if(this.geoWatchId !== null){
+      navigator.geolocation?.clearWatch(this.geoWatchId);
+      this.geoWatchId = null;
+    }
     this.map?.remove();
     this.map = null;
   }
@@ -407,20 +419,102 @@ protected displayedVibes = computed(() =>
   }
  
   private tryGeolocate(map: L.Map): void {
-    if (!navigator.geolocation) return; // browser doesn't support, stay on default
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        // Smoothly fly to the user's location
-        map.flyTo([pos.coords.latitude, pos.coords.longitude], 13, {
-          animate: true,
-          duration: 1.0,
-        });
-      },
-      () => {
-        // User denied permission or geolocation failed; stay on Hyderabad silently
-      },
-      { timeout: 5000, maximumAge: 60_000 * 60 } // 5s timeout, cache 1hr
-    );
+    const prefs = this.appState.locationPreferences();
+    const fallback = prefs.defaultLocation;
+
+    // --- Geolocation disabled by the user ---
+    if(!prefs.locationEnabled){
+      if(fallback) {
+        map.setView([fallback.lat, fallback.lng], 13);
+      }
+      // No fallback set -> stay on the app default (Hyderabad), nothing to do.
+      return;
+    }
+
+    // --- Geolocation enabled but API not available ---
+    // Happens in non-secure contexts (http://) or very old browsers.
+    if (!navigator.geolocation){
+      if(fallback) map.setView([fallback.lat, fallback.lng], 13);      
+      return;
+    }
+
+    // ----- Normal path: user the browser Geolocation API ---
+    let hasFlown = false; // fly to user only the first fix, not every update
+
+    const onSuccess = (pos: GeolocationPosition) =>{
+      const{ latitude: lat, longitude: lng, accuracy } = pos.coords;
+
+      // --- First fix: fly the map to the user ---
+      if(!hasFlown) {
+        hasFlown = true;
+        map.flyTo([lat, lng], 13, { animate: true, duration: 1.0 });
+      }
+
+      // --- Update / create the accuracy circle ---
+      if(this.accuracyCircle){
+        this.accuracyCircle.setLatLng([lat, lng]);
+        this.accuracyCircle.setRadius(accuracy);
+      }else{
+        this.accuracyCircle = this.L.circle([lat, lng], {
+          radius: accuracy,
+          color: '#4A90E2',
+          fillColor: '#4A90E2',
+          fillOpacity: 0.08,
+          weight: 1,
+          opacity: 0.35,
+          interactive: false,
+        }).addTo(map);
+      }
+
+      // --- Update / create the "you are here" marker ---
+      if(this.locationMarker){
+        this.locationMarker.setLatLng([lat, lng]);
+      }else{
+          this.locationMarker = this.L.marker([lat, lng], {
+          icon: this.buildUserLocationIcon(),
+          zIndexOffset: 1000, // always above place pins
+          interactive: false,
+        }).addTo(map);
+      }
+    };
+ 
+    const onError = () => {
+      // Permission denied, position unavailable, or timeout —
+      // Fall back to  the user's default location if they've set one,
+      // otherwise stay on whatever view the map initialised with.
+      if(!hasFlown && fallback) {
+        map.setView([fallback.lat, fallback.lng], 13);
+      }
+    };
+ 
+    // watchPosition keeps the dot live as the user moves (critical on mobile).
+    // maximumAge: serve a cached fix up to 30s old on the first call so the
+    // dot appears immediately. timeout: give the GPS 10s before giving up on
+    // a single update (watch will retry on next movement event).
+    this.geoWatchId = navigator.geolocation.watchPosition(onSuccess, onError, {
+      enableHighAccuracy: true,
+      timeout: 10_000,
+      maximumAge: 30_000,
+    });
+  }
+ 
+  /** Pulsing "you are here" dot — SVG DivIcon, no external image dependency. */
+  private buildUserLocationIcon(): L.DivIcon {
+    return this.L.divIcon({
+      className: 'wf-user-location',
+      html: `
+        <svg width="22" height="22" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+          <!-- Outer pulse ring (animated via CSS) -->
+          <circle class="wf-loc-pulse" cx="11" cy="11" r="10"
+            fill="none" stroke="#4A90E2" stroke-width="1.5" opacity="0.4"/>
+          <!-- White halo so the dot pops on any tile colour -->
+          <circle cx="11" cy="11" r="7" fill="white"/>
+          <!-- Solid location dot -->
+          <circle cx="11" cy="11" r="5" fill="#4A90E2"/>
+        </svg>`,
+      iconSize: [22, 22],
+      iconAnchor: [11, 11], // centered, not bottom-anchored like place pins
+    });
   }
 
   private setupDoubleTapListener(): void {
