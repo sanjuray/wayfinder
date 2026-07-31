@@ -248,9 +248,9 @@
 /* The .menu-right modifier is a holdover — the right-anchored menus
    now position via inline style. Kept as a marker class in case future
    styling needs to discriminate (e.g. arrow direction). */
-.menu-right {
+/* .menu-right {
   /* no-op; positioning is via inline style now */
-}
+/* }  */
 .menu-item {
   display: flex;
   align-items: flex-start;
@@ -587,4 +587,58 @@
   display: flex;
   justify-content: flex-end;
   gap: 8px;
+}
+
+/* ============================================================
+   Phone (≤640px)
+   1) Scroll fix: .page uses overflow:hidden + height:100%, which
+      clips content on small screens (same issue as trip-plan).
+      Let the page scroll naturally so nothing is cut off.
+   2) Header skew fix: .coll-head lays the 160px cover BESIDE the
+      title with align-items:flex-end — cramped/skewed on a phone.
+      Stack it: smaller cover on top, name + stats below, left-aligned.
+   ============================================================ */
+@media (max-width: 640px) {
+  /* 1) natural page scroll */
+  :host{
+    display: block;
+    height: 100%;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .page {
+    height: auto;
+    min-height: 100%;
+  }
+  .place-list-wrap {
+    max-height: 60vh;
+    overflow-y: visible;   /* don't trap scroll in a heightless inner panel */
+    -webkit-overflow-scrolling: touch;
+  }
+ 
+  .map-pane{
+    height: 420px;
+    flex-shrink: 0;
+  }
+
+  /* 2) header: stack cover over meta, left-aligned */
+  .coll-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+  }
+  .coll-cover-large {
+    width: 96px;
+    height: 96px;
+    border-radius: 14px;
+  }
+  .coll-meta .name {
+    font-size: 26px;   /* 32px is large on a phone */
+  }
+ 
+  /* dropdown menu fits the viewport */
+  .menu {
+    min-width: 200px;
+    max-width: calc(100vw - 24px);
+  }
 }

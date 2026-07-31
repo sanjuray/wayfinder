@@ -303,3 +303,11 @@
   line-height: 1.4;
   font-style: italic;
 }
+
+/* Phone (<=640px): ensure cards never overflow very narrow screens */
+@media (max-width: 640px){
+  .grid{
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+  }
+}

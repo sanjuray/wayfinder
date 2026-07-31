@@ -382,6 +382,17 @@ import type { TripStop, Place, Category } from '../../core/models';
         cursor: pointer;
         font: inherit;
         padding: 0;
+        /* CRITICAL for touch drag: tell the browser tuoches on the grip are 
+           for dragging, not page-scroll - without this, cdkDrag reordering
+           fights the scroll geture on phones and feels broken. */
+        touch-action: none;
+      }
+      /* Larger grip target on touch devices (26px is hard to grab with a thumb)*/
+      @media (hover: none) and (pointer: coarse){
+        .grip{
+          width: 40px;
+          height: 40px;
+        }
       }
       .iconbtn:hover {
         background: var(--wf-bg-2);

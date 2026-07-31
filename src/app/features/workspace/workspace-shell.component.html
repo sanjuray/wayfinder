@@ -31,6 +31,7 @@
                 [title]="backupStatusTooltip()" aria-haspopup="menu"
                 [attr.aria-expanded]="backupPopOpen()">
           <span class="dot" [class.stale]="hasUnsavedChanges()"></span>
+          <i class="ti ti-device-floppy save-icon" [class.stale]="hasUnsavedChanges()" aria-hidden="true"></i>
           {{ backupStatusLabel() }}
         </button>
         <div class="backup-pop" role="menu">

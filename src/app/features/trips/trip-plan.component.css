@@ -799,3 +799,61 @@
 .live-controls .btn i {
   font-size: 13px;
 }
+
+/* ============================================================
+   FIX: scrollable stacked layout (≤960px)
+   The workspace .outlet clips overflow at one screen height. In the
+   side-by-side desktop layout that's fine (each column scrolls). But
+   when the planner STACKS, it grows taller than one screen — and the
+   clipped .outlet hid the map + add-stop below with no way to scroll.
+   Make the host scroll and let the side panel grow naturally.
+   ============================================================ */
+@media (max-width: 960px) {
+  :host {
+    height: 100%;
+    overflow-y: auto;      /* the host scrolls, so nothing gets clipped */
+    -webkit-overflow-scrolling: touch;
+  }
+  .planner {
+    height: auto;
+    min-height: 100%;
+  }
+  .side {
+    overflow-y: visible;   /* don't trap scroll in a heightless panel */
+  }
+}
+
+/* ============================================================
+   Phone tuning (≤640px)
+   The 960px block already stacks side-panel over map. Here we
+   just reclaim width/height for small screens: tighter padding,
+   a slightly shorter map so the stops list gets more room, and
+   comfortable header/toast sizing. No structural changes.
+   ============================================================ */
+@media (max-width: 640px) {
+  .planner {
+    grid-template-rows: auto 300px;
+  }
+  .map-region {
+    height: 420px;
+  }
+  .side {
+    padding: 14px 14px 24px;
+    gap: 12px;
+  }
+  .missing {
+    padding: 24px 18px;
+  }
+  /* undo toast: keep it clear of screen edges + safe area */
+  .undo-toast {
+    left: 12px;
+    right: 12px;
+    transform: none;
+    bottom: calc(14px + var(--wf-safe-bottom, 0px));
+    justify-content: space-between;
+  }
+  /* live-controls row (start/finish trip) — full-width comfortable buttons */
+  .live-controls .btn {
+    min-height: var(--wf-touch, 44px);
+  }
+}

@@ -495,5 +495,7 @@
 
   .bulk-btn {
     padding: 8px;
+    min-width: var(--wf-touch, 44px);
+    min-height: var(--wf-touch, 44px);
   }
 }

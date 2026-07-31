@@ -15,6 +15,8 @@
   background: var(--wf-bg);
   gap: 24px;
   flex-shrink: 0;
+  position: relative;
+  z-index: 30;
 }
  
 .brand {
@@ -105,6 +107,16 @@
   border-radius: 50%;
   background: var(--wf-teal);
 }
+/* backup icon - shown only on mobile (see media query); hidden on desktop */
+.save-status .save-icon{
+  display:none;
+  font-size: 16px;
+  line-height: 1;
+  color: var(--wf-teal);
+}
+.save-status .save-icon.stale{
+  color: var(--wf-accent);
+}
 .save-status .dot.stale {
   background: var(--wf-accent);
 }
@@ -140,7 +152,6 @@
   overflow: hidden;
   z-index: 1; /** own stacking context: traps Leaflet's high z-indexes below the topbar */
 }
-
 /* ============================================================
    Saved-status popover · account pill/menu · guest cluster
    (appended — these were missing, which is why the popover
@@ -274,7 +285,7 @@
 }
 .guest-chip .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--wf-ink-faint); }
  
-@media (max-width: 720px) { .acct-name { display: none; } }
+@media (max-width: 720px) { .acct-name, .plan-pill { display: none; } }
 
 /* Buttons in the topbar guest cluster — matches the app's .btn system
    (defined per-feature elsewhere; replicated here so the shell is self-
@@ -303,12 +314,13 @@
   color: var(--wf-bg);
 }
 .topbar-right .btn.primary:hover { filter: brightness(1.05); }
-
 /* ============================================================
    Mobile topbar (≤640px)
-   The tagline is decorative → hide it. Nav stays (primary
-   navigation) but is allowed to scroll horizontally if tight.
-   Padding/gap tighten to reclaim width for the nav + icons.
+   Tagline is decorative -> hide it. Nav statys (primary navigation)
+   but scrolls horizontally if tight. Padding/gap tighten.
+   NOTE: dos NOT touch .topbar z-index or the popover/menu - those
+   stay as-is so the saved-status popover and account menu keep
+   rendering above the map.
    ============================================================ */
 @media (max-width: 640px) {
   .topbar {
@@ -318,8 +330,21 @@
   }
   /* hide the decorative tagline + separator */
   .brand-sep,
-  .brand-tagline {
-    display: none;
+  .brand-tagline,
+  .brand-name {
+    display: none; /* keep just the logo mark on mobile */
+  }
+  /* saved-status on mobile: hide the text label + dot, show the backup icon
+    instead. Icon color carries state (teal = saved, accent = unsaved).
+    Still tappable to open the backup panel. */
+  .save-status {
+    font-size: 0; /* hides the bare text label node */
+  }
+  .save-status .dot {
+    display: none; /* icon replaces the dot on mobile */
+  }
+  .save-status .save-icon {
+    display: inline-flex;
   }
   /* nav: keep visible, let it scroll if it doesn't fit rather than wrap/clip */
   .nav {
