@@ -12,10 +12,19 @@ export const AppStateStore = signalStore(
     async function load() {
       const state = await storage.getAppState();
       if (state) {
-        // Merge loaded state with defaults to handle new fields added
-        // after a user's state was last persisted (e.g. locationPreferences
-        // for users upgrading from a build that predates this field).
-        patchState(store, { ...DEFAULT_APP_STATE, ...state });
+        // Merge loaded state with defaults to handle new fields added after a
+        // user's state was last persisted (e.g. locationPreferences for users
+        // upgrading from a build that predates it). The nested-object fields
+        // are coalesced explicitly: a plain { ...DEFAULT, ...state } spread
+        // would let an *explicit* `locationPreferences: undefined` in stored
+        // state override the default and crash downstream reads.
+        patchState(store, {
+          ...DEFAULT_APP_STATE,
+          ...state,
+          taunting: state.taunting ?? DEFAULT_APP_STATE.taunting,
+          locationPreferences:
+            state.locationPreferences ?? DEFAULT_APP_STATE.locationPreferences,
+        });
       } else {
         await storage.setAppState(DEFAULT_APP_STATE);
       }
@@ -87,6 +96,52 @@ export const AppStateStore = signalStore(
       await storage.setAppState(getState(store));
     }
 
-    return { load, setTheme, patch, setLocationPreferences, recordChange, recordBackup };
+    /**
+     * Stamp lastSyncedAt after a successful sync cycle.
+     * Called by SyncService after push + pull both succeed.
+     */
+    async function recordSync(): Promise<void> {
+      const now = new Date().toISOString();
+      patchState(store, { lastSyncedAt: now });
+      void storage.setAppState(getState(store));
+    }
+ 
+    /**
+     * Merge server app state into local store + IndexedDB.
+     * Called by SyncService after a pull that includes app state.
+     *
+     * Defensive merge: the server's AppState may omit or reshape fields the
+     * frontend treats as required nested objects (taunting, locationPreferences).
+     * A naive spread of `remote` could set those to undefined and make
+     * downstream reads like locationPreferences().locationEnabled throw. So we
+     * merge field-by-field onto the CURRENT state, falling back to the existing
+     * value (never undefined) for each nested object.
+     *
+     * Also does NOT overwrite lastSyncedAt / lastChangeAt / lastBackupAt —
+     * those are local-only and the server never owns them.
+     */
+    async function applyRemote(remote: Partial<AppState> | null | undefined): Promise<void> {
+      if (!remote) return;
+      const cur = getState(store);
+ 
+      patchState(store, {
+        schemaVersion: 1,
+        themePreference: remote.themePreference ?? cur.themePreference,
+        autoShiftToDuskAtNight:
+          remote.autoShiftToDuskAtNight ?? cur.autoShiftToDuskAtNight,
+        taunting: remote.taunting ?? cur.taunting,
+        storageMode: remote.storageMode ?? cur.storageMode,
+        autoBackupFrequency: remote.autoBackupFrequency ?? cur.autoBackupFrequency,
+        locationPreferences: remote.locationPreferences ?? cur.locationPreferences,
+        syncMode: remote.syncMode ?? cur.syncMode,
+        // Local-only fields: keep ours, ignore whatever the server sent.
+        lastSyncedAt: cur.lastSyncedAt,
+        lastChangeAt: cur.lastChangeAt,
+        lastBackupAt: cur.lastBackupAt,
+      });
+      void storage.setAppState(getState(store));
+    }
+ 
+    return { load, setTheme, patch, setLocationPreferences, recordChange, recordBackup, recordSync, applyRemote };
   })
 );

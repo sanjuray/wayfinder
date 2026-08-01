@@ -105,20 +105,37 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--wf-teal);
+  background: var(--wf-ink-faint);   /* default: neutral (e.g. not-synced) */
+  transition: background 0.2s ease;
 }
-/* backup icon - shown only on mobile (see media query); hidden on desktop */
-.save-status .save-icon{
-  display:none;
+/* Sync states — most specific wins; order matters least since they're
+   mutually exclusive in the template, but keep them explicit. */
+.save-status .dot.synced  { background: var(--wf-teal); }
+.save-status .dot.stale   { background: var(--wf-gold); }
+.save-status .dot.syncing { background: var(--wf-teal); animation: dot-pulse 1s ease-in-out infinite; }
+.save-status .dot.error   { background: var(--wf-accent); }
+ 
+/* refresh icon — shown only on mobile (see media query); hidden on desktop */
+.save-status .save-icon {
+  display: none;
   font-size: 16px;
   line-height: 1;
-  color: var(--wf-teal);
+  color: var(--wf-ink-faint);
 }
-.save-status .save-icon.stale{
-  color: var(--wf-accent);
+.save-status .save-icon.stale { color: var(--wf-gold); }
+.save-status .save-icon.spin { animation: icon-spin 0.9s linear infinite; }
+ 
+@keyframes icon-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
 }
-.save-status .dot.stale {
-  background: var(--wf-accent);
+@keyframes dot-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.35; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .save-status .save-icon.spin,
+  .save-status .dot.syncing { animation: none; }
 }
 .iconbtn {
   width: 34px;

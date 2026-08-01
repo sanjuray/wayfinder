@@ -25,22 +25,29 @@
     </nav>
  
     <div class="topbar-right">
-      <!-- (3) saved-status — click to toggle the backup panel (same pattern as the account menu) -->
+      <!-- (3) sync-status — only for logged-in users; guests don't see it.
+           The dot reflects BACKEND SYNC state, not local export. -->
+      @if (showSaveStatus()){
       <div class="save-status-wrap" [class.open]="backupPopOpen()">
         <button class="save-status" type="button" (click)="toggleBackupPop($event)"
                 [title]="backupStatusTooltip()" aria-haspopup="menu"
                 [attr.aria-expanded]="backupPopOpen()">
-          <span class="dot" [class.stale]="hasUnsavedChanges()"></span>
-          <i class="ti ti-device-floppy save-icon" [class.stale]="hasUnsavedChanges()" aria-hidden="true"></i>
+          <span class="dot"
+                [class.synced]="isSynced()"
+                [class.syncing]="sync.status() === 'syncing'"
+                [class.error]="sync.status() === 'error'"
+                [class.stale]="hasUnsyncedChanges()"></span>
+          <i class="ti ti-refresh save-icon"
+             [class.spin]="sync.status() === 'syncing'"
+             [class.stale]="hasUnsyncedChanges()" aria-hidden="true"></i>
           {{ backupStatusLabel() }}
         </button>
         <div class="backup-pop" role="menu">
           <h5>Backups</h5>
  
-          <!-- Backend sync row. STUB: no sync backend yet, so the action is a
-               no-op and the label never claims a real sync. -->
+          <!-- Backend sync row. -->
           <button class="backup-row is-sync" type="button" (click)="syncNow()"
-                  [disabled]="!auth.isLoggedIn()">
+                  [disabled]="sync.status() === 'syncing'">
             <span class="bk-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"
               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 12a9 9 0 0 0-9-9 9 9 0 0 0-6.7 3M3 12a9 9 0 0 0 9 9 9 9 0 0 0 6.7-3"/>
@@ -49,7 +56,7 @@
               <span class="bk-t">Backend sync</span>
               <span class="bk-w">{{ syncStatusLabel() }}</span>
             </span>
-            @if (auth.isLoggedIn()) { <span class="bk-go">Sync now</span> }
+            <span class="bk-go">Sync now</span>
           </button>
  
           <!-- Offline JSON export row — REAL, shared with Settings. -->
@@ -66,6 +73,7 @@
           </button>
         </div>
       </div>
+      }
  
       <!-- (4) search — now enabled, toggles the shared search state -->
       <button class="iconbtn" [class.on]="search.isOpen()" (click)="toggleSearch()"

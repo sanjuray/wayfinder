@@ -59,6 +59,32 @@ export const AuthStore = signalStore(
       }
     }
 
+     /**
+       * Silently re-fetch the current user profile (GET /auth/me) and patch
+       * `user` in place — same endpoint as checkSession(), but deliberately
+       * does NOT touch `initialized` or `loading`. This is meant to be called
+       * repeatedly during a session (on Settings mount, on the sync interval)
+       * to catch plan/profile changes that happened outside this tab's own
+       * mutations (upgrade()/cancelCircle() already patch state directly on
+       * success, so this covers everything else — backend-side changes,
+       * another tab, a stale long-lived session).
+       *
+       * No-op if not logged in — avoids firing an authenticated request (and
+       * the resulting 401 noise) for guests. Failures are swallowed: a
+       * transient network blip here shouldn't disrupt the UI or flip the
+       * user to "logged out" the way checkSession()'s catch-all does.
+     */
+    async function refreshProfile(): Promise<void> {
+      if (!store.user()) return;
+      try {
+        const user = await firstValueFrom(http.get<UserProfile>(`${base}/auth/me`));
+        patchState(store, { user });
+      } catch {
+        // Swallow — a failed background refresh shouldn't log the user out
+        // or surface an error; the next attempt will retry.
+      }
+    }
+
     async function signup(email: string, password: string, displayName?: string): Promise<void> {
       patchState(store, { loading: true, error: null });
       try {
@@ -148,6 +174,6 @@ export const AuthStore = signalStore(
       patchState(store, { user: updated.user });
     }
 
-    return { checkSession, signup, login, logout, upgrade, updateProfile, checkHandleAvailable, changePassword, cancelCircle };
+    return { checkSession, refreshProfile, signup, login, logout, upgrade, updateProfile, checkHandleAvailable, changePassword, cancelCircle };
   })
 );

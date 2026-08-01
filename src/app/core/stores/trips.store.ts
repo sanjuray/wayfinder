@@ -312,6 +312,37 @@ export const TripsStore = signalStore(
       return store.entities().find((t) => t.id === id);
     }
 
+    /**
+     * Merge server trip records into local store + IndexedDB.
+     * Last-write-wins by updatedAt. Does not call recordChange().
+     */
+    async function applyRemote(incoming: Trip[]): Promise<void> {
+      if (!incoming.length) return;
+      const allLocal = await storage.getTrips();
+      const allById = new Map(allLocal.map((t) => [t.id, t]));
+      const nextEntities = [...store.entities()];
+ 
+      for (const raw of incoming) {
+        // Defensive: guarantee `stops` is an array — the trip planner does
+        // t.stops.length / .map / .findIndex all over and would crash on null.
+        const remote: Trip = { ...raw, stops: raw.stops ?? [] };
+        const local = allById.get(remote.id);
+        if (local && local.updatedAt >= remote.updatedAt) continue;
+ 
+        await storage.upsertTrip(remote);
+ 
+        if (remote.deletedAt) {
+          const idx = nextEntities.findIndex((t) => t.id === remote.id);
+          if (idx !== -1) nextEntities.splice(idx, 1);
+        } else {
+          const idx = nextEntities.findIndex((t) => t.id === remote.id);
+          if (idx !== -1) nextEntities[idx] = remote;
+          else nextEntities.push(remote);
+        }
+      }
+      patchState(store, { entities: nextEntities });
+    }
+ 
     return {
       load,
       create,
@@ -323,6 +354,7 @@ export const TripsStore = signalStore(
       getById,
       nameAvailable,
       findUniqueName,
+      applyRemote,
     };
   })
 );

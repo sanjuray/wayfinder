@@ -133,6 +133,34 @@ export const CollectionsStore = signalStore(
       return store.entities().find((c) => c.id === id);
     }
 
-    return { create, load, add, updatePartial, remove, softDelete, getById };
+    /**
+     * Merge server collection records into local store + IndexedDB.
+     * Last-write-wins by updatedAt. Does not call recordChange().
+     */
+    async function applyRemote(incoming: Collection[]): Promise<void> {
+      if (!incoming.length) return;
+      const allLocal = await storage.getCollections();
+      const allById = new Map(allLocal.map((c) => [c.id, c]));
+      const nextEntities = [...store.entities()];
+ 
+      for (const remote of incoming) {
+        const local = allById.get(remote.id);
+        if (local && local.updatedAt >= remote.updatedAt) continue;
+ 
+        await storage.upsertCollection(remote);
+ 
+        if (remote.deletedAt) {
+          const idx = nextEntities.findIndex((c) => c.id === remote.id);
+          if (idx !== -1) nextEntities.splice(idx, 1);
+        } else {
+          const idx = nextEntities.findIndex((c) => c.id === remote.id);
+          if (idx !== -1) nextEntities[idx] = remote;
+          else nextEntities.push(remote);
+        }
+      }
+      patchState(store, { entities: nextEntities });
+    }
+ 
+    return { create, load, add, updatePartial, remove, softDelete, getById, applyRemote };
   })
 );

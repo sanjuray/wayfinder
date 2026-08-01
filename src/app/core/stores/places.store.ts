@@ -119,6 +119,58 @@ export const PlacesStore = signalStore(
       return store.entities().find((p) => p.id === id);
     }
 
-    return { load, add, update, updatePartial, remove, softDelete, getById };
+    /**
+     * Called by SyncService after a pull. Merges server records into the
+     * local store and IndexedDB without touching lastChangeAt — these are
+     * server records, not user mutations.
+     *
+     * Strategy: last-write-wins by updatedAt. If the incoming record is
+     * newer (or not present locally), upsert it. Tombstones (deletedAt set)
+     * are written to IndexedDB but removed from in-memory entities.
+     */
+        async function applyRemote(incoming: Place[]): Promise<void> {
+      if (!incoming.length) return;
+      const current = new Map(store.entities().map((p) => [p.id, p]));
+ 
+      // Also load tombstones from storage so we can compare against them
+      const allLocal = await storage.getPlaces();
+      const allById = new Map(allLocal.map((p) => [p.id, p]));
+ 
+      const nextEntities = [...store.entities()];
+ 
+      for (const raw of incoming) {
+        // Defensive normalization: a server row (or an imported file, or a
+        // future adapter) can arrive with null/absent array fields. Downstream
+        // code does p.collectionIds.includes() and p.vibeTagIds.length, which
+        // throw on undefined. Guarantee arrays here, at the single point where
+        // remote data enters the store.
+        const remote: Place = {
+          ...raw,
+          vibeTagIds: raw.vibeTagIds ?? [],
+          collectionIds: raw.collectionIds ?? [],
+          visits: raw.visits ?? [],
+        };
+ 
+        const local = allById.get(remote.id);
+        // Skip if local is newer
+        if (local && local.updatedAt >= remote.updatedAt) continue;
+ 
+        await storage.upsertPlace(remote);
+ 
+        if (remote.deletedAt) {
+          // Tombstone — remove from in-memory list
+          const idx = nextEntities.findIndex((p) => p.id === remote.id);
+          if (idx !== -1) nextEntities.splice(idx, 1);
+        } else {
+          const idx = nextEntities.findIndex((p) => p.id === remote.id);
+          if (idx !== -1) nextEntities[idx] = remote;
+          else nextEntities.push(remote);
+        }
+      }
+
+      patchState(store, { entities: nextEntities });
+    }
+ 
+    return { load, add, update, updatePartial, remove, softDelete, getById, applyRemote };
   })
 );

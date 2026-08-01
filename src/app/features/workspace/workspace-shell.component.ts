@@ -6,6 +6,7 @@ import { AppStateStore } from '../../core/stores/app-state.store';
 import { SearchStateService } from '../../core/services/search-state.service';
 import { BackupService } from '../../core/services/backup.service';
 import { AuthStore } from '../../core/stores/auth.store';
+import { SyncService } from '../../core/services/sync.service';
  
 /**
  * Persistent workspace chrome — topbar with brand, nav tabs, saved-status
@@ -31,52 +32,92 @@ export class WorkspaceShellComponent {
   protected auth = inject(AuthStore);
   private backup = inject(BackupService);
   private router = inject(Router);
+  protected sync = inject(SyncService);
 
   /** Account dropdown open/closed. */
   protected menuOpen = signal(false);
   /** Saved-status popover click-to-pin (hover also opens it via CSS). */
   protected backupPopOpen = signal(false);
  
-  // ---- saved / unsaved indicator (unchanged logic) ----
-  protected hasUnsavedChanges = computed<boolean>(() => {
+  // ---- saved / unsaved indicator ----
+  // The topbar dot now reflects BACKEND SYNC state (not local export). It's
+  // only meaningful for logged-in users; guests don't see the button at all
+  // (see showSaveStatus + the template @if).
+ 
+  /** Whether to render the save-status button. Hidden entirely for guests. */
+  protected showSaveStatus = computed<boolean>(() => this.auth.isLoggedIn());
+ 
+  /**
+   * True when the user has local changes that haven't reached the server yet —
+   * i.e. something changed since the last successful sync. Drives the "stale"
+   * (amber) dot. Distinct from a sync *error*, which is handled separately.
+   */
+  protected hasUnsyncedChanges = computed<boolean>(() => {
     const lastChange = this.appState.lastChangeAt();
     if (!lastChange) return false;
-    const lastBackup = this.appState.lastBackupAt();
-    if (!lastBackup) return true;
-    return lastChange > lastBackup;
+    const lastSync = this.appState.lastSyncedAt();
+    if (!lastSync) return true;            // never synced but has changes
+    return lastChange > lastSync;
   });
  
-  protected backupStatusLabel = computed<string>(() =>
-    this.hasUnsavedChanges() ? 'unsaved' : 'saved'
-  );
+  /**
+   * The green "in sync" state: logged in, not mid-sync, no error, and no
+   * changes waiting to go up. This is what turns the dot green.
+   */
+  protected isSynced = computed<boolean>(() => {
+    if (!this.auth.isLoggedIn()) return false;
+    if (this.sync.status() !== 'idle') return false;
+    if (this.hasUnsyncedChanges()) return false;
+    return !!this.appState.lastSyncedAt();
+  });
+  
+  /** Short label on the button itself. */
+  protected backupStatusLabel = computed<string>(() => {
+    const status = this.sync.status();
+    if (status === 'syncing') return 'syncing…';
+    if (status === 'error') return 'sync failed';
+    if (this.hasUnsyncedChanges()) return 'unsynced';
+    return this.appState.lastSyncedAt() ? 'synced' : 'not synced';
+  });
 
+  /** Hover/title tooltip on the button. */
   protected backupStatusTooltip = computed<string>(() => {
-    if (this.hasUnsavedChanges()) {
+    const status = this.sync.status();
+    if (status === 'syncing') return 'Syncing with the server…';
+    if (status === 'error') {
+      return `Sync failed — ${this.sync.lastError() ?? 'unknown error'}. It'll retry automatically.`;
+    }
+    if (this.hasUnsyncedChanges()) {
       const lastChange = this.appState.lastChangeAt();
       return lastChange
-        ? `You have unsaved changes since ${formatRelative(lastChange)}.`
-        : 'You have unsaved changes.';
+        ? `You have changes not yet synced (since ${formatRelative(lastChange)}).`
+        : 'You have changes not yet synced.';
     }
-    const last = this.appState.lastBackupAt();
-    if (!last) return 'No backups yet, but no changes to back up.';
-    return `Last backup: ${formatRelative(last)}`;
-  });
- 
-  /** Relative-time label for the JSON-export row in the popover. */
-  protected jsonExportLabel = computed<string>(() => {
-    const last = this.appState.lastBackupAt();
-    return last ? formatRelative(last) : 'never';
+    const last = this.appState.lastSyncedAt();
+    return last ? `Last synced ${formatRelative(last)}` : 'Not synced yet.';
   });
 
   /**
-   * Backend-sync status label. STUB — the sync backend isn't wired yet, so
-   * this deliberately never claims a real sync happened. Once a real
-   * lastSyncedAt lands on AppState (and a sync loop exists), replace the
-   * body with the same formatRelative() treatment as JSON export.
+   * Sync status line shown inside the popover (the "Backend sync" row).
+   * Prefers a precise relative time for the last successful sync.
    */
   protected syncStatusLabel = computed<string>(() => {
     if (!this.auth.isLoggedIn()) return 'sign in to sync';
-    return 'not synced yet'; // STUB: no sync backend yet
+    const status = this.sync.status();
+    if (status === 'syncing') return 'syncing…';
+    if (status === 'error') return `failed — ${this.sync.lastError() ?? 'unknown error'}`;
+    const last = this.appState.lastSyncedAt();
+    return last ? `synced ${formatRelative(last)}` : 'not synced yet';
+  });
+ 
+  /**
+   * Last-backup line for the JSON-export row. Now shows an absolute date WITH
+   * time when a backup exists (e.g. "Jul 31, 2026, 4:12 PM"), per request —
+   * the day alone was too coarse to tell recent exports apart.
+   */
+  protected jsonExportLabel = computed<string>(() => {
+    const last = this.appState.lastBackupAt();
+    return last ? formatRelative(last) : 'never';
   });
 
   // ---- actions ----
@@ -92,13 +133,13 @@ export class WorkspaceShellComponent {
   }
  
   /**
-   * Backend sync trigger. STUB — intentionally does nothing yet except
-   * close the popover. Wiring target: call a SyncService.syncNow() that
-   * pushes/pulls against the backend and stamps AppState.lastSyncedAt.
-   * Left as a no-op (not a fake success) so nothing here lies about state.
+   * Triggers a push → pull sync cycle via SyncService.
+   * Re-entrant calls while syncing are silently ignored (SyncService gates them).
+   * Only fires for logged-in users — guest taps do nothing.
    */
   protected syncNow(): void {
-    // TODO(sync): call SyncService.syncNow() once the sync loop exists.
+    if (!this.auth.isLoggedIn()) return;
+    void this.sync.syncNow();
     this.backupPopOpen.set(false);
   }
  
@@ -145,19 +186,50 @@ export class WorkspaceShellComponent {
 }
  
 /**
- * Short relative-time formatter. "today", "yesterday", "3 days ago", etc.
- * Tolerant of invalid input — falls back to "recently".
+ * Absolute date+time formatter for the last-backup line, e.g.
+ * "Jul 31, 2026, 4:12 PM". Uses the browser locale. Falls back to the raw
+ * string if it can't be parsed.
+ */
+function formatDateTime(iso: string): string {
+  const d = new Date(iso);
+  if (!Number.isFinite(d.getTime())) return iso;
+  return d.toLocaleString(undefined, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+}
+ 
+/**
+ * Short relative-time formatter with sub-day resolution, so recent events read
+ * as "just now" / "3 min ago" / "2 hours ago" rather than collapsing to
+ * "today". Falls back to today/yesterday/days/weeks/months/years for older
+ * timestamps. Tolerant of invalid input — falls back to "recently".
  */
 function formatRelative(iso: string): string {
   const then = new Date(iso).getTime();
   if (!Number.isFinite(then)) return 'recently';
   const diffMs = Math.max(0, Date.now() - then);
+ 
+  const min = 60_000;
+  const hour = 3_600_000;
   const day = 86_400_000;
-  if (diffMs < day) return 'today';
+ 
+  if (diffMs < 45_000) return 'just now';
+  if (diffMs < hour) {
+    const m = Math.round(diffMs / min);
+    return `${m} min ago`;
+  }
+  if (diffMs < day) {
+    const h = Math.round(diffMs / hour);
+    return `${h} ${h === 1 ? 'hour' : 'hours'} ago`;
+  }
   if (diffMs < 2 * day) return 'yesterday';
   const days = Math.floor(diffMs / day);
   if (days < 7) return `${days} days ago`;
   if (days < 30) return `${Math.floor(days / 7)} weeks ago`;
-if (days < 365) return `${Math.floor(days / 30)} months ago`;
+  if (days < 365) return `${Math.floor(days / 30)} months ago`;
   return `${Math.floor(days / 365)} years ago`;
 }

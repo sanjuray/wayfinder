@@ -72,6 +72,12 @@ export interface AppState {
    * signal that way.
    */
   lastChangeAt: ISODate | undefined;
+  /**
+   * Timestamp of the most recent successful backend sync (push + pull).
+   * Written by SyncService after a successful cycle. undefined = never synced.
+   * Drives the sync status label in the topbar popover.
+   */
+  lastSyncedAt: ISODate | undefined;
     /**
    * User's location preferences. Controls whether the browser Geolocation
    * API is used and provides an optional fixed default location.
@@ -94,10 +100,14 @@ export const DEFAULT_APP_STATE: AppState = {
   lastBackupAt: undefined,
   autoBackupFrequency: 'weekly',
   lastChangeAt: undefined,
+  lastSyncedAt: undefined,
   locationPreferences: {
     locationEnabled: true,
-    // defaultLocation is intentionally absent — no assumption about where
-    // the user is based. Set by the user in Settings → Advanced → Location.
+    defaultLocation: {
+      lat: 17.385,
+      lng: 78.4867,
+      label: 'Hyderabad',
+    },
   },
   syncMode: 'off',
 };
