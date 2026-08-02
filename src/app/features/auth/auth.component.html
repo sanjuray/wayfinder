@@ -37,14 +37,28 @@
       </div>
       <div class="form-tagline">{{ tagline.current() }}</div>
  
-      <h1 class="form-h">{{ isSignup() ? 'Start your map' : 'Welcome back' }}</h1>
+            <h1 class="form-h">{{ isForgot() ? 'Reset your password' : (isSignup() ? 'Start your map' : 'Welcome back') }}</h1>
       <p class="form-sub">
-        {{ isSignup() ? 'One account holds every place you mean to go.' : 'Log in to get back to your map.' }}
+        {{ isForgot()
+            ? "Enter your email and we'll send you a link to set a new password."
+            : (isSignup() ? 'One account holds every place you mean to go.' : 'Log in to get back to your map.') }}
       </p>
-
+ 
       @if (errorMsg()) {
         <div class="form-error" role="alert">{{ errorMsg() }}</div>
       }
+ 
+      @if (isForgot() && forgotSent()) {
+        <!-- Confirmation: shown regardless of whether the email exists. -->
+        <div class="forgot-sent">
+          <div class="forgot-sent-icon" aria-hidden="true">✦</div>
+          <p>
+            If an account exists for <strong>{{ email().trim() }}</strong>, a reset
+            link is on its way. Check your inbox — the link expires in 30 minutes.
+          </p>
+        </div>
+        <button type="button" class="submit-btn" (click)="backToLogin()">Back to log in</button>
+      } @else {
  
       @if (isSignup()) {
         <div class="field">
@@ -60,7 +74,8 @@
                [attr.aria-invalid]="errorMsg() ? true : null"
                [value]="email()" (input)="email.set(val($event))" />
       </div>
-
+ 
+      @if (!isForgot()) {
       <div class="field">
         <label for="pw">Password</label>
         <div class="pw-wrap">
@@ -87,11 +102,12 @@
           </div>
         }
       </div>
+      }
  
-      @if (!isSignup()) {
+      @if (!isSignup() && !isForgot()) {
         <div class="row-between">
           <span></span>
-          <button class="link" class="link linkbtn" (click)="onForgotPassword()">Forgot password?</button>
+          <button class="link linkbtn" (click)="goToForgot()">Forgot password?</button>
         </div>
       }
  
@@ -107,16 +123,19 @@
       }
  
       <button type="button" class="submit-btn" [disabled]="!canSubmit()" (click)="submit()">
-        {{ submitting() ? 'One moment…' : (isSignup() ? 'Create account' : 'Log in') }}
+        {{ submitting() ? 'One moment…' : (isForgot() ? 'Send reset link' : (isSignup() ? 'Create account' : 'Log in')) }}
       </button>
- 
+
       <div class="switch">
-        @if (isSignup()) {
+        @if (isForgot()) {
+          Remembered it? <button type="button" class="link linkbtn" (click)="backToLogin()">Back to log in</button>
+        } @else if (isSignup()) {
           Already have an account? <button type="button" class="link linkbtn" (click)="toggleMode()">Log in</button>
         } @else {
           New here? <button type="button" class="link linkbtn" (click)="toggleMode()">Create an account</button>
         }
       </div>
+      }
 
       <div class="guest-row">
         <span class="hair"></span>

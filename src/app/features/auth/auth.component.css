@@ -230,3 +230,27 @@
   .auth-screen { grid-template-columns: 1fr; }
   .brand-panel { display: none; }
 }
+/* Forgot-password confirmation panel */
+.forgot-sent {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  background: var(--wf-bg-2);
+  border: 0.5px solid var(--wf-hairline);
+  border-radius: 12px;
+  padding: 16px 18px;
+  margin-bottom: 18px;
+}
+.forgot-sent-icon {
+  color: var(--wf-accent);
+  font-size: 18px;
+  line-height: 1.4;
+  flex-shrink: 0;
+}
+.forgot-sent p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--wf-ink-soft);
+}
+.forgot-sent strong { color: var(--wf-ink); }

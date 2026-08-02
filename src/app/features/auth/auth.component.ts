@@ -6,7 +6,7 @@ import { AuthStore } from '../../core/stores/auth.store';
 import { GuestModeService } from '../../core/services/guest-mode.service';
 import { TaglineService } from '../../core/services/tagline.service';
  
-type Mode = 'login' | 'signup';
+type Mode = 'login' | 'signup' | 'forgot';
 
 /**
  * Split-panel auth screen — login and signup in one component, toggled in
@@ -57,16 +57,36 @@ export class AuthComponent {
  
   protected canSubmit = computed(() => {
     if (this.submitting()) return false;
+    // Forgot-password step only needs a valid-looking email.
+    if(this.mode() === 'forgot') return !!this.email().trim();
     if (!this.email().trim() || !this.password()) return false;
     if (this.mode() === 'signup') return this.pwAllMet() && this.consent();
     return true;
   });
 
   protected isSignup = computed(() => this.mode() === 'signup');
+  protected isForgot = computed(() => this.mode() === 'forgot');
+
+  /** Shown after a reset link is requested. */
+  protected forgotSent = signal(false);
  
   protected toggleMode(): void {
     this.errorMsg.set(null);
     this.mode.update((m) => (m === 'login' ? 'signup' : 'login'));
+  }
+
+  /** Enter the forgot-password step from the login view*/
+  protected goToForgot(): void{
+    this.errorMsg.set(null);
+    this.forgotSent.set(false);
+    this.mode.set('forgot');
+  }
+
+  /** Back to login from the forgot step. */
+  protected backToLogin(): void{
+    this.errorMsg.set(null);
+    this.forgotSent.set(false);
+    this.mode.set('login');
   }
  
   protected async submit(): Promise<void> {
@@ -74,6 +94,12 @@ export class AuthComponent {
     this.submitting.set(true);
     this.errorMsg.set(null);
     try {
+      if(this.mode() === 'forgot'){
+        await this.auth.forgotPassword(this.email().trim());
+        // Always show the same confirmation - never reveal if the email exists.
+        this.forgotSent.set(true);
+        return;
+      }
       if (this.mode() === 'signup') {
         await this.auth.signup(this.email().trim(), this.password(), this.displayName().trim() || undefined);
       } else {
@@ -86,6 +112,8 @@ export class AuthComponent {
       this.errorMsg.set(
         this.mode() === 'signup'
           ? 'Could not create your account. That email may already be registered.'
+          : this.mode() === 'forgot'
+          ? 'Invalid email or password.'
           : 'Invalid email or password.'
       );
     } finally {
@@ -101,10 +129,5 @@ export class AuthComponent {
   // helpers for signal-bound inputs
   protected val(e: Event): string {
     return (e.target as HTMLInputElement).value;
-  }
-
-  protected onForgotPassword(): void {
-    // TODO: Implement forgot password flow
-    console.log('Forgot password clicked');
   }
 }

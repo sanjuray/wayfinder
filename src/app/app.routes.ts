@@ -38,6 +38,11 @@ export const routes: Routes = [
     data: {mode: 'signup'},
   },
   {
+    path: 'reset-password',
+    loadComponent: () =>
+      import('./features/auth/reset-password.component').then((m) => m.ResetPasswordComponent),
+  },
+  {
     path: 'privacy',
     loadComponent: () =>
       import('./features/privacy/privacy.component').then((m) => m.PrivacyComponent),

@@ -134,6 +134,25 @@ export const AuthStore = signalStore(
       patchState(store, { user: null });
     }
 
+    /**
+     * Step 1 of password reset: request a reset link for an email. Resolves
+     * successfully whether or not the email is registered — the backend never
+     * reveals which emails exist, and neither does this. The UI shows the same
+     * "check your inbox" message regardless.
+     */
+    async function forgotPassword(email: string): Promise<void> {
+      await firstValueFrom(http.post(`${base}/auth/forgot-password`, { email }));
+    }
+ 
+    /**
+     * Step 2 of password reset: submit the token from the email plus a new
+     * password. Throws on an invalid/expired token so the reset page can show
+     * the "link invalid or expired" state.
+     */
+    async function resetPassword(token: string, newPassword: string): Promise<void> {
+      await firstValueFrom(http.post(`${base}/auth/reset-password`, { token, newPassword }));
+    }
+
     // async function upgrade(): Promise<void> {
     //   const res = await firstValueFrom(
     //     http.post<{ user: UserProfile }>(`${base}/auth/upgrade`, {})
@@ -187,6 +206,6 @@ export const AuthStore = signalStore(
       patchState(store, { user: updated.user });
     }
 
-    return { checkSession, refreshProfile, signup, login, logout, deleteAccount, upgrade, updateProfile, checkHandleAvailable, changePassword, cancelCircle };
+    return { checkSession, refreshProfile, signup, login, logout, deleteAccount, forgotPassword, resetPassword, upgrade, updateProfile, checkHandleAvailable, changePassword, cancelCircle };
   })
 );

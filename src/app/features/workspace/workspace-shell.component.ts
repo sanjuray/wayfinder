@@ -7,6 +7,7 @@ import { SearchStateService } from '../../core/services/search-state.service';
 import { BackupService } from '../../core/services/backup.service';
 import { AuthStore } from '../../core/stores/auth.store';
 import { SyncService } from '../../core/services/sync.service';
+import { STORAGE_ADAPTER } from '../../core/storage/storage.token';
  
 /**
  * Persistent workspace chrome — topbar with brand, nav tabs, saved-status
@@ -33,6 +34,7 @@ export class WorkspaceShellComponent {
   private backup = inject(BackupService);
   private router = inject(Router);
   protected sync = inject(SyncService);
+  private storage = inject(STORAGE_ADAPTER);
 
   /** Account dropdown open/closed. */
   protected menuOpen = signal(false);
@@ -117,7 +119,7 @@ export class WorkspaceShellComponent {
    */
   protected jsonExportLabel = computed<string>(() => {
     const last = this.appState.lastBackupAt();
-    return last ? formatRelative(last) : 'never';
+    return last ? formatDateTime(last) : 'never';
   });
 
   // ---- actions ----
@@ -171,8 +173,34 @@ export class WorkspaceShellComponent {
  
   protected async logout(): Promise<void> {
     this.menuOpen.set(false);
+
+    // Clear the server session first (best-effort - an already-expired
+    // sessino shouldn't block the local wipe below).
     await this.auth.logout();
-    this.router.navigate(['/login']);
+
+    // SECURITY: wipe the local IndexedDB copy on logout. Without this, the 
+    // user's places/collections/trips/notes stay in the browser and are
+    // visible to the next person who opens the app (who lands as a guest,
+    // since the app is local-first and shows local data without auth). On a
+    // shared or public machine that's a cross-account data leak.
+    //
+    // For a logged-in user on their own device this is fine: their data is 
+    // synced to the server, so the next login re-pulls everything.
+    try{
+      await this.storage.clear();
+    }catch{
+      // If the wipe fails we must NOT leave the user on a page still showing
+      // their data - fall through to the hard reload, which at least reset 
+      // in-memory state; the storage clear will be retried on next logout.
+    }
+
+    // Hard navigation (not router.navigate) so the whole app re-bootstraps:
+    // the entity stoers load once in App.ngOnInit and are NOT re-run on a 
+    // client-side route change, so a soft navigation would leave the previous
+    // user's data sitting in the in-memory signal. A full reload guarantees 
+    // every store starts empty.
+    window.location.href = "/login";
+    // this.router.navigate(['/login']);
   }
  
   // ---- outside-click / escape close ----
