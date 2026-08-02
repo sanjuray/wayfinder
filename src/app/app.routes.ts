@@ -43,6 +43,11 @@ export const routes: Routes = [
       import('./features/privacy/privacy.component').then((m) => m.PrivacyComponent),
   },
   {
+    path: 'help',
+    loadComponent: () =>
+      import('./features/help-guide/help-guide.component').then((m) => m.HelpGuideComponent),
+  },
+  {
     path: '',
     canActivate: [sessionGuard],
     loadComponent: () =>

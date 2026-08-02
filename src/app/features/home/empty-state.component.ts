@@ -4,6 +4,7 @@ import {
   output,
   ChangeDetectionStrategy,
 } from '@angular/core';
+import { Router } from '@angular/router';
 
 export type EmptyStateVariant = 'no-places' | 'no-results';
 
@@ -16,7 +17,7 @@ export type EmptyStateVariant = 'no-places' | 'no-results';
       @if (variant() === 'no-places') {
         <div class="icon">🧭</div>
         <h3>Your map is wide open.</h3>
-        <p>Drop your first pin and start building your world.</p>
+        <p>Drop your first pin and start building your world.<br/><a class="link primary inline-link" href="/help" target="_blank" rel="noopener noreferrer">>Need help?</a></p>
         <button class="cta" (click)="addPlace.emit()">+ Add a place</button>
       } @else {
         <div class="icon">🔍</div>
@@ -63,11 +64,18 @@ export type EmptyStateVariant = 'no-places' | 'no-results';
         font-weight: 500;
         color: var(--wf-ink);
       }
-p {
+      p {
         margin: 0 0 18px;
         font-size: 13px;
         color: var(--wf-ink-soft);
         line-height: 1.5;
+      }
+      .inline-link {
+        display: inline;
+        padding: 0;
+        font-size: inherit;
+        text-decoration: underline;
+        cursor: pointer;
       }
       .cta {
         padding: 10px 20px;
@@ -89,4 +97,10 @@ export class EmptyStateComponent {
   readonly variant = input.required<EmptyStateVariant>();
   readonly addPlace = output<void>();
   readonly clearFilters = output<void>();
+
+  constructor(private router: Router) {}
+
+  protected goToHelp(): void {
+    this.router.navigate(['/help']);
+  }
 }

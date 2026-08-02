@@ -163,6 +163,11 @@ export class WorkspaceShellComponent {
     this.menuOpen.set(false);
     this.router.navigate(['/settings'], section ? { queryParams: { section } } : {});
   }
+
+  protected goToHelp(): void{
+    this.menuOpen.set(false);
+    this.router.navigate(['/help']);
+  }
  
   protected async logout(): Promise<void> {
     this.menuOpen.set(false);

@@ -1,0 +1,654 @@
+<div class="guide" #scrollHost>
+ 
+  <!-- ============ HERO ============ -->
+  <header class="hero">
+    <div class="hero-inner">
+      <span class="eyebrow">The field guide</span>
+      <h1>How&nbsp;Wayfinder works</h1>
+      <p class="lede">
+        Wayfinder is a map of the places you mean to go — and the ones you're
+        glad you did. Pin a spot, give it a vibe, gather a few into a
+        collection, then string them into a trip. This guide walks every corner
+        of the app, and decodes every mark on the map.
+      </p>
+      <div class="hero-actions">
+        <button class="btn primary" (click)="goToMap()">Open the map</button>
+        <button class="btn ghost" (click)="scrollTo('start')">Start reading</button>
+      </div>
+ 
+      <!-- Signature: a single hero pin, the app's real teardrop shape, dropping. -->
+      <div class="hero-pin" aria-hidden="true">
+        <svg width="120" height="150" viewBox="-5 -5 38 46" xmlns="http://www.w3.org/2000/svg" overflow="visible">
+          <ellipse class="hero-pin-shadow" cx="14" cy="36" rx="7" ry="2.4"/>
+          <path d="M14 2 C7 2 2 7 2 14 C2 23 14 34 14 34 C14 34 26 23 26 14 C26 7 21 2 14 2 Z"
+            fill="var(--wf-accent)" stroke="var(--wf-accent)" stroke-width="2"/>
+          <g transform="translate(7, 7) scale(0.6)" stroke="var(--wf-bg)" stroke-width="2"
+             fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3a9 9 0 0 1 9 9H3a9 9 0 0 1 9-9zM12 12v8a2 2 0 0 1-4 0"/>
+          </g>
+        </svg>
+      </div>
+    </div>
+  </header>
+ 
+  <div class="body">
+ 
+    <!-- ============ CONTENTS RAIL ============ -->
+    <nav class="contents" aria-label="Guide contents">
+      <span class="contents-label">Contents</span>
+      @for (ch of chapters; track ch.id) {
+        <button
+          class="contents-link"
+          [class.active]="activeSection() === ch.id"
+          [attr.aria-current]="activeSection() === ch.id ? 'true' : null"
+          (click)="scrollTo(ch.id)"
+        >
+          <i class="ti" [class]="'ti-' + ch.icon" aria-hidden="true"></i>
+          <span class="contents-text">{{ ch.label }}</span>
+        </button>
+      }
+    </nav>
+ 
+    <!-- ============ CHAPTERS ============ -->
+    <main class="chapters">
+ 
+      <!-- ===== GETTING STARTED ===== -->
+      <section data-chapter="start" class="chapter">
+        <span class="ch-num">01</span>
+        <h2>Getting started</h2>
+        <p class="ch-lede">
+          There's no setup and no empty-form to fill in. The moment you land,
+          you're on a live map — the rest is just pinning what matters.
+        </p>
+ 
+        <div class="flow">
+          <div class="flow-step">
+            <span class="flow-badge">1</span>
+            <h4>Drop a pin</h4>
+            <p>Paste a Google Maps link or an address, or double-click straight
+               onto the map. Wayfinder figures out where it is.</p>
+          </div>
+          <div class="flow-arrow" aria-hidden="true">→</div>
+          <div class="flow-step">
+            <span class="flow-badge">2</span>
+            <h4>Give it meaning</h4>
+            <p>Pick a category, add a vibe or two, mark it planned or already
+               visited.</p>
+          </div>
+          <div class="flow-arrow" aria-hidden="true">→</div>
+          <div class="flow-step">
+            <span class="flow-badge">3</span>
+            <h4>Gather &amp; go</h4>
+            <p>Group places into collections, then plan a trip that links them
+               in order.</p>
+          </div>
+        </div>
+ 
+        <div class="callout">
+          <i class="ti ti-user-question" aria-hidden="true"></i>
+          <div>
+            <strong>Signed in or just visiting?</strong>
+            You can use Wayfinder as a guest — everything saves to your browser.
+            Sign in and it syncs across devices instead. Either way, your data is
+            yours: no ads, no tracking.
+          </div>
+        </div>
+      </section>
+ 
+      <!-- ===== THE MAP ===== -->
+      <section data-chapter="map" class="chapter">
+        <span class="ch-num">02</span>
+        <h2>The map</h2>
+        <p class="ch-lede">
+          The map is home base. Every place you've saved lives here as a pin.
+          The panel on the left filters what you see; the buttons floating over
+          the map are how you add and search.
+        </p>
+ 
+        <!-- Annotated mock of the map screen -->
+        <figure class="diagram map-diagram">
+          <div class="mock-map">
+            <aside class="mock-sidebar">
+              <div class="mock-side-head">Categories</div>
+              <div class="mock-row active"><span class="mock-dot" style="background:#D85A30"></span>Restaurant<span class="mock-count">6</span></div>
+              <div class="mock-row"><span class="mock-dot" style="background:#BA7517"></span>Café<span class="mock-count">3</span></div>
+              <div class="mock-row"><span class="mock-dot" style="background:#1D9E75"></span>Park / Nature<span class="mock-count">2</span></div>
+              <div class="mock-side-head" style="margin-top:12px">Vibes</div>
+              <div class="mock-chips">
+                <span class="mock-chip active">date-worthy</span>
+                <span class="mock-chip">hidden-gem</span>
+              </div>
+              <div class="mock-side-head" style="margin-top:12px">Collections</div>
+              <div class="mock-row"><span class="mock-cover"><i class="ti ti-folder"></i></span>Weekend<span class="mock-count">4</span></div>
+            </aside>
+            <div class="mock-canvas">
+              <span class="mock-annot annot-filter">Filter pill — what's showing right now</span>
+              <div class="mock-pill">Showing: Restaurant · date-worthy <span class="mock-pill-x">×</span></div>
+ 
+              <!-- scattered pins -->
+              <svg class="mock-pin p1" viewBox="-5 -5 38 46" width="26" height="32"><path d="M14 2 C7 2 2 7 2 14 C2 23 14 34 14 34 C14 34 26 23 26 14 C26 7 21 2 14 2 Z" fill="#D85A30"/><circle cx="25" cy="3" r="4.5" fill="#1D9E75" stroke="#fff" stroke-width="1.2"/></svg>
+              <svg class="mock-pin p2" viewBox="-5 -5 38 46" width="26" height="32"><path d="M14 2 C7 2 2 7 2 14 C2 23 14 34 14 34 C14 34 26 23 26 14 C26 7 21 2 14 2 Z" fill="#BA7517"/></svg>
+              <svg class="mock-pin p3" viewBox="-5 -5 38 46" width="26" height="32"><path d="M14 2 C7 2 2 7 2 14 C2 23 14 34 14 34 C14 34 26 23 26 14 C26 7 21 2 14 2 Z" fill="#1D9E75"/></svg>
+              <span class="mock-cluster">7</span>
+ 
+              <span class="mock-annot annot-fab">Add a place</span>
+              <div class="mock-fab">+ Add a place</div>
+              <div class="mock-fab-filters"><i class="ti ti-adjustments-horizontal"></i></div>
+            </div>
+          </div>
+          <figcaption>The map screen. On phones the filter panel becomes a
+            slide-up sheet you open with the <i class="ti ti-adjustments-horizontal"></i>
+            Filters button.</figcaption>
+        </figure>
+ 
+        <div class="detail-grid">
+          <div class="detail-item">
+            <h4><span class="dot" style="background:var(--wf-ink)"></span>The blue dot</h4>
+            <p>That pulsing blue dot is <em>you</em> — your device's current
+               location, with a soft ring showing accuracy. Turn it off or set a
+               fixed default in Settings → Advanced → Location.</p>
+          </div>
+          <div class="detail-item">
+            <h4>Clusters</h4>
+            <p>When pins pile up, they collapse into a numbered circle. Zoom in
+               or click it to fan them back out.</p>
+          </div>
+          <div class="detail-item">
+            <h4>The filter panel</h4>
+            <p>Tap a category, vibe, or collection to narrow the map. Active
+               filters stack — the pill over the map always says what's showing.</p>
+          </div>
+          <div class="detail-item">
+            <h4>Double-click to pin</h4>
+            <p>Double-click (or double-tap) any empty spot to start adding a
+               place right there. Do it on the same spot twice for a small
+               surprise.</p>
+          </div>
+        </div>
+      </section>
+ 
+      <!-- ===== READING THE PINS ===== -->
+      <section data-chapter="pins" class="chapter">
+        <span class="ch-num">03</span>
+        <h2>Reading the pins</h2>
+        <p class="ch-lede">
+          A pin isn't just a dot. Its colour, its badge, and its ring each carry
+          a piece of information. Here's the whole vocabulary.
+        </p>
+ 
+        <div class="legend">
+          <!-- category colour + icon -->
+          <div class="legend-item">
+            <div class="legend-art">
+              <svg viewBox="-5 -5 38 46" width="44" height="54"><path d="M14 2 C7 2 2 7 2 14 C2 23 14 34 14 34 C14 34 26 23 26 14 C26 7 21 2 14 2 Z" fill="#D85A30" stroke="#D85A30" stroke-width="2"/><g transform="translate(7,7) scale(0.6)" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M19 4l-3 3v3h3l3-3V4M4 4v6c0 1 1 2 2 2v9h2v-9c1 0 2-1 2-2V4M7 4v6"/></g></svg>
+            </div>
+            <div class="legend-txt">
+              <h4>Colour &amp; icon = category</h4>
+              <p>Every pin is coloured by its category and stamped with that
+                 category's icon — a fork for Restaurant, a cup for Café, and so
+                 on. Same colours used in the filter panel.</p>
+            </div>
+          </div>
+ 
+          <!-- planned dot -->
+          <div class="legend-item">
+            <div class="legend-art">
+              <svg viewBox="-5 -5 38 46" width="44" height="54"><path d="M14 2 C7 2 2 7 2 14 C2 23 14 34 14 34 C14 34 26 23 26 14 C26 7 21 2 14 2 Z" fill="#888780" stroke="#888780" stroke-width="2"/><circle cx="25" cy="3" r="4.5" fill="#1D9E75" stroke="#fff" stroke-width="1.2"/></svg>
+            </div>
+            <div class="legend-txt">
+              <h4><span class="teal-dot"></span>Teal dot = planned</h4>
+              <p>A small teal dot in the top-right corner means this is a place
+                 you <em>plan</em> to visit. No dot means you've already been —
+                 it's visited.</p>
+            </div>
+          </div>
+ 
+          <!-- favorite ring -->
+          <div class="legend-item">
+            <div class="legend-art">
+              <svg viewBox="-6 -6 40 48" width="44" height="54"><path d="M14 2 C7 2 2 7 2 14 C2 23 14 34 14 34 C14 34 26 23 26 14 C26 7 21 2 14 2 Z" fill="none" stroke="#FFD15B" stroke-width="5" opacity="0.85"/><path d="M14 2 C7 2 2 7 2 14 C2 23 14 34 14 34 C14 34 26 23 26 14 C26 7 21 2 14 2 Z" fill="#534AB7" stroke="#534AB7" stroke-width="2"/><g transform="translate(7,7) scale(0.6)" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V8l8-5 8 5v13M4 21h16M9 21V13a3 3 0 0 1 6 0v8"/></g></svg>
+            </div>
+            <div class="legend-txt">
+              <h4><span class="gold-swatch"></span>Gold ring = favourite</h4>
+              <p>A warm gold halo around a pin marks it as a favourite. Star a
+                 place from its detail panel and it glows on the map.</p>
+            </div>
+          </div>
+ 
+          <!-- cluster -->
+          <div class="legend-item">
+            <div class="legend-art">
+              <span class="legend-cluster">12</span>
+            </div>
+            <div class="legend-txt">
+              <h4>Numbered circle = cluster</h4>
+              <p>Several pins close together group into one circle showing how
+                 many are hidden inside. Click to zoom in and split them.</p>
+            </div>
+          </div>
+        </div>
+ 
+        <div class="callout subtle">
+          <i class="ti ti-bulb" aria-hidden="true"></i>
+          <div>A pin can wear more than one mark at once — a gold-ringed,
+            teal-dotted purple pin is a favourite temple you still plan to visit.</div>
+        </div>
+      </section>
+ 
+      <!-- ===== ADDING A PLACE ===== -->
+      <section data-chapter="adding" class="chapter">
+        <span class="ch-num">04</span>
+        <h2>Adding a place</h2>
+        <p class="ch-lede">
+          Adding a place is a short four-step flow. The progress dots at the top
+          of the card show where you are.
+        </p>
+ 
+        <ol class="steps">
+          <li>
+            <span class="step-n">1</span>
+            <div>
+              <h4>Where?</h4>
+              <p>Paste a Google Maps share link and it resolves automatically.
+                 Or paste any address — even a caption from a reel or short — and
+                 Wayfinder geocodes it. Adding from a double-click on the map
+                 skips this step.</p>
+            </div>
+          </li>
+          <li>
+            <span class="step-n">2</span>
+            <div>
+              <h4>Name it</h4>
+              <p>Give the place a name you'll actually recognise later — "the
+                 dumpling place" beats its official title. If the pin landed
+                 slightly off, drag it on the mini-map to nudge it.</p>
+            </div>
+          </li>
+          <li>
+            <span class="step-n">3</span>
+            <div>
+              <h4>What is it?</h4>
+              <p>Pick one category (this sets the pin's colour and icon), then
+                 add any number of vibe tags — <em>date-worthy</em>,
+                 <em>hidden-gem</em>, <em>touristy</em>, and so on.</p>
+            </div>
+          </li>
+          <li>
+            <span class="step-n">4</span>
+            <div>
+              <h4>Save it where?</h4>
+              <p>Drop it into one or many collections — or none. Set it as
+                 <em>planned</em> or <em>visited</em>, and star it if it's a
+                 favourite. Type a new collection name right here to create one
+                 on the spot.</p>
+            </div>
+          </li>
+        </ol>
+ 
+        <div class="callout subtle">
+          <i class="ti ti-confetti" aria-hidden="true"></i>
+          <div>When you save, the new pin drops onto the map with a little
+            celebration. That's Wayfinder's way of saying: noted.</div>
+        </div>
+      </section>
+ 
+      <!-- ===== PLACE DETAIL ===== -->
+      <section data-chapter="detail" class="chapter">
+        <span class="ch-num">05</span>
+        <h2>A place up close</h2>
+        <p class="ch-lede">
+          Click any pin and a panel slides in with everything about that place —
+          and everything you can do with it.
+        </p>
+ 
+        <div class="detail-grid">
+          <div class="detail-item">
+            <h4><i class="ti ti-pencil"></i> Rename &amp; <i class="ti ti-trash"></i> delete</h4>
+            <p>The pencil edits the name inline; the trash removes the place
+               (with a confirm, so no accidents).</p>
+          </div>
+          <div class="detail-item">
+            <h4>Status &amp; favourite</h4>
+            <p>Toggle between <em>○ planned</em> and <em>✓ visited</em>, or tap
+               the star to favourite it — both update the pin instantly.</p>
+          </div>
+          <div class="detail-item">
+            <h4>Vibes &amp; collections</h4>
+            <p>See at a glance which vibe tags and collections this place belongs
+               to.</p>
+          </div>
+          <div class="detail-item">
+            <h4>Visits &amp; notes</h4>
+            <p>Log a visit with a date, a rating — 👍 / 😐 / 👎 — and a line about
+               how it went. Each place keeps its full history.</p>
+          </div>
+          <div class="detail-item wide">
+            <h4><i class="ti ti-external-link"></i> Open in Google Maps</h4>
+            <p>The main button opens the place in Google Maps. The little chevron
+               beside it opens a menu of query options — handy when Google's
+               default guess lands in the wrong spot. Tick "set as default" and
+               your chosen option sticks for that place, including in trip
+               directions.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== CATEGORIES & VIBES ===== -->
+      <section data-chapter="organize" class="chapter">
+        <span class="ch-num">06</span>
+        <h2>Categories &amp; vibes</h2>
+        <p class="ch-lede">
+          Two different ways to describe a place. Categories answer <em>what is
+          this?</em>; vibes answer <em>what's it like?</em>
+        </p>
+ 
+        <div class="two-col">
+          <div class="col-card">
+            <h3><i class="ti ti-category"></i> Categories</h3>
+            <p>Each place has exactly one. It sets the pin's colour and icon.
+               Wayfinder ships with a full set — Restaurant, Café, Bar,
+               Landmark, Park, Beach, Stay, Temple, Trek, Viewpoint and more —
+               and you can add, rename, recolour, or hide any of them in
+               Settings.</p>
+            <div class="cat-swatches">
+              <span class="cat-sw" style="--c:#D85A30"><i class="ti ti-tools-kitchen-2"></i>Restaurant</span>
+              <span class="cat-sw" style="--c:#BA7517"><i class="ti ti-coffee"></i>Café</span>
+              <span class="cat-sw" style="--c:#1D9E75"><i class="ti ti-tree"></i>Park</span>
+              <span class="cat-sw" style="--c:#534AB7"><i class="ti ti-building-arch"></i>Temple</span>
+              <span class="cat-sw" style="--c:#85B7EB"><i class="ti ti-umbrella"></i>Beach</span>
+            </div>
+          </div>
+          <div class="col-card">
+            <h3><i class="ti ti-tags"></i> Vibes</h3>
+            <p>Free-floating tags a place can have any number of. They don't
+               change how the pin looks, but you can filter the map by them and
+               they show up in a place's detail. Great for cross-cutting moods
+               that don't fit a single category.</p>
+            <div class="vibe-cloud">
+              <span class="mock-chip">date-worthy</span>
+              <span class="mock-chip">hidden-gem</span>
+              <span class="mock-chip">chill spot</span>
+              <span class="mock-chip">family-friendly</span>
+              <span class="mock-chip">splurge</span>
+              <span class="mock-chip">touristy</span>
+            </div>
+          </div>
+        </div>
+      </section>
+ 
+      <!-- ===== COLLECTIONS ===== -->
+      <section data-chapter="collections" class="chapter">
+        <span class="ch-num">07</span>
+        <h2>Collections</h2>
+        <p class="ch-lede">
+          A collection is a named set of places — "Tokyo 2026", "Coffee to try",
+          "Where to take mum". A place can live in many collections at once.
+        </p>
+        
+        <figure class="diagram">
+          <div class="coll-cards">
+            <div class="coll-card" style="--g:linear-gradient(135deg,#FF9A5B,#E5523F)">
+              <span class="coll-card-icon"><i class="ti ti-folder"></i></span>
+              <div class="coll-card-meta"><strong>Weekend list</strong><span>4 places · updated today</span></div>
+            </div>
+            <div class="coll-card" style="--g:linear-gradient(135deg,#7AC7A0,#1D9E75)">
+              <span class="coll-card-icon"><i class="ti ti-coffee"></i></span>
+              <div class="coll-card-meta"><strong>Coffee to try</strong><span>7 places · 2 days ago</span></div>
+            </div>
+            <div class="coll-card new">
+              <span class="coll-card-plus">+</span>
+              <div class="coll-card-meta"><strong>New collection</strong></div>
+            </div>
+          </div>
+          <figcaption>The Collections page — a cover card per set, plus a tile to
+            start a new one.</figcaption>
+        </figure>
+ 
+        <div class="detail-grid">
+          <div class="detail-item">
+            <h4>The list</h4>
+            <p>Every collection as a cover card with its own gradient and icon,
+               its place count, and when you last touched it.</p>
+          </div>
+          <div class="detail-item">
+            <h4>Inside a collection</h4>
+            <p>Open one to see its places listed beside a map showing only those
+               pins. Click a row to fly to it and open its detail — same feel as
+               the main map.</p>
+          </div>
+          <div class="detail-item">
+            <h4>Make it yours</h4>
+            <p>Change the cover gradient or icon, rename it, or remove a place
+               (with an undo if you change your mind).</p>
+          </div>
+          <div class="detail-item">
+            <h4>Summary line</h4>
+            <p>Each collection shows a quick tally: how many places, how many
+               visited, how many favourites.</p>
+          </div>
+        </div>
+      </section>
+ 
+      <!-- ===== PLACES LIST ===== -->
+      <section data-chapter="places-list" class="chapter">
+        <span class="ch-num">08</span>
+        <h2>The places list</h2>
+        <p class="ch-lede">
+          Prefer a list to a map? The Places page is every saved place as rows —
+          sortable, and quick to scan.
+        </p>
+
+        <div class="detail-grid">
+          <div class="detail-item">
+            <h4>Sort any way</h4>
+            <p>By recently added, last visited, category, or favourites first.
+               The sort menu remembers your pick.</p>
+          </div>
+          <div class="detail-item">
+            <h4>Every row at a glance</h4>
+            <p>Category icon and colour, name, planned/visited badge, vibe tags,
+               and a favourite star — the same language as the map.</p>
+          </div>
+          <div class="detail-item">
+            <h4>Bulk actions</h4>
+            <p>Select several at once to change their status or clear favourites
+               in one go.</p>
+          </div>
+          <div class="detail-item">
+            <h4>Search from here</h4>
+            <p>The search bar filters the list live as you type — by name,
+               address, category, or vibe.</p>
+          </div>
+        </div>
+      </section>
+ 
+      <!-- ===== TRIPS ===== -->
+      <section data-chapter="trips" class="chapter">
+        <span class="ch-num">09</span>
+        <h2>Trips</h2>
+        <p class="ch-lede">
+          A trip strings places into an ordered route you can follow — and, once
+          you're out there, tick off as you go.
+        </p>
+ 
+        <h3 class="sub-h">The trips page</h3>
+        <p>Your trips are grouped by where they stand:</p>
+        <div class="trip-sections">
+          <span class="trip-sec"><i class="ti ti-player-play"></i> In progress</span>
+          <span class="trip-sec"><i class="ti ti-calendar"></i> Upcoming</span>
+          <span class="trip-sec"><i class="ti ti-pencil"></i> Drafts &amp; undated</span>
+          <span class="trip-sec past"><i class="ti ti-check"></i> Past</span>
+        </div>
+ 
+        <h3 class="sub-h">Inside the planner</h3>
+        <figure class="diagram trip-diagram">
+          <div class="trip-mock">
+            <div class="trip-stops">
+              <div class="trip-stop"><span class="trip-num done">1</span> Morning café</div>
+              <div class="trip-leg"><i class="ti ti-walk"></i> 0.4&nbsp;km · 6&nbsp;min</div>
+              <div class="trip-stop"><span class="trip-num done">2</span> The old temple</div>
+              <div class="trip-leg"><i class="ti ti-car"></i> 3.1&nbsp;km · 9&nbsp;min</div>
+              <div class="trip-stop"><span class="trip-num">3</span> Lunch spot</div>
+              <div class="trip-leg"><i class="ti ti-car"></i> 2.0&nbsp;km · 6&nbsp;min</div>
+              <div class="trip-stop"><span class="trip-num">4</span> Sunset viewpoint</div>
+            </div>
+            <div class="trip-map">
+              <svg viewBox="0 0 200 220" width="100%" height="100%" preserveAspectRatio="xMidYMid meet">
+                <!-- visited segment: solid teal -->
+                <path d="M40 40 L150 70" stroke="#1D9E75" stroke-width="3" fill="none"/>
+                <!-- remaining: dashed accent --->
+                <path d="M150 70 L60 130 L160 180" stroke="#FF6B5B" stroke-width="3" stroke-dasharray="7 6" fill="none"/>
+                <g font-size="13" font-weight="700" text-anchor="middle">
+                  <circle cx="40" cy="40" r="13" fill="#1D9E75"/><text x="40" y="45" fill="#fff">1</text>
+                  <circle cx="150" cy="70" r="13" fill="#1D9E75"/><text x="150" y="75" fill="#fff">2</text>
+                  <circle cx="60" cy="130" r="13" fill="#FF6B5B"/><text x="60" y="135" fill="#fff">3</text>
+                  <circle cx="160" cy="180" r="13" fill="#FF6B5B"/><text x="160" y="185" fill="#fff">4</text>
+                </g>
+              </svg>
+            </div>
+          </div>
+          <figcaption>Stops on the left, route on the right. The solid teal line
+            is where you've already been; the dashed coral line is what's left.</figcaption>
+        </figure>
+ 
+        <div class="detail-grid">
+          <div class="detail-item">
+            <h4>Build the route</h4>
+            <p>Add stops from your saved places, then drag to reorder. The order
+               <em>is</em> the route.</p>
+          </div>
+          <div class="detail-item">
+            <h4>Distance &amp; time</h4>
+            <p>Between each pair of stops you get a rough distance and travel
+               time, based on your chosen mode — walking, driving, transit, and
+               so on.</p>
+          </div>
+          <div class="detail-item">
+            <h4>Live trips</h4>
+            <p>Start a trip and mark stops visited as you reach them. The line
+               fills in teal behind you, and a marker rides along at your latest
+               stop.</p>
+          </div>
+          <div class="detail-item">
+            <h4>Open in Google Maps</h4>
+            <p>Export the whole route as Google Maps directions with your stops
+               as waypoints. Long trips split into a few links (Google caps
+               waypoints per link).</p>
+          </div>
+        </div>
+      </section>
+ 
+      <!-- ===== TOPBAR ===== -->
+      <section data-chapter="topbar" class="chapter">
+        <span class="ch-num">10</span>
+        <h2>The top bar</h2>
+        <p class="ch-lede">
+          The bar across the top is always there. Left to right:
+        </p>
+
+        <div class="topbar-legend">
+          <div class="tl-item"><span class="tl-key"><i class="ti ti-map-pin"></i></span>
+            <div><strong>Brand &amp; tagline</strong> — home, and a rotating line of Wayfinder flavour.</div></div>
+          <div class="tl-item"><span class="tl-key">Map · Places · Collections · Trips</span>
+            <div><strong>The four sections</strong> — the whole app in four tabs.</div></div>
+          <div class="tl-item"><span class="tl-key"><i class="ti ti-device-floppy"></i></span>
+            <div><strong>Save status</strong> — shows whether you have changes yet to be backed up. Click it for backup and sync options.</div></div>
+          <div class="tl-item"><span class="tl-key"><i class="ti ti-search"></i></span>
+            <div><strong>Search</strong> — jump to any place, collection, or trip by name.</div></div>
+          <div class="tl-item"><span class="tl-key"><i class="ti ti-user-circle"></i></span>
+            <div><strong>Account</strong> — your profile, plan, settings, and log out. Guests see Log in / Sign up here instead.</div></div>
+        </div>
+      </section>
+ 
+      <!-- ===== ACCOUNT & BACKUPS ===== -->
+      <section data-chapter="account" class="chapter">
+        <span class="ch-num">11</span>
+        <h2>Account &amp; backups</h2>
+        <p class="ch-lede">
+          Your places are saved as you go. How they travel between devices
+          depends on whether you're signed in.
+        </p>
+ 
+        <div class="two-col">
+          <div class="col-card">
+            <h3><i class="ti ti-user"></i> Signed in</h3>
+            <p>Everything syncs to your account automatically and stays in step
+               across every device you use. The save-status button in the top
+               bar shows when the last sync happened, and you can sync on demand
+               any time.</p>
+          </div>
+          <div class="col-card">
+            <h3><i class="ti ti-user-off"></i> As a guest</h3>
+            <p>Your data lives in this browser only. To move it to another device,
+               export a backup file from Settings and import it on the other
+               side. It's the guest's way to travel.</p>
+          </div>
+        </div>
+ 
+        <div class="callout subtle">
+          <i class="ti ti-download" aria-hidden="true"></i>
+          <div><strong>Export &amp; import</strong> are available to everyone, signed
+            in or not — a portable JSON snapshot of everything you've saved, from
+            Settings → Storage &amp; backup or the save-status menu.</div>
+        </div>
+ 
+        <div class="detail-grid">
+          <div class="detail-item">
+            <h4>Profile</h4>
+            <p>Set a display name and a handle that travel with your account.</p>
+          </div>
+          <div class="detail-item">
+            <h4>Plan &amp; billing</h4>
+            <p>Wayfinder has a free tier and a Circle upgrade. Manage it from
+               Settings → Plan &amp; billing.</p>
+          </div>
+          <div class="detail-item">
+            <h4>Location</h4>
+            <p>In Settings → Advanced, decide whether the map uses your live
+               location, and set a default spot to fall back on.</p>
+          </div>
+          <div class="detail-item">
+            <h4>Categories &amp; vibes</h4>
+            <p>Add, rename, recolour, or hide the tags you organise with — all in
+               Settings.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== THEMES ===== -->
+      <section data-chapter="themes" class="chapter">
+        <span class="ch-num">12</span>
+        <h2>Themes</h2>
+        <p class="ch-lede">
+          Seven themes, switchable any time from Settings. The whole app —
+          including the pins and this very page — re-paints instantly.
+        </p>
+ 
+        <div class="theme-row">
+          <div class="theme-chip"><span class="sw" style="background:#FAF6EF"></span><span class="sw" style="background:#1A1A2E"></span><span class="sw" style="background:#FF6B5B"></span><em>Paper</em></div>
+          <div class="theme-chip"><span class="sw" style="background:#0E0F1A"></span><span class="sw" style="background:#FF3D9A"></span><span class="sw" style="background:#7AFFD7"></span><em>Neon Drift</em></div>
+          <div class="theme-chip"><span class="sw" style="background:#0F1729"></span><span class="sw" style="background:#E8A547"></span><span class="sw" style="background:#F4D58D"></span><em>Kyoto Night</em></div>
+          <div class="theme-chip"><span class="sw" style="background:#FFFFFF"></span><span class="sw" style="background:#000000"></span><span class="sw" style="background:#D72638"></span><em>Mono Press</em></div>
+          <div class="theme-chip"><span class="sw" style="background:#1B0F1F"></span><span class="sw" style="background:#D4A74C"></span><span class="sw" style="background:#E8C57A"></span><em>Midnight Library</em></div>
+          <div class="theme-chip"><span class="sw" style="background:#FAFAFA"></span><span class="sw" style="background:#1C1C1C"></span><span class="sw" style="background:#0066CC"></span><em>Tokyo Subway</em></div>
+          <div class="theme-chip"><span class="sw" style="background:#EFEAD8"></span><span class="sw" style="background:#1F2D1A"></span><span class="sw" style="background:#3F6B47"></span><em>Forest Floor</em></div>
+        </div>
+      </section>
+ 
+      <!-- ===== CLOSING ===== -->
+      <section class="chapter closing">
+        <div class="closing-card">
+          <svg width="60" height="72" viewBox="-5 -5 38 46" xmlns="http://www.w3.org/2000/svg" overflow="visible">
+            <path d="M14 2 C7 2 2 7 2 14 C2 23 14 34 14 34 C14 34 26 23 26 14 C26 7 21 2 14 2 Z" fill="var(--wf-accent)" stroke="var(--wf-accent)" stroke-width="2"/>
+            <path d="M14 11 L16 19 L24 21 L16 23 L14 31 L12 23 L4 21 L12 19 Z" fill="var(--wf-bg)"/>
+          </svg>
+          <h2>That's the whole map.</h2>
+          <p>Now go pin something. Wayfinder doesn't push — it pins, it plans,
+             and it stays quiet when you just want to look at the map.</p>
+          <button class="btn primary" (click)="goToMap()">Open the map</button>
+        </div>
+      </section>
+ 
+    </main>
+  </div>
+</div>

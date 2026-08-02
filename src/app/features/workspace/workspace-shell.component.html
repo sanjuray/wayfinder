@@ -107,6 +107,7 @@
               <span class="mh-name">{{ auth.user()?.displayName || 'Your account' }}</span>
               <span class="mh-mail">{{ auth.user()?.email }}</span>
             </button>
+            <button class="menu-item" type="button" (click)="goToHelp()">How Wayfinder Works</button>
             <button class="menu-item" type="button" (click)="goToSettings('profile')">Profile</button>
             <button class="menu-item" type="button" (click)="goToSettings('billing')">Plan &amp; billing</button>
             @if (!auth.isCircle()) {
