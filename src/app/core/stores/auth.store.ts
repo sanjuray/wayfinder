@@ -121,6 +121,19 @@ export const AuthStore = signalStore(
       }
     }
 
+    /**
+     * Permanently delete the account (DELETE /auth/me). The backend wipes all
+     * server-side data and clears the auth cookie. We then clear local auth
+     * state so the app drops to a logged-out view. Note: this does NOT touch 
+     * the local IndexedDB copy - the caller decides whether to also wipe local
+     * data (the settings flow does, so a deleted account doesn't leave a full
+     * local mirror behind that would re-sync nothing to a dead account).
+     */
+    async function deleteAccount(): Promise<void>{
+      await firstValueFrom(http.delete('@{base}/auth/me'));
+      patchState(store, { user: null });
+    }
+
     // async function upgrade(): Promise<void> {
     //   const res = await firstValueFrom(
     //     http.post<{ user: UserProfile }>(`${base}/auth/upgrade`, {})
@@ -174,6 +187,6 @@ export const AuthStore = signalStore(
       patchState(store, { user: updated.user });
     }
 
-    return { checkSession, refreshProfile, signup, login, logout, upgrade, updateProfile, checkHandleAvailable, changePassword, cancelCircle };
+    return { checkSession, refreshProfile, signup, login, logout, deleteAccount, upgrade, updateProfile, checkHandleAvailable, changePassword, cancelCircle };
   })
 );

@@ -71,19 +71,18 @@ interface ThemeTile {
         <div class="set-grid">
 
           <!-- LEFT NAV -->
-          <div class="set-nav">
+          <nav class="set-nav" aria-label="Settings setions">
             @for (item of navItems; track item.id) {
               <button
                 [class.active]="activeSection() === item.id"
-                [class.adv-nav]="item.id === 'advanced'"
                 [attr.aria-current]="activeSection() === item.id ? 'true' : null"
                 (click)="scrollToSection(item.id)"
               >
                 <i class="ti" [class]="'ti-' + item.icon" aria-hidden="true"></i>
-                {{ item.label }}
+                <span class="nav-label">{{ item.label }}</span>
               </button>
             }
-          </div>
+          </nav>
 
           <!-- RIGHT BODY: all sections rendered, sidebar scrolls to each -->
           <div class="set-body">
@@ -216,6 +215,21 @@ interface ThemeTile {
                     Payments aren't live yet — upgrades run through a placeholder for now, so this won't charge you.
                   </div>
                   @if (planMsg()) { <div class="save-msg" [class.err]="planErr()">{{ planMsg() }}</div> }
+
+                  <div class="danger-zone">
+                    <h4>Delete account</h4>
+                    <p>
+                      Permanently removes your account and everything synced to it.
+                      This can't be undone.
+                    </p>
+                    <button class="btn danger" type="button"
+                            [disabled]="deleteBusy()" (click)="deleteAccount()">
+                      {{ deleteBusy() ? 'Walking away…' : 'Delete my account' }}
+                    </button>
+                    @if (deleteErr()) {
+                      <div class="save-msg err">Couldn't delete your account — please try again.</div>
+                    }
+                  </div>
                 }
               </div>
             </section>
@@ -681,26 +695,6 @@ interface ThemeTile {
         background: var(--wf-ink);
         color: var(--wf-bg);
       }
-      .set-nav button.adv-nav {
-        margin-top: 18px;
-        color: var(--wf-ink-faint);
-        font-style: italic;
-        font-size: 12px;
-        border-top: 0.5px solid color-mix(in srgb, var(--wf-hairline) 60%, transparent);
-        padding-top: 14px;
-        border-radius: 0;
-      }
-      .set-nav button.adv-nav:hover {
-        color: var(--wf-ink-soft);
-        background: color-mix(in srgb, var(--wf-hairline) 60%, transparent);
-      }
-      .set-nav button.adv-nav.active {
-        background: var(--wf-ink);
-        color: var(--wf-bg);
-        font-style: normal;
-        border-radius: 10px;
-        border-top: none;
-      }
       
       .set-nav button > i.ti {
         font-size: 15px;
@@ -741,6 +735,7 @@ interface ThemeTile {
       
       /* ===== Toggle switch (Advanced → Location) ===== */
       .toggle-row {
+        position: relative;
         display: flex;
         align-items: center;
         gap: 10px;
@@ -755,15 +750,14 @@ interface ThemeTile {
          to the scroll container and add empty space + a second scrollbar.
       */
       .toggle-row input[type="checkbox"] {
-        position: relative;
-        width: 1px;
-        height: 1px;
-        padding: 0;
-        margin: -1px;
-        overflow: hidden;
-        clip: rect(0, 0, 0, 0);
-        white-space: nowrap;
-        border: 0;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        opacity: 0;
+        cursor: pointer;
       }
       .toggle-switch {
         position: relative;
@@ -1255,11 +1249,6 @@ interface ThemeTile {
           padding-bottom: 4px;
           gap: 6px;
         }
-        .set-nav button.adv-nav {
-          margin-top: 0;
-          border-top: none;
-          padding-top: 10px;
-        }
         .backup-freq {
           margin-left: 0;
           width: 100%;
@@ -1301,11 +1290,6 @@ interface ThemeTile {
           gap: 2px;
           padding: 8px 10px;
           border-radius: 10px;
-        }
-        .set-nav button.adv-nav {
-          margin-top: 0;
-          border-top: none;
-          padding-top: 8px;
         }
         .set-nav button > i.ti {
           font-size: 19px;
@@ -1686,7 +1670,11 @@ export class SettingsComponent implements OnInit, AfterViewInit, OnDestroy {
   protected planMsg = signal<string | null>(null);
   protected planErr = signal(false);
 
-    // ===== Location preferences (Advanced section) =====
+  // ===== Account deletion =====
+  protected deleteBusy = signal(false);
+  protected deleteErr = signal(false);
+
+  // ===== Location preferences (Advanced section) =====
  
   protected locationEnabled = computed(
     () => this.appState.locationPreferences().locationEnabled
@@ -1793,13 +1781,15 @@ export class SettingsComponent implements OnInit, AfterViewInit, OnDestroy {
   }
   async upgrade(): Promise<void> {
     this.planBusy.set(true); this.planMsg.set(null);
-    try { await this.auth.upgrade(); 
+    try { 
+      await this.auth.upgrade(); 
       // Belt-and-braces: upgrade() already patches the store from its response,
       // but re-fetche /auth/me so the plan is read back from the freshly-issue
       // cookie. This closes any window where the store patch and the new cookie
       // are momenterially out of the step, and guarantess the badge/button flip
       await this.auth.refreshProfile();
-      this.planErr.set(false); this.planMsg.set('Welcome to Circle!'); }
+      this.planErr.set(false); this.planMsg.set('Welcome to Circle!');
+    }
     catch { this.planErr.set(true); this.planMsg.set('Upgrade failed — please try again.'); }
     finally { this.planBusy.set(false); }
   }
@@ -1808,8 +1798,38 @@ export class SettingsComponent implements OnInit, AfterViewInit, OnDestroy {
     try { 
       await this.auth.cancelCircle(); 
       await this.auth.refreshProfile();
-      this.planErr.set(false); this.planMsg.set("Circle cancelled — you're back on Freemium."); }
+      this.planErr.set(false); this.planMsg.set("Circle cancelled — you're back on Freemium.");
+     }
     catch { this.planErr.set(true); this.planMsg.set('Could not cancel — please try again.'); }
     finally { this.planBusy.set(false); }
+  }
+
+    /**
+   * Delete-account flow. Uses the native browser confirm() — note the OS/
+   * browser controls its button labels ("OK"/"Cancel"), so they can't be
+   * renamed to "Walk away"/"Jai Wandering!" (a browser limitation). OK
+   * proceeds with deletion; Cancel keeps the account.
+   *
+   * On confirm: DELETE the account (server wipes all data + clears the auth
+   * cookie), then also clear the LOCAL IndexedDB copy so a deleted account
+   * doesn't leave a full local mirror behind, then send the user home.
+   */
+  async deleteAccount(): Promise<void> {
+    const message =
+      'Wandering is hard, but you just need to get started and things will fall in place. ' +
+      'If you still want to be a couch potato and curb your wanderer spirit, you can walk away.\n\n' +
+      'Press OK to walk away (this permanently deletes your account), or Cancel to keep wandering.';
+    if (!window.confirm(message)) return;   // Cancel = "Jai Wandering!"
+ 
+    this.deleteBusy.set(true); this.deleteErr.set(false);
+    try {
+      await this.auth.deleteAccount();      // server wipe + cookie clear + local auth state cleared
+      await this.storage.clear();           // wipe the local IndexedDB mirror too
+      await this.router.navigate(['/']);    // home; app will show the logged-out view
+    } catch {
+      this.deleteErr.set(true);
+    } finally {
+      this.deleteBusy.set(false);
+    }
   }
 }
