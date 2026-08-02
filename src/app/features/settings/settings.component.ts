@@ -6,6 +6,7 @@ import {
   linkedSignal,
   ElementRef,
   ViewChild,
+  OnInit,
   AfterViewInit,
   OnDestroy,
   ChangeDetectionStrategy,
@@ -75,9 +76,10 @@ interface ThemeTile {
               <button
                 [class.active]="activeSection() === item.id"
                 [class.adv-nav]="item.id === 'advanced'"
+                [attr.aria-current]="activeSection() === item.id ? 'true' : null"
                 (click)="scrollToSection(item.id)"
               >
-                <i class="ti" [class]="'ti-' + item.icon"></i>
+                <i class="ti" [class]="'ti-' + item.icon" aria-hidden="true"></i>
                 {{ item.label }}
               </button>
             }
@@ -86,7 +88,7 @@ interface ThemeTile {
           <!-- RIGHT BODY: all sections rendered, sidebar scrolls to each -->
           <div class="set-body">
 
-                      <!-- ===== PROFILE ===== -->
+            <!-- ===== PROFILE ===== -->
             <section #section id="section-profile" data-section="profile">
               <div class="set-card">
                 <h3>Profile</h3>
@@ -105,6 +107,7 @@ interface ThemeTile {
                       <span class="field-note">permanent</span>
                     </div>
                   </div>
+
                   <div class="field">
                     <label for="handle">Handle</label>
                     <div class="handle-row">
@@ -491,6 +494,83 @@ interface ThemeTile {
                 <p class="hint">More controls coming as features land. Map provider selection
                 and dusk-shift toggle will live here.</p>
               </div>
+
+              <div class="set-card">
+                <h3>Location</h3>
+                <div class="desc">
+                  Control how Wayfinder finds "you" when the map opens.
+                </div>
+ 
+                <label class="toggle-row">
+                  <input
+                    type="checkbox"
+                    [checked]="locationEnabled()"
+                    (change)="onLocationEnabledChange($event)"
+                  />
+                  <span class="toggle-switch" aria-hidden="true"></span>
+                  <span class="toggle-label">Use my device's location</span>
+                </label>
+                <p class="field-hint">
+                  When off — or if location access is denied or unavailable —
+                  Wayfinder falls back to the default location below.
+                </p>
+
+                <div class="loc-default">
+                  <h4>Default location</h4>
+                  <div class="loc-fields">
+                    <label class="field loc-field">
+                      <span>Latitude</span>
+                      <input
+                        type="number"
+                        step="any"
+                        min="-90"
+                        max="90"
+                        [ngModel]="draftLat()"
+                        (ngModelChange)="draftLat.set($event)"
+                        name="defaultLat"
+                      />
+                    </label>
+                    <label class="field loc-field">
+                      <span>Longitude</span>
+                      <input
+                        type="number"
+                        step="any"
+                        min="-180"
+                        max="180"
+                        [ngModel]="draftLng()"
+                        (ngModelChange)="draftLng.set($event)"
+                        name="defaultLng"
+                      />
+                    </label>
+                    <label class="field loc-field loc-field-label">
+                      <span>Label</span>
+                      <input
+                        type="text"
+                        [ngModel]="draftLabel()"
+                        (ngModelChange)="draftLabel.set($event)"
+                        placeholder="e.g. Home"
+                        name="defaultLabel"
+                      />
+                    </label>
+                  </div>
+                  <button
+                    class="btn primary"
+                    type="button"
+                    [disabled]="!defaultLocationValid() || !defaultLocationDirty()"
+                    (click)="saveDefaultLocation()"
+                  >
+                    Save default location
+                  </button>
+                  @if (!defaultLocationValid()) {
+                    <div class="save-msg err">
+                      Latitude must be between -90 and 90, longitude between -180 and 180.
+                    </div>
+                  }
+                  @if (locationMsg()) {
+                    <div class="save-msg">{{ locationMsg() }}</div>
+                  }
+                </div>
+              </div>
             </section>
 
           </div>
@@ -657,6 +737,112 @@ interface ThemeTile {
         color: var(--wf-ink-faint);
         font-style: italic;
         margin: 8px 0 0;
+      }
+      
+      /* ===== Toggle switch (Advanced → Location) ===== */
+      .toggle-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        cursor: pointer;
+        width: fit-content;
+      }
+      /* Real checkbox — kept in the tab order and screen-reader-visible,
+         just visually invisible. Pinned to the row's origin (the row is 
+         position: relative) with zero size + opacity:0 so it NEVER adds
+         layout or a stray scroll extent. The earlier clip-rect version used
+         position: absolute without a positioned ancestor, which let it escape
+         to the scroll container and add empty space + a second scrollbar.
+      */
+      .toggle-row input[type="checkbox"] {
+        position: relative;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+      .toggle-switch {
+        position: relative;
+        width: 38px;
+        height: 22px;
+        border-radius: 11px;
+        background: var(--wf-hairline);
+        flex-shrink: 0;
+        transition: background 0.15s ease;
+      }
+      .toggle-switch::before {
+        content: '';
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: var(--wf-bg);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+        transition: transform 0.15s ease;
+      }
+      .toggle-row input:checked + .toggle-switch {
+        background: var(--wf-accent);
+      }
+      .toggle-row input:checked + .toggle-switch::before {
+        transform: translateX(16px);
+      }
+      /* Visible ring on the switch itself when the hidden checkbox has
+         keyboard focus — :focus-visible on the input, styling its sibling. */
+      .toggle-row input:focus-visible + .toggle-switch {
+        box-shadow: var(--wf-ring);
+      }
+      .toggle-label {
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--wf-ink);
+      }
+ 
+      /* ===== Default location fields ===== */
+      .loc-default {
+        margin-top: 18px;
+        padding-top: 16px;
+        border-top: 0.5px solid var(--wf-hairline);
+      }
+      .loc-default h4 {
+        font-size: 13px;
+        font-weight: 600;
+        margin: 0 0 10px;
+        color: var(--wf-ink);
+      }
+      .loc-fields {
+        /*display: flex;*/
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 14px;
+      }
+      .loc-field {
+        /* display: flex; */
+        flex-direction: column;
+        gap: 4px;
+        font-size: 12px;
+        color: var(--wf-ink-soft);
+        flex: 1 1 120px;
+      }
+      .loc-field-label { flex: 1 1 160px; }
+      .loc-field input {
+        padding: 8px 10px;
+        border-radius: 8px;
+        border: 0.5px solid var(--wf-hairline);
+        background: var(--wf-bg-2);
+        font: inherit;
+        font-size: 13px;
+        color: var(--wf-ink);
+      }
+      .loc-field input:focus {
+        outline: none;
+        border-color: var(--wf-accent);
+        box-shadow: var(--wf-glow);
       }
       .empty-hint {
         font-size: 13px;
@@ -892,8 +1078,30 @@ interface ThemeTile {
         flex-wrap: wrap;
         align-items: center;
       }
-      .import-label { cursor: pointer; }
-      .file-input { display: none; }
+      .import-label { cursor: pointer; position: relative; }
+      .import-label:focus-within {
+        box-shadow: var(--wf-ring);
+        border-radius: 6px;
+      }
+      /*
+       * Visually-hidden, NOT display:none. display:none removes the input
+       * from the tab order entirely, making "Import from file" unreachable
+       * by keyboard. This clip-rect technique keeps it focusable (Enter/
+       * Space opens the file dialog — native <input type="file"> behavior)
+       * while remaining visually invisible; the wrapping .import-label
+       * shows the click target and gets a focus ring via :focus-within.
+       */
+      .file-input {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
       .backup-freq {
         display: flex;
         align-items: center;
@@ -1059,7 +1267,76 @@ interface ThemeTile {
         .freq-select { flex: 1; }
       }
 
-            /* ===== Profile + Billing (mock-accurate) ===== */
+       /*
+       * Phone: the nav becomes a fixed, icon-only strip pinned below the
+       * breadcrumb (which is itself sticky at top:0 — see .breadcrumb
+       * above). Reuses the file's existing 80px "below breadcrumb"
+       * convention (already used by .set-nav's desktop 'top' and by
+       * .set-body section's scroll-margin-top) so the offset stays
+       * consistent rather than introducing a second guessed value.
+       *
+       * Labels stay in the DOM (inside .nav-label) but are visually
+       * hidden via the clip-rect technique — NOT display:none — so
+       * screen readers still announce the full section name even though
+       * only the icon is visible. Button text content is the accessible
+       * name; no separate aria-label needed.
+       */
+      @media (max-width: 640px) {
+        .set-nav {
+          position: fixed;
+          top: 80px;
+          left: 0;
+          right: 0;
+          z-index: 9;
+          flex-direction: row;
+          justify-content: center;
+          overflow-x: auto;
+          background: var(--wf-bg);
+          border-bottom: 0.5px solid var(--wf-hairline);
+          padding: 6px 10px;
+          gap: 2px;
+        }
+        .set-nav button {
+          flex-direction: column;
+          gap: 2px;
+          padding: 8px 10px;
+          border-radius: 10px;
+        }
+        .set-nav button.adv-nav {
+          margin-top: 0;
+          border-top: none;
+          padding-top: 8px;
+        }
+        .set-nav button > i.ti {
+          font-size: 19px;
+        }
+        .set-nav .nav-label {
+          position: absolute;
+          width: 1px;
+          height: 1px;
+          padding: 0;
+          margin: -1px;
+          overflow: hidden;
+          clip: rect(0, 0, 0, 0);
+          white-space: nowrap;
+          border: 0;
+        }
+        /* Compensate for .set-nav leaving normal flow (position:fixed) so
+           section content doesn't render underneath the fixed bar. Height
+           is an estimate (icon ~19px + vertical padding); a few px of
+           slack either way is harmless. */
+        .set-body {
+          padding-top: 54px;
+        }
+        /* Section anchors need extra scroll-margin so scrollToSection()'s
+           scrollIntoView() doesn't land a section's top underneath the
+           fixed breadcrumb + fixed nav stack (80px breadcrumb + ~54px nav). */
+        .set-body section {
+          scroll-margin-top: 134px;
+        }
+      }
+      
+      /* ===== Profile + Billing (mock-accurate) ===== */
       .field { margin-bottom: 18px; }
       .field label {
         display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px;
@@ -1117,11 +1394,10 @@ interface ThemeTile {
       .cw-title { font-size: 13px; font-weight: 600; color: var(--wf-ink); margin-bottom: 6px; }
       .btn.small { padding: 7px 12px; font-size: 12px; margin-top: 12px; }
       .btn.ghost { background: transparent; }
-
     `,
   ],
 })
-export class SettingsComponent implements AfterViewInit, OnDestroy {
+export class SettingsComponent implements OnInit, AfterViewInit, OnDestroy {
   protected collections = inject(CollectionsStore);
   protected places = inject(PlacesStore);
   protected categories = inject(CategoriesStore);
@@ -1194,6 +1470,16 @@ export class SettingsComponent implements AfterViewInit, OnDestroy {
     return `${Math.floor(days / 30)} month${days < 60 ? '' : 's'} ago`;
   });
 
+  ngOnInit(): void {
+    // Settings is exactly where a user checks "did my upgrade go through?" —
+    // refresh the profile on mount so plan/account state reflects the
+    // backend's truth rather than whatever was cached at app bootstrap or
+    // this tab's last own mutation. Silent no-op for guests (guarded inside
+    // AuthStore.refreshProfile()) and on failure (network blip shouldn't
+    // disrupt the page).
+    void this.auth.refreshProfile();
+  }
+
   ngAfterViewInit(): void {
     // Find all section elements
     this.sectionElements = Array.from(
@@ -1207,7 +1493,7 @@ export class SettingsComponent implements AfterViewInit, OnDestroy {
     // as high as a short one in the thin band, and the nav skips it.
     this.intersectionObserver = new IntersectionObserver(
       () => {
-        const line = 88; //breadcrumb (~80px) + small offset
+        const line = 75; //breadcrumb (~80px) + small offset
         let current: SettingsSection | null = null;
         for(const el of this.sectionElements){
           if(el.getBoundingClientRect().top <= line + 40){
@@ -1366,8 +1652,8 @@ export class SettingsComponent implements AfterViewInit, OnDestroy {
     await this.collections.updatePartial(collectionId, { coverIcon: iconName });
     this.iconPickerForCollectionId.set(null);
   }
-
-    // ===== Profile + Billing =====
+  
+  // ===== Profile + Billing =====
   protected handleDraft = linkedSignal(() => this.auth.user()?.handle ?? '');
   protected handleState = signal<'idle' | 'checking' | 'available' | 'taken' | 'invalid' | 'current'>('idle');
   protected savingHandle = signal(false);
@@ -1399,6 +1685,67 @@ export class SettingsComponent implements AfterViewInit, OnDestroy {
   protected planBusy = signal(false);
   protected planMsg = signal<string | null>(null);
   protected planErr = signal(false);
+
+    // ===== Location preferences (Advanced section) =====
+ 
+  protected locationEnabled = computed(
+    () => this.appState.locationPreferences().locationEnabled
+  );
+ 
+  /**
+   * Draft fields for the default-location form. linkedSignal re-derives
+   * from the stored value whenever it changes underneath (e.g. after a
+   * sync pull brings in a value set on another device), while still
+   * letting the user freely edit before saving — same pattern as
+   * handleDraft/nameDraft above.
+   */
+  protected draftLat = linkedSignal(
+    () => this.appState.locationPreferences().defaultLocation?.lat ?? 17.385
+  );
+  protected draftLng = linkedSignal(
+    () => this.appState.locationPreferences().defaultLocation?.lng ?? 78.4867
+  );
+  protected draftLabel = linkedSignal(
+    () => this.appState.locationPreferences().defaultLocation?.label ?? 'Hyderabad'
+  );
+ 
+  protected locationMsg = signal<string | null>(null);
+ 
+  protected defaultLocationValid = computed(() => {
+    const lat = this.draftLat();
+    const lng = this.draftLng();
+    return (
+      typeof lat === 'number' && !Number.isNaN(lat) && lat >= -90 && lat <= 90 &&
+      typeof lng === 'number' && !Number.isNaN(lng) && lng >= -180 && lng <= 180
+    );
+  });
+ 
+  protected defaultLocationDirty = computed(() => {
+    const current = this.appState.locationPreferences().defaultLocation;
+    return (
+      this.draftLat() !== (current?.lat ?? 17.385) ||
+      this.draftLng() !== (current?.lng ?? 78.4867) ||
+      this.draftLabel() !== (current?.label ?? 'Hyderabad')
+    );
+  });
+ 
+  protected async onLocationEnabledChange(event: Event): Promise<void> {
+    const checked = (event.target as HTMLInputElement).checked;
+    await this.appState.setLocationPreferences({ locationEnabled: checked });
+  }
+ 
+  protected async saveDefaultLocation(): Promise<void> {
+    if (!this.defaultLocationValid()) return;
+    await this.appState.setLocationPreferences({
+      defaultLocation: {
+        lat: this.draftLat(),
+        lng: this.draftLng(),
+        label: this.draftLabel().trim() || undefined,
+      },
+    });
+    this.locationMsg.set('Default location saved.');
+    setTimeout(() => this.locationMsg.set(null), 3000);
+  }
  
   onHandleInput(raw: string): void {
     const v = raw.toLowerCase().trim();
@@ -1446,13 +1793,22 @@ export class SettingsComponent implements AfterViewInit, OnDestroy {
   }
   async upgrade(): Promise<void> {
     this.planBusy.set(true); this.planMsg.set(null);
-    try { await this.auth.upgrade(); this.planErr.set(false); this.planMsg.set('Welcome to Circle!'); }
+    try { await this.auth.upgrade(); 
+      // Belt-and-braces: upgrade() already patches the store from its response,
+      // but re-fetche /auth/me so the plan is read back from the freshly-issue
+      // cookie. This closes any window where the store patch and the new cookie
+      // are momenterially out of the step, and guarantess the badge/button flip
+      await this.auth.refreshProfile();
+      this.planErr.set(false); this.planMsg.set('Welcome to Circle!'); }
     catch { this.planErr.set(true); this.planMsg.set('Upgrade failed — please try again.'); }
     finally { this.planBusy.set(false); }
   }
   async cancelCircle(): Promise<void> {
     this.planBusy.set(true); this.planMsg.set(null);
-    try { await this.auth.cancelCircle(); this.planErr.set(false); this.planMsg.set("Circle cancelled — you're back on Freemium."); }
+    try { 
+      await this.auth.cancelCircle(); 
+      await this.auth.refreshProfile();
+      this.planErr.set(false); this.planMsg.set("Circle cancelled — you're back on Freemium."); }
     catch { this.planErr.set(true); this.planMsg.set('Could not cancel — please try again.'); }
     finally { this.planBusy.set(false); }
   }
