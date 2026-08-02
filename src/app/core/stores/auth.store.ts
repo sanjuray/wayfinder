@@ -130,7 +130,7 @@ export const AuthStore = signalStore(
      * local mirror behind that would re-sync nothing to a dead account).
      */
     async function deleteAccount(): Promise<void>{
-      await firstValueFrom(http.delete('@{base}/auth/me'));
+      await firstValueFrom(http.delete(`${base}/auth/me`));
       patchState(store, { user: null });
     }
 

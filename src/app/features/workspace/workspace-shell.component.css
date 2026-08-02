@@ -342,7 +342,7 @@
 @media (max-width: 640px) {
   .topbar {
     padding: 10px 12px;
-    padding-top: calc(10px + var(--wf-safe-top));
+    padding-top: calc(13px + var(--wf-safe-top, 2px));
     gap: 10px;
   }
   /* hide the decorative tagline + separator */
