@@ -392,7 +392,7 @@ import type { VisitRating } from '../../../core/models';
           bottom: 0;
           width: 100%;
           max-width: 100%;
-          height: 88dvh;
+          height: 60dvh;
           border-left: none;
           border-top: 0.5px solid var(--wf-hairline);
           border-radius: 16px 16px 0 0;
