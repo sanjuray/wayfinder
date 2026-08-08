@@ -346,6 +346,7 @@
 /* Field row: input + hint side by side */
 .map-search-field-row{
   display: flex;
+  width: 100%;
   align-items: center;
   gap: 12px;
 }

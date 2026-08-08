@@ -195,8 +195,7 @@
 .backup-pop {
   position: absolute;
   top: calc(100% + 12px);
-  right: 0;
-  width: 258px;
+  width: auto;
   background: var(--wf-bg);
   border: 0.5px solid var(--wf-hairline);
   border-radius: 12px;
@@ -354,8 +353,11 @@
   /* saved-status on mobile: hide the text label + dot, show the backup icon
     instead. Icon color carries state (teal = saved, accent = unsaved).
     Still tappable to open the backup panel. */
-  .save-status {
+  .save-status,
+  .plan-pill.circle {
     font-size: 0; /* hides the bare text label node */
+    padding: 0px;
+    margin: 0px;
   }
   .save-status .dot {
     display: none; /* icon replaces the dot on mobile */
@@ -363,6 +365,7 @@
   .save-status .save-icon {
     display: inline-flex;
   }
+  .topbar-right { gap: 8px; }
   /* nav: keep visible, let it scroll if it doesn't fit rather than wrap/clip */
   .nav {
     overflow-x: auto;

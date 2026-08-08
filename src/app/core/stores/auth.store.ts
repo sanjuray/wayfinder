@@ -37,7 +37,7 @@ export const AuthStore = signalStore(
   withState(initialState),
   withComputed((store) => ({
     isLoggedIn: computed(() => store.user() !== null),
-    isCircle: computed(() => store.user()?.plan === 'circle'),
+    isCircle: computed(() => store.user()?.plan === 'CIRCLE'),
   })),
   withMethods((store) => {
     const http = inject(HttpClient);

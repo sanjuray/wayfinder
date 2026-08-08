@@ -969,6 +969,7 @@ export class PlaceDetailComponent {
   protected onEdit(): void {
     const id = this.facade.placeId();
     if (id) this.editRequested.emit(id);
+    this.onClose();
   }
 
   protected async onConfirmDelete(): Promise<void> {
