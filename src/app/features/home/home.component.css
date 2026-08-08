@@ -440,6 +440,7 @@
     padding-bottom: calc(16px + var(--wf-safe-bottom, 0px));
   }
   .sidebar.sheet-open {
+    padding-top: 0px;
     transform: translateY(0);
   }
 

@@ -1273,7 +1273,7 @@ interface ThemeTile {
       @media (max-width: 640px) {
         .set-nav {
           position: fixed;
-          top: 80px;
+          top: 60px;
           left: 0;
           right: 0;
           z-index: 9;
@@ -1282,7 +1282,7 @@ interface ThemeTile {
           overflow-x: auto;
           background: var(--wf-bg);
           border-bottom: 0.5px solid var(--wf-hairline);
-          padding: 6px 10px;
+          padding: 8px 10px;
           gap: 2px;
         }
         .set-nav button {
