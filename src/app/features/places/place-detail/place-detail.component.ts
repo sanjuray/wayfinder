@@ -131,6 +131,41 @@ import type { VisitRating } from '../../../core/models';
           </p>
         </section>
 
+        <section class="block">
+          <div class="label-row">
+            <div class="label">Notes</div>
+            @if (!facade.editingNotes()) {
+              <button
+                class="row-icon tiny"
+                (click)="facade.startEditNotes()"
+                aria-label="Edit notes"
+                title="Edit notes"
+              >
+                <i class="ti ti-pencil"></i>
+              </button>
+            }
+          </div>
+
+          @if (facade.editingNotes()) {
+            <textarea
+              class="note-textarea"
+              [ngModel]="facade.editedNotes()"
+              (ngModelChange)="facade.editedNotes.set($event)"
+              placeholder="Add personal notes about this place..."
+              rows="3"
+              autofocus
+            ></textarea>
+            <div class="notes-actions">
+              <button class="link" (click)="facade.cancelEditNotes()">Cancel</button>
+              <button class="link primary" (click)="facade.saveEditedNotes()">Save</button>
+            </div>
+          } @else {
+            <p class="notes-display" (click)="facade.startEditNotes()">
+              {{ p.customNotes || 'No notes added yet.' }}
+            </p>
+          }
+        </section>
+
         @if (vibeTags(p.vibeTagIds); as vibes) {
           @if (vibes.length > 0) {
             <section class="block">
@@ -897,6 +932,59 @@ import type { VisitRating } from '../../../core/models';
       .link:disabled {
         opacity: 0.4;
         cursor: not-allowed;
+      }
+
+      .label-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 4px;
+      }
+      .row-icon.tiny {
+        width: 20px;
+        height: 20px;
+      }
+      .row-icon.tiny i.ti {
+        font-size: 11px;
+      }
+      .notes-display {
+        font-size: 12px;
+        color: var(--wf-ink);
+        line-height: 1.5;
+        margin: 0;
+        white-space: pre-wrap;
+        word-break: break-word;
+        cursor: pointer;
+        padding: 4px 6px;
+        border-radius: 4px;
+        background: var(--wf-bg-2);
+        border: 0.5px solid transparent;
+        min-height: 24px;
+      }
+      .notes-display:hover {
+        border-color: var(--wf-hairline);
+      }
+      .note-textarea {
+        width: 100%;
+        padding: 6px 8px;
+        border-radius: 6px;
+        border: 0.5px solid var(--wf-hairline);
+        background: var(--wf-bg-2);
+        font: inherit;
+        font-size: 12px;
+        color: var(--wf-ink);
+        resize: vertical;
+      }
+      .note-textarea:focus {
+        outline: none;
+        border-color: var(--wf-accent);
+        box-shadow: var(--wf-glow);
+      }
+      .notes-actions {
+        display: flex;
+        gap: 6px;
+        justify-content: flex-end;
+        margin-top: 6px;
       }
     `,
   ],

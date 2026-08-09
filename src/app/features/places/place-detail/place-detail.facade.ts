@@ -31,6 +31,8 @@ export class PlaceDetailFacade {
   readonly placeId = signal<string | null>(null);
   readonly editingName = signal(false);
   readonly editedName = signal('');
+  readonly editingNotes = signal(false);
+  readonly editedNotes = signal('');
   readonly addingVisit = signal(false);
 
   // Visit draft state — bound to the "add visit" form
@@ -97,6 +99,7 @@ export class PlaceDetailFacade {
   open(placeId: string): void {
     this.placeId.set(placeId);
     this.editingName.set(false);
+    this.editingNotes.set(false);
     this.addingVisit.set(false);
     this.resetVisitDraft();
   }
@@ -104,6 +107,7 @@ export class PlaceDetailFacade {
   close(): void {
     this.placeId.set(null);
     this.editingName.set(false);
+    this.editingNotes.set(false);
     this.addingVisit.set(false);
     this.resetVisitDraft();
   }
@@ -125,6 +129,26 @@ export class PlaceDetailFacade {
 
   cancelEditName(): void {
     this.editingName.set(false);
+  }
+
+  startEditNotes(): void {
+    const p = this.place();
+    if (!p) return;
+    this.editedNotes.set(p.customNotes ?? '');
+    this.editingNotes.set(true);
+  }
+
+  async saveEditedNotes(): Promise<void> {
+    const p = this.place();
+    if (!p) return;
+    const newNotes = this.editedNotes().trim();
+    const customNotes = newNotes === '' ? undefined : newNotes;
+    await this.placesStore.updatePartial(p.id, { customNotes });
+    this.editingNotes.set(false);
+  }
+
+  cancelEditNotes(): void {
+    this.editingNotes.set(false);
   }
 
   async toggleStatus(): Promise<void> {
@@ -213,6 +237,9 @@ export class PlaceDetailFacade {
   async commitPendingEdits(): Promise<void> {
     if (this.editingName()) {
       await this.saveEditedName();
+    }
+    if(this.editingNotes()){
+      await this.saveEditedNotes();
     }
   }
 
