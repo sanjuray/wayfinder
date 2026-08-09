@@ -104,21 +104,28 @@ export class AddPlaceFacade {
    *   4. Plain text → forward geocode with comma-fallback
    */
   async resolveInput(): Promise<void> {
-    const raw = this.inputText().trim();
+    let raw = this.inputText().trim();
     if (!raw) return;
 
     this.loading.set(true);
     this.error.set(null);
 
     try {
-      // Case 1: coordinates (any format)
+
+      // 1. Automatically expand short links if matched
+      if (this.mapsLink.isShortLink(raw)) {
+        raw = await this.mapsLink.expandShortLink(raw);
+        this.inputText.set(raw); // Update UI box to show the full long URL
+      }
+
+      // 2. Case 1: coordinates (any format)
       const coords = parseCoordinates(raw);
       if (coords) {
         await this.resolveFromCoords(coords.lat, coords.lng, undefined, raw);
         return;
       }
 
-      // Case 2 & 3: Google Maps URL
+      // 3. Case 2 & 3: Google Maps URL
       const parsed = this.mapsLink.parse(raw);
 
       if (parsed.needsExpansion) {
@@ -134,7 +141,7 @@ export class AddPlaceFacade {
         return;
       }
 
-      // Case 4: forward geocode plain text
+      // 4. Case 4: forward geocode plain text
       let query = raw;
 
       // NEW: handle Plus Code fragments better
@@ -159,9 +166,12 @@ export class AddPlaceFacade {
       }
 
       const r = results[0];
+      // 1. Create a safe, modified copy (avoids mutating read-only API objects)
+      const cleanedName = r.name ? r.name.replace(/\+/g, ' ') : '';
+
       this.draft.set({
-        name: r.name,
-        customName: r.name, // default editable name
+        name: cleanedName,
+        customName: cleanedName, // default editable name
         displayAddress: r.displayAddress,
         lat: r.lat,
         lng: r.lng,
@@ -169,7 +179,7 @@ export class AddPlaceFacade {
         region: r.region,
         country: r.country,
       });
-      this.customName.set(r.name);
+      this.customName.set(cleanedName);
       this.step.set(2);
     } catch {
       this.error.set('Network problem. Check your connection or click the map directly.');

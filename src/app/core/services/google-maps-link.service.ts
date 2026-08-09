@@ -17,12 +17,87 @@ export interface ParsedMapsLink {
 
 @Injectable({ providedIn: 'root' })
 export class GoogleMapsLinkService {
+
+
+  /**
+   * Checks if the input is a known short link format in maps.
+   */
+  isShortLink(input: string): boolean {
+    const trimmed = input.trim();
+    return /(maps\.app\.goo\.gl|g\.co\/maps)/i.test(trimmed);
+  }
+
+  cleanGoogleConsentUrl(rawUrl: string): string {
+  try {
+    // Parse the full raw URL
+    const parsedUrl = new URL(rawUrl);
+    
+    // Check if it's a Google consent redirect
+    if (parsedUrl.hostname.includes('consent.google.com')) {
+      // Extract the 'continue' parameter value
+      const continueParam = parsedUrl.searchParams.get('continue');
+      
+      if (continueParam) {
+        // Decode and return the target URL (e.g., the actual Google Maps link)
+        return decodeURIComponent(continueParam);
+      }
+    }
+  } catch (e) {
+    console.warn('Failed to parse URL, returning original string', e);
+  }
+  
+  // Return original if it wasn't a consent link or parsing failed
+  return rawUrl;
+}
+
+  /**
+   * Asynchronously expands a short link to its full long URL using a public unshortening proxy.
+   */
+  async expandShortLink(shortUrl: string): Promise<string> {
+    const trimmed = shortUrl.trim();
+    // only valid for Short link maps.app.goo.gl/xxx
+    if (!this.isShortLink(trimmed)) return trimmed;
+
+    try {
+      // Using a fast open-source unshorten service API to bypass browser CORS redirect blocks
+      const response = await fetch(`https://unshorten.me/json/${encodeURIComponent(trimmed)}`);
+      const data = await response.json();
+      
+      if (data && data.resolved_url && data.resolved_url !== 'http://' && data.resolved_url !== 'https://') {
+        let resolved = data.resolved_url;
+
+        // Clean Google Consent Interception page if present
+        if (resolved.includes('consent.google.com')) {
+          try {
+            const parsedUrl = new URL(resolved);
+            const continueParam = parsedUrl.searchParams.get('continue');
+            if (continueParam) {
+              resolved = decodeURIComponent(continueParam);
+            }
+          } catch (err) {
+            console.warn('Failed to parse consent redirect URL parameters', err);
+          }
+        }
+
+        return resolved;
+      }
+    } catch (e) {
+      console.warn('Failed to auto-expand short link via proxy, falling back to raw', e);
+    }
+
+    return trimmed;
+  }
+
   parse(input: string): ParsedMapsLink {
     const trimmed = input.trim();
 
-    // Short link maps.app.goo.gl/xxx — needs server-side expansion 
     // Short link share.google/xxx - needs server-side expansion
-    if (/(maps\.app\.goo\.gl|share\.google)/i.test(trimmed)) {
+    if (/(share\.google)/i.test(trimmed)) {
+      return { raw: trimmed, needsExpansion: true };
+    }
+
+    // If it's still a short link and wasn't expanded upstream
+    if (this.isShortLink(trimmed)) {
       return { raw: trimmed, needsExpansion: true };
     }
 
