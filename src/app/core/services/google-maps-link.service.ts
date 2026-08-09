@@ -27,29 +27,6 @@ export class GoogleMapsLinkService {
     return /(maps\.app\.goo\.gl|g\.co\/maps)/i.test(trimmed);
   }
 
-  cleanGoogleConsentUrl(rawUrl: string): string {
-  try {
-    // Parse the full raw URL
-    const parsedUrl = new URL(rawUrl);
-    
-    // Check if it's a Google consent redirect
-    if (parsedUrl.hostname.includes('consent.google.com')) {
-      // Extract the 'continue' parameter value
-      const continueParam = parsedUrl.searchParams.get('continue');
-      
-      if (continueParam) {
-        // Decode and return the target URL (e.g., the actual Google Maps link)
-        return decodeURIComponent(continueParam);
-      }
-    }
-  } catch (e) {
-    console.warn('Failed to parse URL, returning original string', e);
-  }
-  
-  // Return original if it wasn't a consent link or parsing failed
-  return rawUrl;
-}
-
   /**
    * Asynchronously expands a short link to its full long URL using a public unshortening proxy.
    */
@@ -93,11 +70,6 @@ export class GoogleMapsLinkService {
 
     // Short link share.google/xxx - needs server-side expansion
     if (/(share\.google)/i.test(trimmed)) {
-      return { raw: trimmed, needsExpansion: true };
-    }
-
-    // If it's still a short link and wasn't expanded upstream
-    if (this.isShortLink(trimmed)) {
       return { raw: trimmed, needsExpansion: true };
     }
 

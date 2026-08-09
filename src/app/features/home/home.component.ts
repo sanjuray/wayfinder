@@ -519,8 +519,8 @@ protected displayedVibes = computed(() =>
 
   private setupDoubleTapListener(): void {
     const mapDiv = this.mapEl.nativeElement;
-    const tapWindow = 1000; // ms — two taps must occur within this window
-    const distanceThreshold = 80; // px — taps must land within this radius
+    const tapWindow = 2000; // ms — two taps must occur within this window
+    const distanceThreshold = 1000; // px — taps must land within this radius
  
     let taps: { time: number; x: number; y: number }[] = [];
  

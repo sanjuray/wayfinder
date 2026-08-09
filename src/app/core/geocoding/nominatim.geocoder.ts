@@ -104,8 +104,8 @@ export class NominatimGeocoder implements Geocoder {
       seen.add(key);
       return true;
     });
- 
-    const displayAddress = cleanParts.join(', ') || r.display_name;
+
+    const displayAddress = r.display_name;
 
     return {
       name,

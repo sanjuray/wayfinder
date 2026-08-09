@@ -37,7 +37,6 @@ import { AddPlaceFacade } from '../add-place.facade';
         <div class="details">
           @if (d.displayAddress) {
             <div class="addr">
-              {{ d.name}},<br/>
               {{ d.displayAddress || d.name}}
             </div>
           }
