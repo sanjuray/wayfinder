@@ -7,7 +7,7 @@ import type {
   ImportResult,
   WayfinderEnvelope,
 } from './storage.adapter';
-import type { Place, Collection, Trip, Category, VibeTag, AppState } from '../models';
+import type { Place, Collection, Trip, Category, VibeTag, AppState, ScoutConversation } from '../models';
 
 /**
  * v1 storage: IndexedDB via Dexie. All deletes are soft-deletes
@@ -83,6 +83,20 @@ export class LocalStorageAdapter implements StorageAdapter {
   }
   async deleteVibeTag(id: string): Promise<void> {
     await db.vibeTags.delete(id);
+  }
+
+  // ---- Scout conversations ----
+  async getScoutConversations(): Promise<ScoutConversation[]> {
+    return db.scoutConversations.filter((c) => !c.deletedAt).toArray();
+  }
+  async upsertScoutConversation(c: ScoutConversation): Promise<void> {
+    await db.scoutConversations.put(c);
+  }
+  async deleteScoutConversation(id: string): Promise<void> {
+    const existing = await db.scoutConversations.get(id);
+    if(existing){
+      await db.scoutConversations.put({ ...existing, deletedAt: new Date().toISOString() });
+    }
   }
 
   // ---- App state ----

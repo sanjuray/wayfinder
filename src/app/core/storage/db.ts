@@ -1,5 +1,5 @@
 import Dexie, { Table } from 'dexie';
-import type { Place, Collection, Trip, Category, VibeTag, AppState } from '../models';
+import type { Place, Collection, Trip, Category, VibeTag, AppState, ScoutConversation } from '../models';
 
 const APP_STATE_KEY = 'app-state' as const;
 
@@ -14,17 +14,19 @@ export class WayfinderDB extends Dexie {
   trips!: Table<Trip, string>;
   categories!: Table<Category, string>;
   vibeTags!: Table<VibeTag, string>;
+  scoutConversations!: Table<ScoutConversation, string>;
   appState!: Table<AppStateRecord, string>;
 
   constructor() {
     super('wayfinder');
-    this.version(1).stores({
+    this.version(2).stores({
       places: 'id, categoryId, status, locality, country, updatedAt, deletedAt',
       collections: 'id, name, updatedAt, deletedAt',
       trips: 'id, plannedDate, isCompleted, updatedAt, deletedAt',
       categories: 'id, name, sortOrder',
       vibeTags: 'id, name',
       appState: 'key',
+      scoutConversations: 'id, updatedAt, deletedAt',
     });
   }
 }

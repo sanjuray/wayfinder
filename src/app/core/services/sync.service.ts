@@ -12,7 +12,8 @@ import { AppStateStore } from '../stores/app-state.store';
 import { AuthStore } from '../stores/auth.store';
 import { STORAGE_ADAPTER } from '../storage/storage.token';
  
-import type { Place, Collection, Trip, Category, VibeTag, AppState } from '../models';
+import type { Place, Collection, Trip, Category, VibeTag, AppState, ScoutConversation } from '../models';
+import { ScoutHistoryStore } from '../stores/scout-history.store';
  
 // ---- Wire types (mirrors backend SyncDtos) ----
  
@@ -22,6 +23,7 @@ interface SyncData {
   trips:       Trip[];
   categories:  Category[];
   vibeTags:    VibeTag[];
+  scoutConversations: ScoutConversation[];
   appState:    AppState | null;
 }
  
@@ -79,15 +81,16 @@ export type SyncStatus = 'idle' | 'syncing' | 'error';
  */
 @Injectable({ providedIn: 'root' })
 export class SyncService {
-  private http        = inject(HttpClient);
-  private storage     = inject(STORAGE_ADAPTER);
-  private places      = inject(PlacesStore);
-  private collections = inject(CollectionsStore);
-  private trips       = inject(TripsStore);
-  private categories  = inject(CategoriesStore);
-  private vibeTags    = inject(VibeTagsStore);
-  private appState    = inject(AppStateStore);
-  private auth        = inject(AuthStore);
+  private http         = inject(HttpClient);
+  private storage      = inject(STORAGE_ADAPTER);
+  private places       = inject(PlacesStore);
+  private collections  = inject(CollectionsStore);
+  private trips        = inject(TripsStore);
+  private categories   = inject(CategoriesStore);
+  private vibeTags     = inject(VibeTagsStore);
+  private scoutHistory = inject(ScoutHistoryStore);
+  private appState     = inject(AppStateStore);
+  private auth         = inject(AuthStore);
 
   private readonly base = environment.apiBaseUrl;
 
@@ -189,12 +192,13 @@ export class SyncService {
  
       // 1. Collect local data (read directly from storage so tombstones
       //    and records not yet in the store's filtered entities are included)
-      const [places, collections, trips, categories, vibeTags] = await Promise.all([
+      const [places, collections, trips, categories, vibeTags, scoutConversations] = await Promise.all([
         this.storage.getPlaces(),
         this.storage.getCollections(),
         this.storage.getTrips(),
         this.storage.getCategories(),
         this.storage.getVibeTags(),
+        this.storage.getScoutConversations(),
       ]);
       const appStateLocal = await this.storage.getAppState();
  
@@ -210,6 +214,7 @@ export class SyncService {
           trips:       filter(trips),
           categories:  filter(categories),
           vibeTags:    filter(vibeTags),
+          scoutConversations: filter(scoutConversations),
           // App state: send if it changed since last sync (or always on first)
           appState: appStateLocal
             ? (since && appStateLocal.lastChangeAt && appStateLocal.lastChangeAt <= since
@@ -267,6 +272,7 @@ export class SyncService {
     if (data.trips?.length)       tasks.push(this.trips.applyRemote(data.trips));
     if (data.categories?.length)  tasks.push(this.categories.applyRemote(data.categories));
     if (data.vibeTags?.length)    tasks.push(this.vibeTags.applyRemote(data.vibeTags));
+    if (data.scoutConversations?.length) tasks.push(this.scoutHistory.applyRemote(data.scoutConversations));
  
     // App state is applied last — it may affect how other data is rendered
     if (data.appState) {

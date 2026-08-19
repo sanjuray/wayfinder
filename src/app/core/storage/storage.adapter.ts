@@ -1,4 +1,4 @@
-import type { Place, Collection, Trip, Category, VibeTag, AppState } from '../models';
+import type { Place, Collection, Trip, Category, VibeTag, AppState, ScoutConversation } from '../models';
 
 /**
  * The single contract between the app and "where data lives."
@@ -31,6 +31,7 @@ export interface WayfinderEnvelope{
     trips: Trip[],
     categories: Category[];
     vibeTags: VibeTag[];
+    scoutConversations?: ScoutConversation[];
     appState?: AppState;
   }
 }
@@ -61,6 +62,11 @@ export interface StorageAdapter {
   getVibeTags(): Promise<VibeTag[]>;
   upsertVibeTag(t: VibeTag): Promise<void>;
   deleteVibeTag(id: string): Promise<void>;
+
+  // Scout conversations
+  getScoutConversations(): Promise<ScoutConversation[]>
+  upsertScoutConversation(c: ScoutConversation): Promise<void>;
+  deleteScoutConversation(id: string): Promise<void>;
 
   // App state
   getAppState(): Promise<AppState | undefined>;

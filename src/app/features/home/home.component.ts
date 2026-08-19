@@ -41,6 +41,7 @@ import type { EmptyStateVariant } from './empty-state.component';
 import { SearchStateService } from '../../core/services/search-state.service';
 import { SearchService } from '../../core/services/search.service';
 import type { GroupedSearchResults } from '../../core/services/search.service';
+import { ScoutBubbleComponent } from '../scout/scout-bubble.component';
  
 interface CelebrationState {
   x: number;
@@ -69,6 +70,7 @@ interface CelebrationState {
     QuoteCardComponent,
     FilterPopoverComponent,
     PlaceDetailComponent,
+    ScoutBubbleComponent,
     DatePipe
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -248,6 +250,35 @@ protected displayedVibes = computed(() =>
       this.editingPlace.set(place);
       this.showAddModal.set(true);
       this.router.navigate([], { queryParams: { edit: null }, queryParamsHandling: 'merge', replaceUrl: true });
+    });
+
+    // ?scout=:id handoff from Scout (compact panel or /scout fullscreen).
+    // Opens the place detail panel and pans the map to the place. Distinct
+    // from ?edit — Scout wants a read view, not the editor.
+    let scoutHandled: string | null = null;
+    effect(() => {
+      const params = editId(); // reuse the same queryParamMap signal already declared above
+      const id = params?.get('scout');
+      if (!id || scoutHandled === id) return;
+      const places = this.places.entities();
+      if (places.length === 0) return;
+      const place = this.places.getById(id);
+      if (!place) {
+        scoutHandled = id;
+        this.router.navigate([], { queryParams: { scout: null }, queryParamsHandling: 'merge', replaceUrl: true });
+        return;
+      }
+      scoutHandled = id;
+      if (this.map) {
+        this.map.flyTo([place.lat, place.lng], Math.max(this.map.getZoom(), 14), {
+          animate: true, duration: 0.8,
+        });
+        setTimeout(() => { this.placeDetail?.open(id); this.isPlaceDetailOpen.set(true); }, 700);
+      } else {
+        this.placeDetail?.open(id);
+        this.isPlaceDetailOpen.set(true);
+      }
+      this.router.navigate([], { queryParams: { scout: null }, queryParamsHandling: 'merge', replaceUrl: true });
     });
   }
  

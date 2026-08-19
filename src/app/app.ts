@@ -9,6 +9,7 @@ import { VibeTagsStore } from './core/stores/vibe-tags.store';
 import { CollectionsStore } from './core/stores/collections.store';
 import { PlacesStore } from './core/stores/places.store';
 import { TripsStore } from './core/stores/trips.store';
+import { ScoutHistoryStore } from './core/stores/scout-history.store';
 
 @Component({
   selector: 'wf-root',
@@ -27,6 +28,7 @@ export class App implements OnInit {
   private collections = inject(CollectionsStore);
   private places = inject(PlacesStore);
   private trips = inject(TripsStore);
+  private scoutHistory = inject(ScoutHistoryStore);
 
   constructor(){
     effect(() =>{
@@ -47,6 +49,7 @@ export class App implements OnInit {
       this.collections.load(),
       this.places.load(),
       this.trips.load(),
+      this.scoutHistory.load(),
     ]);
   }
 }

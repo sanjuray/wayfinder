@@ -3,4 +3,5 @@ export * from './collection.model';
 export * from './trip.model';
 export * from './category.model';
 export * from './vibe-tag.model';
+export * from './scout-conversation.model';
 export * from './app-state.model';
